@@ -435,7 +435,7 @@ function openTaskDetail(id) {
 
 /* ---------------- 初始化 ---------------- */
 document.addEventListener('DOMContentLoaded', () => {
-  renderSidebar('reach', 'reach-task');
+  renderSidebar('reach', 'reach-task-records');
   renderTopbar('reach');
   bindDrawerClose();
 
