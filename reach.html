@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新建任务 · ReachHub</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+      <div class="reach-layout">
+    <!-- 中间预览区：手机主屏幕 -->
+    <section class="preview-pane">
+      <div class="pane-title">触达通道</div>
+      <div class="pane-hint">点击屏幕中的通道图标即可新建触达任务</div>
+      <div class="phone-screen" id="phoneScreen">
+        <div class="phone-clock">
+          <div class="time" id="phoneTime">20:12</div>
+          <div class="date" id="phoneDate">7月9日 星期四</div>
+        </div>
+        <div class="app-grid">
+          <button class="app-item" data-channel="sms">
+            <span class="app-icon"><i data-lucide="message-square"></i></span><span>SMS</span>
+          </button>
+          <button class="app-item" data-channel="email">
+            <span class="app-icon"><i data-lucide="mail"></i></span><span>邮件</span>
+          </button>
+          <button class="app-item" data-channel="push">
+            <span class="app-icon"><i data-lucide="bell"></i></span><span>Push</span>
+          </button>
+          <button class="app-item" data-channel="viber">
+            <span class="app-icon"><i data-lucide="phone-call"></i></span><span>Viber</span>
+          </button>
+          <button class="app-item" data-channel="telegram">
+            <span class="app-icon"><i data-lucide="send"></i></span><span>Telegram</span>
+          </button>
+          <button class="app-item" data-channel="messenger">
+            <span class="app-icon"><i data-lucide="message-circle"></i></span><span>Messenger</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右侧 AI 对话区 -->
+    <section class="list-pane">
+      <div class="welcome-block">
+        <h2 id="greeting"></h2>
+        <p id="greetSub"></p>
+      </div>
+      <div class="ai-chat-panel">
+        <div class="ai-chat-messages" id="aiChatMessages">
+          <div class="ai-msg ai-msg-bot">
+            <div class="ai-msg-label"><i data-lucide="sparkles"></i> AI 助手</div>
+            您好！我是触达 AI 助手，可帮您分析任务效果、推荐通道与文案。功能开发中，敬请期待。
+          </div>
+          <div class="ai-msg ai-msg-user">
+            <div class="ai-msg-label">marvin@</div>
+            帮我看看当前执行中的任务情况
+          </div>
+          <div class="ai-msg ai-msg-bot">
+            <div class="ai-msg-label"><i data-lucide="sparkles"></i> AI 助手</div>
+            您当前共有 2 个任务在执行：世界杯竞猜预热短信（SMS，进度 75%）、新用户充值召回邮件（邮件，进度 38%）。
+          </div>
+        </div>
+        <div class="ai-chat-input-bar">
+          <textarea class="textarea" rows="2" readonly placeholder="AI功能开发中，敬请期待"></textarea>
+          <button type="button" class="ai-chat-send" disabled aria-label="发送"><i data-lucide="send"></i></button>
+        </div>
+      </div>
+    </section>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 跟随鼠标的气泡提示 -->
+  <div class="cursor-tip" id="cursorTip"></div>
+
+  <!-- 新建任务抽屉 -->
+  <div class="drawer-root" id="taskDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-xl">
+      <header class="drawer-header">
+        <h3>新建</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+
+      <div class="nt-cols">
+        <!-- 左：预览 -->
+        <section class="nt-preview">
+          <div class="pane-caption">预览</div>
+          <div id="ntPreview"></div>
+        </section>
+
+        <!-- 中：任务配置 -->
+        <section class="nt-config">
+          <div class="field">
+            <span class="field-label">名称</span>
+            <input class="input" id="ntName" placeholder="请输入名称">
+          </div>
+
+          <div class="field">
+            <span class="field-label">产品线</span>
+            <select class="select" id="ntProductLine">
+              <option value="">请选择产品线</option>
+              <option value="BP-VIP">BP-VIP</option>
+              <option value="BP-CONTENT OPERATION CENTER">BP-CONTENT OPERATION CENTER</option>
+            </select>
+          </div>
+
+          <div class="field" hidden>
+            <span class="field-label">任务类型</span>
+            <div class="radio-group" id="ntTaskType">
+              <label><input type="radio" name="taskType" value="manual" checked>手动发送</label>
+              <label><input type="radio" name="taskType" value="api">API调用</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">人群（Who）</span>
+            <div class="cfg-row" id="rowAudience">
+              <div class="cfg-value" id="audienceValue"><span class="placeholder">请选择人群</span></div>
+              <i data-lucide="chevron-right"></i>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">通道（Where）</span>
+            <div class="tabs" id="ntTabs"></div>
+
+            <div class="field">
+              <span class="field-label">时间（When）</span>
+              <div class="cfg-row" id="rowTiming">
+                <div class="cfg-value" id="timingValue"><span class="placeholder">请选择发送时机</span></div>
+                <i data-lucide="chevron-right"></i>
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="field-label">内容（What）</span>
+              <div class="cfg-row" id="rowContent">
+                <div class="cfg-value" id="contentValue"><span class="placeholder">请配置发送内容</span></div>
+                <i data-lucide="chevron-right"></i>
+              </div>
+            </div>
+
+            <div class="field" hidden>
+              <span class="field-label">触达策略</span>
+              <div class="cfg-row" id="rowStrategy">
+                <div class="cfg-value" id="strategyValue"><span class="placeholder">请选择触达策略</span></div>
+                <i data-lucide="chevron-right"></i>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 右：配置项内容区（条件显示） -->
+        <section class="nt-panel" id="ntPanel">
+          <div class="panel-empty">点击左侧配置项查看详情</div>
+        </section>
+      </div>
+
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>取消</button>
+        <button class="btn btn-primary" id="createTaskBtn">提交审批</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js"></script>
+  <script src="assets/content-editor.js"></script>
+  <script src="assets/reach-config.js"></script>
+  <script src="assets/search-select.js"></script>
+  <script src="assets/strategy-data.js"></script>
+  <script src="assets/search-multi-select.js"></script>
+  <script src="assets/reach.js"></script>
+</body>
+</html>

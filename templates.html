@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模板管理 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main">
+
+          <!-- 1. 页面标题区 -->
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">模板管理</h1>
+              <p class="page-desc">统一管理短信、邮件、Push、站内信、IM、Bot 等渠道模板</p>
+            </div>
+            <div class="stats-header-actions">
+              <span class="update-time" id="updateTime">2026-07-13 03:20 更新</span>
+              <button class="btn btn-primary" id="newTplBtn"><i data-lucide="plus"></i>新建模板</button>
+            </div>
+          </div>
+
+          <!-- 分类导航 -->
+          <section class="tpl-cat-nav">
+            <div class="chip-group" id="catChips">
+              <button class="chip selected" data-cat="all">全部模板</button>
+              <button class="chip" data-cat="SMS">短信模板</button>
+              <button class="chip" data-cat="邮件">邮件模板</button>
+              <button class="chip" data-cat="Push">Push模板</button>
+              <button class="chip" data-cat="Inbox">Inbox模板</button>
+              <button class="chip" data-cat="IM">IM模板</button>
+              <button class="chip" data-cat="Bot">Bot模板</button>
+            </div>
+          </section>
+
+          <!-- 2. 筛选区 -->
+          <section class="card filter-card">
+            <div class="filter-row">
+              <div class="filter-item">
+                <span class="filter-label">模板名称</span>
+                <input class="input" id="fName" placeholder="输入模板名称搜索">
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">模板编码</span>
+                <input class="input" id="fCode" placeholder="输入模板编码搜索">
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">模板类型</span>
+                <select class="select" id="fType">
+                  <option value="">全部</option>
+                  <option>营销</option><option>OTP</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">产品线</span>
+                <select class="select" id="fBiz">
+                  <option value="">全部产品线</option>
+                  <option>BingoPlus</option><option>ArenaPlus</option><option>BP-VIP</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">通道类型</span>
+                <select class="select" id="fChannel">
+                  <option value="">全部</option>
+                  <option>SMS</option><option>邮件</option><option>Push</option>
+                  <option>Inbox</option><option>IM</option><option>Bot</option>
+                  <option>Viber</option><option>Telegram</option><option>电销</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">模板状态</span>
+                <select class="select" id="fStatus">
+                  <option value="">全部</option>
+                  <option value="draft">草稿</option>
+                  <option value="active">已生效</option><option value="disabled">已停用</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">创建人</span>
+                <select class="select" id="fCreator">
+                  <option value="">全部创建人</option>
+                  <option>marvin@</option><option>lily@</option><option>ken@</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">更新时间</span>
+                <div class="seg-group" id="timeRange">
+                  <button class="seg-btn active" data-range="7d">最近7天</button>
+                  <button class="seg-btn" data-range="30d">最近30天</button>
+                  <button class="seg-btn" data-range="custom">自定义</button>
+                </div>
+                <div class="date-range" id="customDates" hidden>
+                  <input type="date" class="input" value="2026-07-01">
+                  <span class="date-sep">至</span>
+                  <input type="date" class="input" value="2026-07-13">
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" id="queryBtn">查询</button>
+                <button class="btn btn-outline" id="resetBtn">重置</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3. 模板概览统计区 -->
+          <section class="kpi-grid kpi-grid-4" id="kpiGrid"></section>
+
+          <!-- 4. 模板列表区 -->
+          <section class="card table-card">
+            <h4 class="card-title">模板列表</h4>
+            <div class="table-scroll table-sticky">
+              <table class="table stats-table records-table">
+                <thead>
+                  <tr>
+                    <th class="col-name">模板名称</th><th class="col-name">模板编码</th><th>模板类型</th>
+                    <th>产品线</th><th>通道</th><th class="num">变量数量</th>
+                    <th>当前状态</th><th>最近更新时间</th><th>更新人</th>
+                    <th class="col-ops">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="tplTableBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <div class="pagination" id="pagination"></div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模板详情/编辑抽屉 -->
+  <div class="drawer-root" id="tplDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-xl tpl-drawer">
+      <header class="drawer-header">
+        <h3 id="tplDrawerTitle">模板详情</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="tpl-drawer-cols">
+        <div class="tpl-drawer-preview">
+          <div class="pane-caption">模板预览</div>
+          <div id="tplPreview"></div>
+        </div>
+        <div class="tpl-drawer-form" id="tplDrawerForm"></div>
+      </div>
+      <footer class="drawer-footer" id="tplDrawerFooter"></footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js"></script>
+  <script src="assets/content-editor.js"></script>
+  <script src="assets/reach-config.js"></script>
+  <script src="assets/search-select.js"></script>
+  <script src="assets/templates.js"></script>
+</body>
+</html>

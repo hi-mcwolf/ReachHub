@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>触达策略 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <div class="strategy-layout">
+
+          <!-- 左侧：策略分类导航 -->
+          <aside class="strategy-nav card">
+            <div class="strategy-nav-title">触达策略中心</div>
+            <nav class="strategy-nav-menu" id="strategyNav"></nav>
+          </aside>
+
+          <!-- 中间：总览 / 分类列表 -->
+          <main class="strategy-main" id="strategyMain"></main>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧：策略详情抽屉 -->
+  <div class="drawer-root" id="strategyDetailDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-md">
+      <header class="drawer-header">
+        <h3 id="strategyDetailTitle">策略详情</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body drawer-body--gray" id="strategyDetailBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>关闭</button>
+        <button class="btn btn-outline" id="detailCopyBtn">复制策略</button>
+        <button class="btn btn-outline" id="detailToggleBtn">停用</button>
+        <button class="btn btn-primary" id="detailEditBtn">编辑策略</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js"></script>
+  <script src="assets/content-editor.js"></script>
+  <script src="assets/reach-config.js"></script>
+  <script src="assets/search-select.js"></script>
+  <script src="assets/strategy-data.js"></script>
+  <script src="assets/strategy.js"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据统计 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main">
+
+          <!-- 1. 页面标题区 -->
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">触达数据统计</h1>
+              <p class="page-desc">查看触达任务、渠道表现、异常监控与效果分析</p>
+            </div>
+            <div class="stats-header-actions">
+              <span class="update-time" id="updateTime">2026-07-10 16:35 更新</span>
+              <button class="btn btn-outline" id="refreshBtn"><i data-lucide="refresh-cw"></i>刷新</button>
+              <button class="btn btn-primary" id="exportBtn"><i data-lucide="download"></i>导出数据</button>
+            </div>
+          </div>
+
+          <!-- 2. 筛选区 -->
+          <section class="card filter-card">
+            <div class="filter-row">
+              <div class="filter-item">
+                <span class="filter-label">时间范围</span>
+                <div class="seg-group" id="timeRange">
+                  <button class="seg-btn" data-range="today">今天</button>
+                  <button class="seg-btn active" data-range="7d">最近7天</button>
+                  <button class="seg-btn" data-range="30d">最近30天</button>
+                  <button class="seg-btn" data-range="custom">自定义</button>
+                </div>
+                <div class="date-range" id="customDates" hidden>
+                  <input type="date" class="input" value="2026-07-01">
+                  <span class="date-sep">至</span>
+                  <input type="date" class="input" value="2026-07-10">
+                </div>
+              </div>
+              <div class="filter-item" hidden>
+                <span class="filter-label">任务类型</span>
+                <select class="select">
+                  <option>全部</option><option>营销活动</option><option>生命周期</option>
+                  <option>召回</option><option>促活</option><option>通知</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">通道</span>
+                <select class="select">
+                  <option>全部</option><option>SMS</option><option>邮件</option><option>Push</option>
+                  <option>Inbox</option><option>IM</option><option>Bot</option>
+                  <option>Viber</option><option>Telegram</option><option>电销</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">状态</span>
+                <select class="select">
+                  <option>全部</option><option>执行中</option><option>已完成</option>
+                  <option>失败</option><option>已暂停</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">业务线</span>
+                <select class="select">
+                  <option>全部业务线</option><option>BingoPlus</option><option>ArenaPlus</option><option>GameZone</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">接入方</span>
+                <select class="select">
+                  <option>全部接入方</option><option>自营平台</option><option>渠道 A</option><option>渠道 B</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" id="queryBtn">查询</button>
+                <button class="btn btn-outline" id="resetBtn">重置</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3. KPI 指标卡片区 -->
+          <section class="kpi-grid" id="kpiGrid"></section>
+
+          <!-- 4. 趋势与结构分析区 -->
+          <section class="chart-grid">
+            <div class="card chart-card">
+              <div class="chart-card-head"><h4 class="card-title">发送趋势</h4></div>
+              <div class="chart-box" id="trendChart"></div>
+            </div>
+            <div class="card chart-card">
+              <div class="chart-card-head"><h4 class="card-title">渠道发送分布</h4></div>
+              <div class="chart-box" id="channelChart"></div>
+            </div>
+            <div class="card chart-card">
+              <div class="chart-card-head"><h4 class="card-title">渠道效果对比</h4></div>
+              <div class="chart-box" id="effectChart"></div>
+            </div>
+            <div class="card chart-card">
+              <div class="chart-card-head"><h4 class="card-title">任务效果 TOP 5</h4></div>
+              <div class="top-list" id="topList"></div>
+            </div>
+          </section>
+
+          <!-- 5. 监控预警区 -->
+          <section class="monitor-grid">
+            <div class="card monitor-card">
+              <h4 class="card-title"><i data-lucide="gauge"></i>配额 / 用量监控</h4>
+              <div class="quota-list" id="quotaList"></div>
+            </div>
+            <div class="card monitor-card">
+              <h4 class="card-title"><i data-lucide="activity"></i>异常监控</h4>
+              <ul class="anomaly-list">
+                <li class="anomaly-item" title="近 1 小时内 3 个任务发送失败率超过 5% 阈值">
+                  <span class="dot dot-danger"></span>发送失败率异常
+                  <span class="anomaly-count danger">3</span>
+                </li>
+                <li class="anomaly-item" title="5 个任务回执延迟超过 30 分钟">
+                  <span class="dot dot-warning"></span>回执延迟
+                  <span class="anomaly-count warning">5</span>
+                </li>
+                <li class="anomaly-item" title="Viber 通道供应商连接中断，已自动切换备用通道">
+                  <span class="dot dot-danger"></span>通道中断
+                  <span class="anomaly-count danger">1</span>
+                </li>
+              </ul>
+            </div>
+            <div class="card monitor-card">
+              <h4 class="card-title"><i data-lucide="bell-ring"></i>告警中心</h4>
+              <ul class="alert-list">
+                <li class="alert-item" title="SMS 通道近 1 小时失败率 6.8%，超过 5% 阈值，请检查供应商状态">
+                  <i data-lucide="alert-triangle" class="alert-icon danger"></i>
+                  <span class="alert-text">SMS 通道失败率升高</span>
+                  <span class="tag tag-danger">未处理</span>
+                </li>
+                <li class="alert-item" title="邮件供应商本月配额已使用 91%，预计 3 天后耗尽，请及时扩容">
+                  <i data-lucide="alert-circle" class="alert-icon warning"></i>
+                  <span class="alert-text">邮件供应商配额不足</span>
+                  <span class="tag tag-warning">处理中</span>
+                </li>
+                <li class="alert-item" title="Push 回执延迟一度超过 45 分钟，当前已恢复正常">
+                  <i data-lucide="check-circle-2" class="alert-icon success"></i>
+                  <span class="alert-text">Push 回执延迟超过阈值</span>
+                  <span class="tag tag-success">已恢复</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- 6. 任务明细表格区 -->
+          <section class="card table-card">
+            <h4 class="card-title">任务明细</h4>
+            <div class="table-scroll">
+              <table class="table stats-table">
+                <thead>
+                  <tr>
+                    <th>任务名称</th><th>通道</th><th>接入方</th>
+                    <th>发送时间</th><th>发送量</th><th>送达率</th><th>打开率</th>
+                    <th>点击率</th><th>当前状态</th><th>异常情况</th><th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="taskTableBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <div class="pagination" id="pagination"></div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="assets/common.js"></script>
+  <script src="assets/content-editor.js"></script>
+  <script src="assets/reach-config.js"></script>
+  <script src="assets/search-select.js"></script>
+  <script src="assets/stats.js"></script>
+</body>
+</html>

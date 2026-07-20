@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>任务记录 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main">
+
+          <!-- 1. 页面标题区 -->
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">任务记录</h1>
+              <p class="page-desc">查看触达任务的配置、执行状态和基础效果</p>
+            </div>
+            <div class="stats-header-actions">
+              <span class="update-time" id="updateTime">2026-07-13 02:30 更新</span>
+              <button class="btn btn-outline" id="exportBtn"><i data-lucide="download"></i>导出</button>
+              <a class="btn btn-primary" href="reach.html"><i data-lucide="plus"></i>新建任务</a>
+            </div>
+          </div>
+
+          <!-- 2. 筛选区 -->
+          <section class="card filter-card">
+            <div class="filter-row">
+              <div class="filter-item">
+                <span class="filter-label">时间范围</span>
+                <div class="seg-group" id="timeRange">
+                  <button class="seg-btn" data-range="today">今天</button>
+                  <button class="seg-btn active" data-range="7d">最近7天</button>
+                  <button class="seg-btn" data-range="30d">最近30天</button>
+                  <button class="seg-btn" data-range="custom">自定义</button>
+                </div>
+                <div class="date-range" id="customDates" hidden>
+                  <input type="date" class="input" value="2026-07-01">
+                  <span class="date-sep">至</span>
+                  <input type="date" class="input" value="2026-07-13">
+                </div>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">任务名称/ID</span>
+                <input class="input" id="fName" placeholder="输入任务名称或 ID 搜索">
+              </div>
+              <div class="filter-item" hidden>
+                <span class="filter-label">任务类型</span>
+                <select class="select" id="fType">
+                  <option value="">全部</option><option>营销活动</option><option>生命周期</option>
+                  <option>召回</option><option>促活</option><option>通知</option>
+                </select>
+              </div>
+              <div class="filter-item filter-item-wide">
+                <span class="filter-label">产品线</span>
+                <div id="fProductLine"></div>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">通道</span>
+                <select class="select" id="fChannel">
+                  <option value="">全部</option><option>SMS</option><option>邮件</option><option>Push</option>
+                  <option>Inbox</option><option>IM</option><option>Bot</option>
+                  <option>Viber</option><option>Telegram</option><option>电销</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">状态</span>
+                <select class="select" id="fStatus">
+                  <option value="">全部</option><option value="draft">草稿</option><option value="reviewing">审核中</option><option value="pending">待发送</option>
+                  <option value="running">执行中</option><option value="done">已完成</option>
+                  <option value="paused">已暂停</option><option value="failed">失败</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">接入方</span>
+                <select class="select" id="fParty">
+                  <option value="">全部接入方</option><option>自营平台</option><option>渠道 A</option><option>渠道 B</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">触达策略</span>
+                <select class="select" id="fStrategy">
+                  <option value="">全部策略</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">创建人</span>
+                <select class="select" id="fCreator">
+                  <option value="">全部创建人</option><option>marvin@</option><option>lily@</option><option>ken@</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" id="queryBtn">查询</button>
+                <button class="btn btn-outline" id="resetBtn">重置</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3. 快捷统计区 -->
+          <section class="kpi-grid kpi-grid-4" id="kpiGrid"></section>
+
+          <!-- 4. 任务列表表格区 -->
+          <section class="card table-card">
+            <h4 class="card-title">任务列表</h4>
+            <div class="table-scroll table-sticky">
+              <table class="table stats-table records-table">
+                <thead>
+                  <tr>
+                    <th class="col-name">任务名称</th><th>任务 ID</th><th>目标人群</th><th>产品线</th><th>通道</th>
+                    <th>发送时机</th><th>触达策略</th><th>当前状态</th><th>创建人</th>
+                    <th>创建时间</th><th>最近更新时间</th>
+                    <th class="num">发送量</th><th class="num">送达率</th>
+                    <th class="col-ops">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="taskTableBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <div class="pagination" id="pagination"></div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任务详情抽屉 -->
+  <div class="drawer-root" id="taskDetailDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-md">
+      <header class="drawer-header">
+        <h3>任务详情</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body drawer-body--gray" id="taskDetailBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>关闭</button>
+        <button class="btn btn-outline" id="detailToSendRecords">查看发送记录</button>
+        <button class="btn btn-primary" id="detailEditBtn">编辑任务</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js"></script>
+  <script src="assets/content-editor.js"></script>
+  <script src="assets/reach-config.js"></script>
+  <script src="assets/search-select.js"></script>
+  <script src="assets/search-multi-select.js"></script>
+  <script src="assets/strategy-data.js"></script>
+  <script src="assets/task-records.js"></script>
+</body>
+</html>
