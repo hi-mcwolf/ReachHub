@@ -1,7 +1,7 @@
 /* 公共逻辑：左侧菜单渲染、抽屉开关、Toast */
 
 const REACH_NAV_ITEMS = [
-  { key: 'reach-task', label: '触达任务', icon: 'send', href: 'reach.html' },
+  { key: 'reach-task', label: '触达任务', icon: 'send', href: 'index.html' },
   { key: 'reach-task-records', label: '任务记录', icon: 'clipboard-list', href: 'task-records.html' },
   { key: 'reach-send-records', label: '发送记录', icon: 'mail-check', href: 'send-records.html' },
   { key: 'reach-template', label: '模板管理', icon: 'file-text', href: 'templates.html' },
@@ -43,7 +43,7 @@ function renderTopbar(activeModule = 'reach') {
   host.className = 'topbar';
   host.innerHTML = `
     <nav class="topbar-menu">
-      <a class="topbar-item active" href="reach.html">触达中心</a>
+      <a class="topbar-item active" href="index.html">触达中心</a>
     </nav>
     <div class="topbar-actions">
       <button class="btn btn-outline btn-sm" id="sdkBtn" type="button">SDK</button>
