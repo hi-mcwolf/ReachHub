@@ -709,6 +709,7 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
   margin-bottom: 16px;
   position: relative;
 }
+.panel-channel-tabs { margin-bottom: 20px; }
 .tab {
   border: none;
   background: none;

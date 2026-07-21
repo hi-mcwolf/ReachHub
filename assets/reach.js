@@ -71,7 +71,6 @@ function initDraft(channel) {
     r.checked = r.value === 'manual';
   });
   closePanel();
-  renderTabs();
   renderRows();
   renderPreview();
 }
@@ -123,23 +122,21 @@ function bindPhoneScreen() {
   });
 }
 
-function renderTabs() {
-  const host = document.getElementById('ntTabs');
+function renderChannelTabs(host, { allowAdd = false, onSwitch, onAdd } = {}) {
+  if (!host || !draft) return;
   const remaining = Object.keys(CHANNELS).filter(c => !draft.channels.includes(c));
   host.innerHTML = `
     ${draft.channels.map(c => `
       <button type="button" class="tab${c === draft.active ? ' active' : ''}" data-tab="${c}">${CHANNELS[c].tip}</button>
     `).join('')}
-    ${remaining.length ? '<button type="button" class="tab-add" id="tabAdd" title="添加通道"><i data-lucide="plus"></i></button>' : ''}
+    ${allowAdd && remaining.length ? '<button type="button" class="tab-add" id="tabAdd" title="添加通道"><i data-lucide="plus"></i></button>' : ''}
   `;
 
   host.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      draft.active = tab.dataset.tab;
-      closePanel();
-      renderTabs();
-      renderRows();
-      renderPreview();
+      const next = tab.dataset.tab;
+      if (next === draft.active) return;
+      onSwitch?.(next);
     });
   });
 
@@ -157,14 +154,8 @@ function renderTabs() {
       host.appendChild(pop);
       pop.querySelectorAll('[data-add]').forEach(btn => {
         btn.addEventListener('click', () => {
-          const c = btn.dataset.add;
-          draft.channels.push(c);
-          draft.perChannel[c] = newChannelConfig();
-          draft.active = c;
-          closePanel();
-          renderTabs();
-          renderRows();
-          renderPreview();
+          pop.remove();
+          onAdd?.(btn.dataset.add);
         });
       });
       const closePop = ev => {
@@ -174,6 +165,56 @@ function renderTabs() {
     });
   }
   refreshIcons();
+}
+
+function saveActiveContentEditor() {
+  if (panelContentEditor) {
+    draft.perChannel[draft.active].content = panelContentEditor.getValue();
+  }
+}
+
+function mountContentEditor(container) {
+  panelContentEditor?.destroy();
+  panelContentEditor = createContentEditor({
+    container,
+    channel: draft.active,
+    value: draft.perChannel[draft.active].content,
+    showTemplateTools: true,
+    onChange: () => {
+      draft.perChannel[draft.active].content = panelContentEditor.getValue();
+      renderPreview();
+      renderRows();
+    },
+  });
+}
+
+function switchContentChannel(nextChannel, tabsHost, editorHost) {
+  saveActiveContentEditor();
+  draft.active = nextChannel;
+  renderChannelTabs(tabsHost, {
+    allowAdd: true,
+    onSwitch: c => switchContentChannel(c, tabsHost, editorHost),
+    onAdd: c => addContentChannel(c, tabsHost, editorHost),
+  });
+  mountContentEditor(editorHost);
+  renderPreview();
+  renderRows();
+}
+
+function addContentChannel(channel, tabsHost, editorHost) {
+  if (draft.channels.includes(channel)) return;
+  saveActiveContentEditor();
+  draft.channels.push(channel);
+  draft.perChannel[channel] = newChannelConfig();
+  draft.active = channel;
+  renderChannelTabs(tabsHost, {
+    allowAdd: true,
+    onSwitch: c => switchContentChannel(c, tabsHost, editorHost),
+    onAdd: c => addContentChannel(c, tabsHost, editorHost),
+  });
+  mountContentEditor(editorHost);
+  renderPreview();
+  renderRows();
 }
 
 function timingLabel(t) {
@@ -207,10 +248,15 @@ function renderRows() {
     : '<span class="placeholder">请选择发送时机</span>';
 
   const cv = document.getElementById('contentValue');
-  if (hasContent(cfg.content)) {
-    cv.innerHTML = `<span class="cfg-summary">${contentSummary(cfg.content)}</span>`;
-  } else {
+  const configured = draft.channels.filter(c => hasContent(draft.perChannel[c].content));
+  if (!configured.length) {
     cv.innerHTML = '<span class="placeholder">请配置发送内容</span>';
+  } else if (draft.channels.length === 1) {
+    cv.innerHTML = `<span class="cfg-summary">${contentSummary(draft.perChannel[draft.channels[0]].content)}</span>`;
+  } else if (configured.length === draft.channels.length) {
+    cv.innerHTML = configured.map(c => `<span class="tag tag-primary">${CHANNELS[c].tip}</span>`).join('');
+  } else {
+    cv.innerHTML = `<span class="cfg-summary">${configured.length}/${draft.channels.length} 通道已配置内容</span>`;
   }
 }
 
@@ -464,28 +510,25 @@ function openPanel(type) {
   } else if (type === 'content') {
     document.getElementById('rowContent').classList.add('active');
     panel.innerHTML = `
-      <div class="panel-title">发送内容 · ${CHANNELS[draft.active].tip}</div>
+      <div class="panel-title">发送内容</div>
+      <div class="tabs panel-channel-tabs" id="ntContentChannelTabs"></div>
       <div id="ntContentEditor"></div>
       <div class="panel-actions">
         <button type="button" class="btn btn-outline" id="panelCancel">取消</button>
         <button type="button" class="btn btn-primary" id="panelOk">确认</button>
       </div>`;
 
-    const savedContent = draft.perChannel[draft.active].content;
-    panelContentEditor = createContentEditor({
-      container: panel.querySelector('#ntContentEditor'),
-      channel: draft.active,
-      value: savedContent,
-      showTemplateTools: true,
-      onChange: () => {
-        const previewContent = panelContentEditor.getValue();
-        draft.perChannel[draft.active].content = previewContent;
-        renderPreview();
-      },
+    const tabsHost = panel.querySelector('#ntContentChannelTabs');
+    const editorHost = panel.querySelector('#ntContentEditor');
+    renderChannelTabs(tabsHost, {
+      allowAdd: true,
+      onSwitch: c => switchContentChannel(c, tabsHost, editorHost),
+      onAdd: c => addContentChannel(c, tabsHost, editorHost),
     });
+    mountContentEditor(editorHost);
 
     panel.querySelector('#panelOk').addEventListener('click', () => {
-      draft.perChannel[draft.active].content = panelContentEditor.getValue();
+      saveActiveContentEditor();
       closePanel();
       renderRows();
       renderPreview();
