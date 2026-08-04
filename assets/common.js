@@ -1,10 +1,11 @@
 /* 公共逻辑：左侧菜单渲染、抽屉开关、Toast */
 
 const REACH_NAV_ITEMS = [
-  { key: 'reach-task', label: '触达任务', icon: 'send', href: 'index.html' },
+  { key: 'reach-task', label: '首页', icon: 'send', href: 'index.html' },
   { key: 'reach-task-records', label: '任务记录', icon: 'clipboard-list', href: 'task-records.html' },
   { key: 'reach-send-records', label: '发送记录', icon: 'mail-check', href: 'send-records.html' },
   { key: 'reach-template', label: '模板管理', icon: 'file-text', href: 'templates.html' },
+  { key: 'reach-my-approvals', label: '我的审批', icon: 'clipboard-check', href: 'my-approvals.html' },
   { key: 'reach-strategy', label: '触达策略', icon: 'sliders-horizontal', href: 'strategy.html' },
   { key: 'reach-stats', label: '数据统计', icon: 'bar-chart-3', href: 'stats.html' },
 ];
@@ -32,7 +33,7 @@ function renderSidebar(module, activeKey, activeSubKey) {
   ).join('');
 
   host.innerHTML = `
-    <div class="sb-brand"><i data-lucide="layout-grid"></i>ReachHub</div>
+    <div class="sb-brand"><i data-lucide="layout-grid"></i>Digiplus</div>
     <nav class="sb-menu">${menuHtml}</nav>
   `;
 }

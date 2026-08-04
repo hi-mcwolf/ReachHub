@@ -26,19 +26,6 @@
             </div>
           </div>
 
-          <!-- 分类导航 -->
-          <section class="tpl-cat-nav">
-            <div class="chip-group" id="catChips">
-              <button class="chip selected" data-cat="all">全部模板</button>
-              <button class="chip" data-cat="SMS">短信模板</button>
-              <button class="chip" data-cat="邮件">邮件模板</button>
-              <button class="chip" data-cat="Push">Push模板</button>
-              <button class="chip" data-cat="Inbox">Inbox模板</button>
-              <button class="chip" data-cat="IM">IM模板</button>
-              <button class="chip" data-cat="Bot">Bot模板</button>
-            </div>
-          </section>
-
           <!-- 2. 筛选区 -->
           <section class="card filter-card">
             <div class="filter-row">
@@ -47,15 +34,8 @@
                 <input class="input" id="fName" placeholder="输入模板名称搜索">
               </div>
               <div class="filter-item">
-                <span class="filter-label">模板编码</span>
-                <input class="input" id="fCode" placeholder="输入模板编码搜索">
-              </div>
-              <div class="filter-item">
-                <span class="filter-label">模板类型</span>
-                <select class="select" id="fType">
-                  <option value="">全部</option>
-                  <option>营销</option><option>OTP</option>
-                </select>
+                <span class="filter-label">模板ID</span>
+                <input class="input" id="fCode" placeholder="输入模板 ID 搜索">
               </div>
               <div class="filter-item">
                 <span class="filter-label">产品线</span>
@@ -65,12 +45,12 @@
                 </select>
               </div>
               <div class="filter-item">
-                <span class="filter-label">通道类型</span>
+                <span class="filter-label">通道</span>
                 <select class="select" id="fChannel">
                   <option value="">全部</option>
                   <option>SMS</option><option>邮件</option><option>Push</option>
                   <option>Inbox</option><option>IM</option><option>Bot</option>
-                  <option>Viber</option><option>Telegram</option><option>电销</option>
+                  <option>Viber</option><option>Messenger</option><option>电销</option>
                 </select>
               </div>
               <div class="filter-item">
@@ -82,6 +62,22 @@
                 </select>
               </div>
               <div class="filter-item">
+                <span class="filter-label">审批状态</span>
+                <select class="select" id="fApproval">
+                  <option value="">全部</option>
+                  <option value="pending">待审批</option>
+                  <option value="approved">已通过</option>
+                  <option value="rejected">已拒绝</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">审批人</span>
+                <select class="select" id="fApprover">
+                  <option value="">全部审批人</option>
+                  <option>marvin@</option><option>lily@</option><option>ken@</option>
+                </select>
+              </div>
+              <div class="filter-item">
                 <span class="filter-label">创建人</span>
                 <select class="select" id="fCreator">
                   <option value="">全部创建人</option>
@@ -89,17 +85,8 @@
                 </select>
               </div>
               <div class="filter-item">
-                <span class="filter-label">更新时间</span>
-                <div class="seg-group" id="timeRange">
-                  <button class="seg-btn active" data-range="7d">最近7天</button>
-                  <button class="seg-btn" data-range="30d">最近30天</button>
-                  <button class="seg-btn" data-range="custom">自定义</button>
-                </div>
-                <div class="date-range" id="customDates" hidden>
-                  <input type="date" class="input" value="2026-07-01">
-                  <span class="date-sep">至</span>
-                  <input type="date" class="input" value="2026-07-13">
-                </div>
+                <span class="filter-label">内容</span>
+                <input class="input" id="fContent" placeholder="输入内容关键词搜索">
               </div>
               <div class="filter-actions">
                 <button class="btn btn-primary" id="queryBtn">查询</button>
@@ -109,18 +96,26 @@
           </section>
 
           <!-- 3. 模板概览统计区 -->
-          <section class="kpi-grid kpi-grid-4" id="kpiGrid"></section>
+          <section class="kpi-grid kpi-grid-1" id="kpiGrid"></section>
 
           <!-- 4. 模板列表区 -->
           <section class="card table-card">
-            <h4 class="card-title">模板列表</h4>
+            <div class="table-card-head">
+              <h4 class="card-title">模板列表</h4>
+              <div class="batch-bar" id="batchBar" hidden>
+                <span class="batch-count">已选 <b id="batchCount">0</b> 项</span>
+                <button class="btn btn-outline btn-sm" data-batch="approve">通过</button>
+                <button class="btn btn-outline btn-sm btn-reject" data-batch="reject">拒绝</button>
+              </div>
+            </div>
             <div class="table-scroll table-sticky">
               <table class="table stats-table records-table">
                 <thead>
                   <tr>
-                    <th class="col-name">模板名称</th><th class="col-name">模板编码</th><th>模板类型</th>
-                    <th>产品线</th><th>通道</th><th class="num">变量数量</th>
-                    <th>当前状态</th><th>最近更新时间</th><th>更新人</th>
+                    <th class="col-check"><input type="checkbox" id="checkAll" aria-label="全选"></th>
+                    <th>模板 ID</th><th class="col-name">模板名称</th><th>产品线</th><th>通道</th>
+                    <th class="col-name">内容</th><th>审批状态</th><th>创建人</th>
+                    <th>创建时间</th><th>最近更新人</th><th>最近更新时间</th>
                     <th class="col-ops">操作</th>
                   </tr>
                 </thead>

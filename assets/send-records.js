@@ -17,19 +17,19 @@ const RECEIPT_STATUS = {
 
 const SEND_RECORDS = (() => {
   const tasks = [
-    { name: '世界杯竞猜预热短信', id: 'T20260713001', channel: 'SMS', productLine: 'BingoPlus', vendor: '供应商 A', sender: 'BPLUS', party: '自营平台', strategy: '单用户每日频控', template: '世界杯竞猜提醒',
+    { name: '世界杯竞猜预热短信', id: 'T20260713001', channel: 'SMS', productLine: 'BingoPlus', vendor: '供应商 A', sender: 'BPLUS', party: '自营平台', strategy: '单用户每日频控', template: '世界杯竞猜提醒', taskType: 'API',
       content: "Only the best teams remain! Warm up for the Quarterfinals with today's FREE World Cup Quiz. Visit bingoplus.com." },
-    { name: '新用户充值召回邮件', id: 'T20260713002', channel: '邮件', productLine: 'BP-VIP', vendor: 'SendCloud', sender: 'marketing@bingoplus.com', party: '自营平台', strategy: '夜间免打扰', template: '充值优惠通知',
+    { name: '新用户充值召回邮件', id: 'T20260713002', channel: '邮件', productLine: 'BP-VIP', vendor: 'SendCloud', sender: 'marketing@bingoplus.com', party: '自营平台', strategy: '夜间免打扰', template: '充值优惠通知', taskType: '手动',
       content: '尊敬的用户，本周充值满 500 即享 8% 加赠，活动今晚 24:00 截止，立即打开 App 参与吧！' },
-    { name: '每日签到提醒 Push', id: 'T20260712004', channel: 'Push', productLine: 'BingoPlus', vendor: 'APNs/FCM', sender: 'BingoPlus App', party: '自营平台', strategy: 'AI 最佳发送时间推荐', template: '-',
+    { name: '每日签到提醒 Push', id: 'T20260712004', channel: 'Push', productLine: 'BingoPlus', vendor: 'APNs/FCM', sender: 'BingoPlus App', party: '自营平台', strategy: 'AI 最佳发送时间推荐', template: '-', taskType: 'API',
       content: '今日签到礼包已刷新，连续签到 7 天可领神秘大奖！' },
-    { name: 'Viber 高充值用户回馈', id: 'T20260711007', channel: 'Viber', productLine: 'BP-VIP', vendor: '供应商 B', sender: 'BingoPlus Official', party: '渠道 B', strategy: 'SMS 通道周频控', template: '-',
+    { name: 'Viber 高充值用户回馈', id: 'T20260711007', channel: 'Viber', productLine: 'BP-VIP', vendor: '供应商 B', sender: 'BingoPlus Official', party: '渠道 B', strategy: 'SMS 通道周频控', template: '-', taskType: '手动',
       content: '尊贵的用户，您的专属回馈礼包已到账，点击查收！' },
-    { name: '沉默用户唤醒短信', id: 'T20260710009', channel: 'SMS', productLine: 'BingoPlus', vendor: '供应商 A', sender: 'BPLUS', party: '自营平台', strategy: '召回消息 7 天去重', template: '流失召回话术',
+    { name: '沉默用户唤醒短信', id: 'T20260710009', channel: 'SMS', productLine: 'BingoPlus', vendor: '供应商 A', sender: 'BPLUS', party: '自营平台', strategy: '召回消息 7 天去重', template: '流失召回话术', taskType: 'API',
       content: '好久不见！您的老朋友 BingoPlus 为您准备了回归好礼，登录即可领取！' },
-    { name: 'Telegram 社群拉新', id: 'T20260711008', channel: 'Telegram', productLine: 'BP-CONTENT OPERATION CENTER', vendor: '供应商 B', sender: '@BingoPlusBot', party: '自营平台', strategy: '单活动触达频控', template: '-',
+    { name: 'Messenger 社群拉新', id: 'T20260711008', channel: 'Messenger', productLine: 'BP-CONTENT OPERATION CENTER', vendor: '供应商 B', sender: '@BingoPlusBot', party: '自营平台', strategy: '单活动触达频控', template: '-', taskType: '手动',
       content: '加入官方社群，每日抽奖赢免费竞猜券！' },
-    { name: '账户激活提醒', id: 'T20260702019', channel: '邮件', productLine: 'BingoPlus', vendor: 'Mailgun', sender: 'noreply@bingoplus.com', party: '自营平台', strategy: '邮件 CAN-SPAM 合规', template: '账户激活',
+    { name: '账户激活提醒', id: 'T20260702019', channel: '邮件', productLine: 'BingoPlus', vendor: 'Mailgun', sender: 'noreply@bingoplus.com', party: '自营平台', strategy: '邮件 CAN-SPAM 合规', template: '账户激活', taskType: 'API',
       content: '请完成账户激活以解锁全部功能。' },
   ];
 
@@ -51,7 +51,7 @@ const SEND_RECORDS = (() => {
     '邮件': '用户账号无效',
     Push: '设备 Token 已失效',
     Viber: '用户未安装 Viber 客户端',
-    Telegram: '用户已屏蔽 Bot',
+    Messenger: '用户已屏蔽 Bot',
   };
 
   const records = [];
@@ -71,10 +71,15 @@ const SEND_RECORDS = (() => {
     if (status === 'sent') receipt = 'waiting';
     if (status === 'failed') { receipt = 'none'; failReason = failReasons[task.channel]; }
 
+    const receiptId = receipt === 'none' ? '-' : `RC${String(20260713000 + i * 37)}`;
+    const vendorMessageId = status === 'pending' || status === 'failed'
+      ? '-'
+      : `MSG-${task.channel.replace(/[^A-Za-z]/g, '')}-${883421 + i * 17}`;
+
     records.push({
       recordId: `S${String(20260713000 + i * 37)}`,
-      sendTime, status, receipt, failReason,
-      taskName: task.name, taskId: task.id, productLine: task.productLine,
+      sendTime, status, receipt, failReason, receiptId, vendorMessageId,
+      taskName: task.name, taskId: task.id, productLine: task.productLine, taskType: task.taskType,
       channel: task.channel, vendor: task.vendor, sender: task.sender, party: task.party,
       strategy: task.strategy, template: task.template, content: task.content,
       userAccount: user.account, userTags: user.tags,
@@ -116,26 +121,26 @@ function renderKpis() {
 function applyFilters() {
   const recordId = document.getElementById('fRecordId').value.trim().toLowerCase();
   const task = document.getElementById('fTask').value.trim().toLowerCase();
+  const type = document.getElementById('fType').value;
   const channel = document.getElementById('fChannel').value;
   const status = document.getElementById('fStatus').value;
   const party = document.getElementById('fParty').value;
   const vendor = document.getElementById('fVendor').value;
   const sender = document.getElementById('fSender').value;
   const user = document.getElementById('fUser').value.trim().toLowerCase();
-  const strategy = document.getElementById('fStrategy').value;
   const productLines = productLineFilter?.getValue() || [];
 
   filtered = SEND_RECORDS.filter(r =>
     (!recordId || r.recordId.toLowerCase().includes(recordId)) &&
     (!task || r.taskName.toLowerCase().includes(task) || r.taskId.toLowerCase().includes(task)) &&
     (!productLines.length || productLines.includes(r.productLine)) &&
+    (!type || r.taskType === type) &&
     (!channel || r.channel === channel) &&
     (!status || (status === 'receipt-failed' ? r.receipt === 'failed' : r.status === status)) &&
     (!party || r.party === party) &&
     (!vendor || r.vendor === vendor) &&
     (!sender || r.sender === sender) &&
-    (!user || r.userAccount.toLowerCase().includes(user)) &&
-    (!strategy || r.strategy === strategy)
+    (!user || r.userAccount.toLowerCase().includes(user))
   );
   currentPage = 1;
   renderTable();
@@ -143,7 +148,7 @@ function applyFilters() {
 
 function resetFilters() {
   ['fRecordId', 'fTask', 'fUser'].forEach(id => document.getElementById(id).value = '');
-  ['fChannel', 'fStatus', 'fParty', 'fVendor', 'fSender', 'fStrategy'].forEach(id =>
+  ['fType', 'fChannel', 'fStatus', 'fParty', 'fVendor', 'fSender'].forEach(id =>
     document.getElementById(id).value = '');
   productLineFilter?.setValue([]);
   applyFilters();
@@ -167,15 +172,15 @@ function renderTable() {
         <tr>
           <td class="cell-muted">${r.recordId}</td>
           <td class="cell-muted">${r.sendTime}</td>
-          <td class="col-name"><span class="cell-ellipsis" title="${r.taskName}">${r.taskName}</span></td>
           <td class="cell-muted">${r.taskId}</td>
+          <td class="col-name"><span class="cell-ellipsis" title="${r.taskName}">${r.taskName}</span></td>
           <td>${r.userAccount}</td>
           <td><span class="tag">${r.channel}</span></td>
           <td>${r.vendor}</td>
           <td><span class="cell-ellipsis" title="${r.sender}">${r.sender}</span></td>
           <td class="col-name"><span class="cell-ellipsis" title="${r.content}">${r.content}</span></td>
-          <td><span class="cell-ellipsis" title="${r.strategy}">${fmt(r.strategy)}</span></td>
           <td><span class="tag ${st.cls}">${st.label}</span></td>
+          <td class="cell-muted">${fmt(r.receiptId)}</td>
           <td><span class="tag ${rc.cls}">${rc.label}</span></td>
           <td>${failCell}</td>
           <td>${r.party}</td>
@@ -266,7 +271,7 @@ function openSendDetail(recordId) {
         <div class="desc-item"><span class="desc-label">发送记录 ID</span><span>${r.recordId}</span></div>
         <div class="desc-item"><span class="desc-label">发送时间</span><span>${r.sendTime}</span></div>
         <div class="desc-item"><span class="desc-label">通道</span><span><span class="tag tag-primary">${r.channel}</span></span></div>
-        <div class="desc-item"><span class="desc-label">接入方</span><span>${r.party}</span></div>
+        <div class="desc-item"><span class="desc-label">来源</span><span>${r.party}</span></div>
       </div>
     </section>
     <section class="card detail-group">
@@ -289,8 +294,9 @@ function openSendDetail(recordId) {
       <h4 class="card-title">通道执行信息</h4>
       <div class="desc-list">
         <div class="desc-item"><span class="desc-label">供应商</span><span>${r.vendor}</span></div>
-        <div class="desc-item"><span class="desc-label">账号/Sender</span><span>${r.sender}</span></div>
+        <div class="desc-item"><span class="desc-label">账号</span><span>${r.sender}</span></div>
         <div class="desc-item"><span class="desc-label">发送状态</span><span class="tag ${st.cls}">${st.label}</span></div>
+        <div class="desc-item"><span class="desc-label">供应商消息ID</span><span>${fmt(r.vendorMessageId)}</span></div>
         <div class="desc-item"><span class="desc-label">回执状态</span><span class="tag ${rc.cls}">${rc.label}</span></div>
         <div class="desc-item"><span class="desc-label">失败原因</span><span>${r.failReason ? `<span class="fail-reason">${r.failReason}</span>` : '-'}</span></div>
         <div class="desc-item"><span class="desc-label">通道返回码</span><span>${r.returnCode}</span></div>
@@ -317,11 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
     placeholder: '全部产品线',
     searchPlaceholder: '搜索产品线…',
   });
-
-  const fStrategy = document.getElementById('fStrategy');
-  fStrategy.innerHTML = '<option value="">全部策略</option>' +
-    REACH_STRATEGIES.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-  fStrategy._ssel?.refresh();
 
   document.querySelectorAll('#timeRange .seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {

@@ -6,10 +6,10 @@ const CONTENT_TPL_OPTIONS = [
   { id: 'recall', name: '流失召回话术', text: '您好，我们注意到您已有一段时间未登录。现为您专属保留了回归礼包，登录即可领取，期待您的回来！' },
 ];
 
-const RTE_CHANNELS = new Set(['email', 'viber', 'telegram', 'messenger']);
+const RTE_CHANNELS = new Set(['email', 'viber', 'messenger']);
 
 function normalizeChannel(ch) {
-  const map = { SMS: 'sms', 邮件: 'email', Push: 'push', Viber: 'viber', Telegram: 'telegram', Messenger: 'messenger' };
+  const map = { SMS: 'sms', 邮件: 'email', Push: 'push', Viber: 'viber', Messenger: 'messenger' };
   return map[ch] || (ch || '').toLowerCase();
 }
 

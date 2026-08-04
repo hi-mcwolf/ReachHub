@@ -10,6 +10,12 @@ const TASK_STATUS = {
   failed:    { label: '失败',   cls: 'tag-danger' },
 };
 
+const APPROVAL_STATUS = {
+  pending:  { label: '待审批', cls: 'tag-orange' },
+  approved: { label: '已通过', cls: 'tag-success' },
+  rejected: { label: '已拒绝', cls: 'tag-danger' },
+};
+
 const EXECUTION_TIPS = {
   total: '任务目标人群总数',
   pushable: '经过策略过滤后可推送的用户数',
@@ -28,9 +34,31 @@ function execMetric(label, key, value) {
 }
 
 function enrichTaskRecords() {
+  const APPROVERS = ['lily@', 'ken@', 'marvin@'];
   TASK_RECORDS.forEach((t, i) => {
     if (!t.productLine) t.productLine = ['BP-VIP', 'BingoPlus', 'BP-CONTENT OPERATION CENTER'][i % 3];
     if (t.audienceCount == null) t.audienceCount = t.total;
+    if (!t.taskType) t.taskType = i % 3 === 0 ? 'API' : '手动';
+    if (!t.approvalStatus) {
+      if (t.status === 'reviewing' || t.status === 'draft') t.approvalStatus = 'pending';
+      else if (t.status === 'failed' && i % 2 === 0) t.approvalStatus = 'rejected';
+      else t.approvalStatus = 'approved';
+    }
+    if (t.approvalStatus !== 'pending') {
+      if (!t.approver) t.approver = APPROVERS[(i + 1) % APPROVERS.length];
+      if (!t.approvedAt) t.approvedAt = t.createdAt;
+    }
+    if (!t.updatedBy) t.updatedBy = APPROVERS[i % APPROVERS.length];
+    if (!t.channelContents) {
+      t.channelContents = {};
+      t.channels.forEach((c, ci) => {
+        t.channelContents[c] = {
+          contentSummary: t.contentSummary === '-' ? '-' : `【${c}】${t.contentSummary}`,
+          template: ci === 0 ? t.template : '-',
+          timing: t.timing,
+        };
+      });
+    }
     if (!t.execution) {
       const sent = t.sent || 0;
       const fails = t.fails || 0;
@@ -109,8 +137,8 @@ const TASK_RECORDS = [
     contentSummary: '尊贵的用户，您的专属回馈礼包已到账，点击查收…',
   },
   {
-    id: 'T20260711008', name: 'Telegram 社群拉新', type: '营销活动', audience: '活跃用户',
-    channels: ['Telegram'], timing: '2026-07-14 12:00 定时', strategy: '单活动触达频控',
+    id: 'T20260711008', name: 'Messenger 社群拉新', type: '营销活动', audience: '活跃用户',
+    channels: ['Messenger'], timing: '2026-07-14 12:00 定时', strategy: '单活动触达频控',
     status: 'reviewing', creator: 'lily@', createdAt: '2026-07-11 16:25', updatedAt: '2026-07-12 09:10',
     sent: null, total: 12800, deliverRate: null, opens: null, clicks: null, fails: null,
     party: '自营平台', sender: '@BingoPlusBot', template: '-',
@@ -221,6 +249,7 @@ const PAGE_SIZE = 8;
 let currentPage = 1;
 let filtered = [...TASK_RECORDS];
 let productLineFilter = null;
+let selectedIds = new Set();
 
 const fmt = v => (v === null || v === undefined || v === '' || v === '-') ? '-' : (typeof v === 'number' ? v.toLocaleString() : v);
 
@@ -230,11 +259,11 @@ function renderKpis() {
   const running = TASK_RECORDS.filter(t => t.status === 'running').length;
   const todayNew = TASK_RECORDS.filter(t => t.createdAt.startsWith('2026-07-13')).length;
   const failed = TASK_RECORDS.filter(t => t.status === 'failed').length;
-  const reviewing = TASK_RECORDS.filter(t => t.status === 'reviewing').length;
+  const pendingApproval = TASK_RECORDS.filter(t => t.approvalStatus === 'pending').length;
   const kpis = [
     { title: '任务总数', value: total, cls: '' },
     { title: '执行中任务数', value: running, cls: 'kpi-orange' },
-    { title: '审核中', value: reviewing, cls: 'kpi-orange' },
+    { title: '待审批', value: pendingApproval, cls: 'kpi-orange' },
     { title: '失败任务数', value: failed, cls: 'kpi-red' },
   ];
   document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
@@ -247,10 +276,12 @@ function renderKpis() {
 /* ---------------- 筛选 ---------------- */
 function applyFilters() {
   const name = document.getElementById('fName').value.trim().toLowerCase();
+  const type = document.getElementById('fType').value;
   const channel = document.getElementById('fChannel').value;
   const status = document.getElementById('fStatus').value;
+  const approval = document.getElementById('fApproval').value;
   const party = document.getElementById('fParty').value;
-  const strategy = document.getElementById('fStrategy').value;
+  const approver = document.getElementById('fApprover').value.trim().toLowerCase();
   const creator = document.getElementById('fCreator').value;
 
   const productLines = productLineFilter?.getValue() || [];
@@ -258,22 +289,81 @@ function applyFilters() {
   filtered = TASK_RECORDS.filter(t =>
     (!name || t.name.toLowerCase().includes(name) || t.id.toLowerCase().includes(name)) &&
     (!productLines.length || productLines.includes(t.productLine)) &&
+    (!type || t.taskType === type) &&
     (!channel || t.channels.includes(channel)) &&
     (!status || t.status === status) &&
+    (!approval || t.approvalStatus === approval) &&
     (!party || t.party === party) &&
-    (!strategy || t.strategy === strategy) &&
+    (!approver || (t.approver || '').toLowerCase().includes(approver)) &&
     (!creator || t.creator === creator)
   );
   currentPage = 1;
+  clearSelection();
   renderTable();
 }
 
 function resetFilters() {
-  ['fName'].forEach(id => document.getElementById(id).value = '');
-  ['fChannel', 'fStatus', 'fParty', 'fStrategy', 'fCreator'].forEach(id =>
+  ['fName', 'fApprover'].forEach(id => document.getElementById(id).value = '');
+  ['fType', 'fChannel', 'fStatus', 'fApproval', 'fParty', 'fCreator'].forEach(id =>
     document.getElementById(id).value = '');
   productLineFilter?.setValue([]);
   applyFilters();
+}
+
+/* ---------------- 多选与批量操作 ---------------- */
+function clearSelection() {
+  selectedIds.clear();
+  updateBatchBar();
+}
+
+function updateBatchBar() {
+  const bar = document.getElementById('batchBar');
+  const count = document.getElementById('batchCount');
+  if (!bar) return;
+  bar.hidden = selectedIds.size === 0;
+  if (count) count.textContent = String(selectedIds.size);
+
+  const checkAll = document.getElementById('checkAll');
+  if (checkAll) {
+    const pageIds = currentPageIds();
+    const checkedOnPage = pageIds.filter(id => selectedIds.has(id)).length;
+    checkAll.checked = pageIds.length > 0 && checkedOnPage === pageIds.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < pageIds.length;
+  }
+}
+
+function currentPageIds() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  return filtered.slice(start, start + PAGE_SIZE).map(t => t.id);
+}
+
+function handleBatchAction(act) {
+  const tasks = TASK_RECORDS.filter(t => selectedIds.has(t.id));
+  if (!tasks.length) return;
+  const n = tasks.length;
+  if (act === 'approve') {
+    tasks.forEach(t => { if (t.approvalStatus === 'pending') { t.approvalStatus = 'approved'; t.approver = 'marvin@'; t.approvedAt = '2026-07-14 10:00'; } });
+    showToast(`已批量通过 ${n} 个任务`);
+  }
+  if (act === 'reject') {
+    tasks.forEach(t => { if (t.approvalStatus === 'pending') { t.approvalStatus = 'rejected'; t.approver = 'marvin@'; t.approvedAt = '2026-07-14 10:00'; } });
+    showToast(`已批量拒绝 ${n} 个任务`);
+  }
+  if (act === 'pause') {
+    tasks.forEach(t => { if (t.status === 'running') t.status = 'paused'; });
+    showToast(`已批量暂停 ${n} 个任务`);
+  }
+  if (act === 'resume') {
+    tasks.forEach(t => { if (t.status === 'paused') t.status = 'running'; });
+    showToast(`已批量恢复 ${n} 个任务`);
+  }
+  if (act === 'stop') {
+    tasks.forEach(t => { if (['running', 'paused', 'pending'].includes(t.status)) t.status = 'failed'; });
+    showToast(`已批量终止 ${n} 个任务`);
+  }
+  clearSelection();
+  renderKpis();
+  renderTable();
 }
 
 /* ---------------- 表格与分页 ---------------- */
@@ -294,22 +384,27 @@ function renderTable() {
         : t.status === 'paused'
           ? `<button class="more-item" data-act="resume" data-id="${t.id}">恢复</button>`
           : '';
+      const approvalOps = t.approvalStatus === 'pending'
+        ? `<button class="link-btn" data-act="approve" data-id="${t.id}">通过</button>
+           <button class="link-btn link-btn-danger" data-act="reject" data-id="${t.id}">拒绝</button>`
+        : '';
       return `
         <tr>
-          <td class="col-name"><span class="cell-ellipsis" title="${t.name}">${t.name}</span></td>
+          <td class="col-check"><input type="checkbox" class="row-check" data-check="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} aria-label="选择 ${t.id}"></td>
           <td class="cell-muted">${t.id}</td>
-          <td><span class="cell-ellipsis" title="${audienceText}">${audienceText}</span></td>
+          <td class="col-name"><span class="cell-ellipsis" title="${t.name}">${t.name}</span></td>
           <td>${t.productLine}</td>
+          <td><span class="cell-ellipsis" title="${audienceText}">${audienceText}</span></td>
           <td>${t.channels.map(c => `<span class="tag">${c}</span>`).join('')}</td>
           <td>${fmt(t.timing)}</td>
-          <td><span class="cell-ellipsis" title="${t.strategy}">${fmt(t.strategy)}</span></td>
+          <td>${t.taskType}</td>
           <td><span class="tag ${st.cls}">${st.label}</span></td>
           <td>${t.creator}</td>
           <td class="cell-muted">${t.createdAt}</td>
+          <td>${t.updatedBy}</td>
           <td class="cell-muted">${t.updatedAt}</td>
-          <td class="num">${fmt(t.sent)}</td>
-          <td class="num">${fmt(t.deliverRate)}</td>
           <td class="col-ops">
+            ${approvalOps}
             <button class="link-btn" data-detail="${t.id}">查看详情</button>
             <span class="more-wrap">
               <button class="link-btn" data-more="${t.id}">更多<i data-lucide="chevron-down"></i></button>
@@ -327,6 +422,7 @@ function renderTable() {
 
   bindRowActions();
   renderPagination();
+  updateBatchBar();
   refreshIcons();
 }
 
@@ -343,6 +439,7 @@ function renderPagination() {
   host.querySelectorAll('.page-btn:not([disabled])').forEach(btn => {
     btn.addEventListener('click', () => {
       currentPage = Number(btn.dataset.page);
+      clearSelection();
       renderTable();
     });
   });
@@ -353,6 +450,31 @@ function bindRowActions() {
 
   tbody.querySelectorAll('[data-detail]').forEach(btn =>
     btn.addEventListener('click', () => openTaskDetail(btn.dataset.detail)));
+
+  tbody.querySelectorAll('.row-check').forEach(cb =>
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedIds.add(cb.dataset.check);
+      else selectedIds.delete(cb.dataset.check);
+      updateBatchBar();
+    }));
+
+  tbody.querySelectorAll('.link-btn[data-act]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const t = TASK_RECORDS.find(x => x.id === btn.dataset.id);
+      if (!t || t.approvalStatus !== 'pending') return;
+      const now = '2026-07-14 10:00';
+      if (btn.dataset.act === 'approve') {
+        t.approvalStatus = 'approved';
+        showToast(`已通过任务「${t.name}」`);
+      } else {
+        t.approvalStatus = 'rejected';
+        showToast(`已拒绝任务「${t.name}」`);
+      }
+      t.approver = 'marvin@';
+      t.approvedAt = now;
+      renderKpis();
+      renderTable();
+    }));
 
   bindMoreMenus(tbody);
 
@@ -381,9 +503,43 @@ function bindRowActions() {
 }
 
 /* ---------------- 详情抽屉 ---------------- */
+function channelDetailHtml(t, channel) {
+  const cc = t.channelContents?.[channel] || {};
+  return `
+    <div class="desc-item"><span class="desc-label">发送时机</span><span>${fmt(cc.timing ?? t.timing)}</span></div>
+    <div class="desc-item"><span class="desc-label">内容摘要</span><span>${fmt(cc.contentSummary ?? t.contentSummary)}</span></div>
+    <div class="desc-item"><span class="desc-label">模板名称</span><span>${fmt(cc.template ?? t.template)}</span></div>`;
+}
+
+function bindChannelTabs(t) {
+  const tabs = document.getElementById('detailChannelTabs');
+  const panel = document.getElementById('detailChannelPanel');
+  if (!tabs || !panel) return;
+  tabs.querySelectorAll('.chip').forEach(chip =>
+    chip.addEventListener('click', () => {
+      tabs.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      panel.innerHTML = channelDetailHtml(t, chip.dataset.channel);
+    }));
+}
+
 function openTaskDetail(id) {
   const t = TASK_RECORDS.find(x => x.id === id);
   const st = TASK_STATUS[t.status];
+  const ap = APPROVAL_STATUS[t.approvalStatus] || APPROVAL_STATUS.pending;
+  const channelBlock = t.channels.length > 1
+    ? `
+      <div class="desc-item desc-block">
+        <span class="desc-label">通道配置</span>
+        <div class="chip-group detail-channel-tabs" id="detailChannelTabs">
+          ${t.channels.map((c, i) => `<button class="chip${i === 0 ? ' selected' : ''}" data-channel="${c}">${c}</button>`).join('')}
+        </div>
+        <div class="desc-list detail-channel-panel" id="detailChannelPanel">${channelDetailHtml(t, t.channels[0])}</div>
+      </div>`
+    : `
+      <div class="desc-item"><span class="desc-label">通道配置</span><span><span class="tag tag-primary">${t.channels[0]}</span></span></div>
+      ${channelDetailHtml(t, t.channels[0])}`;
+
   document.getElementById('taskDetailBody').innerHTML = `
     <section class="card detail-group">
       <h4 class="card-title">基础信息</h4>
@@ -392,20 +548,18 @@ function openTaskDetail(id) {
         <div class="desc-item"><span class="desc-label">任务 ID</span><span>${t.id}</span></div>
         <div class="desc-item"><span class="desc-label">创建人</span><span>${t.creator}</span></div>
         <div class="desc-item"><span class="desc-label">创建时间</span><span>${t.createdAt}</span></div>
-        <div class="desc-item"><span class="desc-label">当前状态</span><span class="tag ${st.cls}">${st.label}</span></div>
+        <div class="desc-item"><span class="desc-label">任务状态</span><span class="tag ${st.cls}">${st.label}</span></div>
+        <div class="desc-item"><span class="desc-label">审批状态</span><span class="tag ${ap.cls}">${ap.label}</span></div>
+        <div class="desc-item"><span class="desc-label">审批人</span><span>${fmt(t.approver)}</span></div>
+        <div class="desc-item"><span class="desc-label">审批时间</span><span>${fmt(t.approvedAt)}</span></div>
       </div>
     </section>
     <section class="card detail-group">
       <h4 class="card-title">配置信息</h4>
       <div class="desc-list">
-        <div class="desc-item"><span class="desc-label">人群标签</span><span>${fmt(t.audience)}</span></div>
-        <div class="desc-item"><span class="desc-label">通道配置</span><span>${t.channels.map(c => `<span class="tag tag-primary">${c}</span>`).join('')}</span></div>
-        <div class="desc-item"><span class="desc-label">发送时机</span><span>${fmt(t.timing)}</span></div>
-        <div class="desc-item"><span class="desc-label">内容摘要</span><span>${fmt(t.contentSummary)}</span></div>
-        <div class="desc-item"><span class="desc-label">触达策略</span><span>${fmt(t.strategy)}</span></div>
-        <div class="desc-item"><span class="desc-label">模板名称</span><span>${fmt(t.template)}</span></div>
-        <div class="desc-item"><span class="desc-label">接入方</span><span>${fmt(t.party)}</span></div>
-        <div class="desc-item"><span class="desc-label">账号/Sender</span><span>${fmt(t.sender)}</span></div>
+        <div class="desc-item"><span class="desc-label">发送对象</span><span>${fmt(t.audience)}</span></div>
+        <div class="desc-item"><span class="desc-label">任务类型</span><span>${t.taskType}</span></div>
+        ${channelBlock}
       </div>
     </section>
     <section class="card detail-group">
@@ -424,6 +578,8 @@ function openTaskDetail(id) {
       </div>
     </section>`;
 
+  bindChannelTabs(t);
+
   const editBtn = document.getElementById('detailEditBtn');
   const editable = ['draft', 'pending', 'paused'].includes(t.status);
   editBtn.disabled = !editable;
@@ -439,18 +595,13 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTopbar('reach');
   bindDrawerClose();
 
-  // 触达策略筛选项（来自共享数据）
+  // 产品线筛选项（多选）
   productLineFilter = createSearchMultiSelect({
     container: document.getElementById('fProductLine'),
     options: PRODUCT_LINES.map(p => ({ value: p.value, label: p.label })),
     placeholder: '全部产品线',
     searchPlaceholder: '搜索产品线…',
   });
-
-  const fStrategy = document.getElementById('fStrategy');
-  fStrategy.innerHTML = '<option value="">全部策略</option>' +
-    REACH_STRATEGIES.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-  fStrategy._ssel?.refresh();
 
   // 时间范围切换
   document.querySelectorAll('#timeRange .seg-btn').forEach(btn => {
@@ -463,7 +614,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('queryBtn').addEventListener('click', applyFilters);
   document.getElementById('resetBtn').addEventListener('click', resetFilters);
-  document.getElementById('fName').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+  ['fName', 'fApprover'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
+
+  // 全选与批量操作
+  document.getElementById('checkAll').addEventListener('change', e => {
+    const pageIds = currentPageIds();
+    if (e.target.checked) pageIds.forEach(id => selectedIds.add(id));
+    else pageIds.forEach(id => selectedIds.delete(id));
+    renderTable();
+  });
+  document.querySelectorAll('#batchBar [data-batch]').forEach(btn =>
+    btn.addEventListener('click', () => handleBatchAction(btn.dataset.batch)));
   document.getElementById('exportBtn').addEventListener('click', () => showToast('任务记录导出中，完成后将通知您'));
   document.getElementById('detailToSendRecords').addEventListener('click', () => location.href = 'send-records.html');
   document.getElementById('detailEditBtn').addEventListener('click', () => showToast('进入任务编辑（原型演示）'));

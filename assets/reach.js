@@ -5,7 +5,6 @@ const CHANNELS = {
   email:    { label: '邮件',     tip: '邮件',     icon: 'mail' },
   push:     { label: 'Push',     tip: 'Push',     icon: 'bell' },
   viber:    { label: 'Viber',    tip: 'Viber',    icon: 'phone-call' },
-  telegram: { label: 'Telegram', tip: 'Telegram', icon: 'send' },
   messenger:{ label: 'Messenger',tip: 'Messenger',icon: 'message-circle' },
 };
 
@@ -20,9 +19,16 @@ const AUDIENCES = [
 
 const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
-const tasks = [
-  { name: '世界杯竞猜预热短信', channel: 'sms',   total: 12800, sent: 9632 },
-  { name: '新用户充值召回邮件', channel: 'email', total: 5600,  sent: 2128 },
+const APPROVAL_QUEUE = [
+  { id: 'AP20260714003', name: 'Messenger 社群拉新', channel: 'Messenger', appliedAt: '2026-07-14 09:20' },
+  { id: 'AP20260713002', name: '世界杯决赛邮件预告', channel: '邮件', appliedAt: '2026-07-13 15:40' },
+  { id: 'AP20260712001', name: '沉默用户唤醒短信', channel: 'SMS', appliedAt: '2026-07-12 11:05' },
+];
+
+const RUNNING_TASKS = [
+  { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75 },
+  { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38 },
+  { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52 },
 ];
 
 let draft = null;
@@ -75,15 +81,59 @@ function initDraft(channel) {
   renderPreview();
 }
 
-function updateGreeting() {
-  const greeting = document.getElementById('greeting');
-  const greetSub = document.getElementById('greetSub');
-  if (!greeting || !greetSub) return;
-  const h = new Date().getHours();
-  const part = h < 11 ? '早上' : h < 14 ? '中午' : '晚上';
-  greeting.textContent = `${part}好，尊敬的 marvin@ 指挥官`;
-  greetSub.innerHTML =
-    `您当前共有 <b>${tasks.length}</b> 个任务在执行，您可以点击左侧展示区新建触达任务`;
+function renderApprovalQueue() {
+  const body = document.getElementById('approvalQueueBody');
+  const countEl = document.getElementById('approvalQueueCount');
+  if (!body) return;
+  body.innerHTML = APPROVAL_QUEUE.map(a => `
+    <tr>
+      <td><a class="link-btn" href="my-approvals.html">${a.id}</a></td>
+      <td>${a.name}</td>
+      <td><span class="tag tag-primary">${a.channel}</span></td>
+      <td>${a.appliedAt}</td>
+      <td class="home-ops">
+        <button type="button" class="link-btn" data-approval-act="approve" data-id="${a.id}">通过</button>
+        <button type="button" class="link-btn link-btn-danger" data-approval-act="reject" data-id="${a.id}">拒绝</button>
+      </td>
+    </tr>
+  `).join('');
+  if (countEl) countEl.textContent = String(APPROVAL_QUEUE.length);
+}
+
+function bindApprovalQueueActions() {
+  const body = document.getElementById('approvalQueueBody');
+  if (!body || body.dataset.bound) return;
+  body.dataset.bound = '1';
+  body.addEventListener('click', e => {
+    const btn = e.target.closest('[data-approval-act]');
+    if (!btn) return;
+    const idx = APPROVAL_QUEUE.findIndex(a => a.id === btn.dataset.id);
+    if (idx === -1) return;
+    const item = APPROVAL_QUEUE[idx];
+    APPROVAL_QUEUE.splice(idx, 1);
+    renderApprovalQueue();
+    showToast(btn.dataset.approvalAct === 'approve'
+      ? `已通过审批单「${item.name}」`
+      : `已拒绝审批单「${item.name}」`);
+  });
+}
+
+function renderRunningTasksTable() {
+  const body = document.getElementById('runningTaskBody');
+  const hint = document.querySelector('.home-sections .card:last-of-type .home-section-hint b');
+  if (!body) return;
+  body.innerHTML = RUNNING_TASKS.slice(0, 3).map(t => `
+    <tr>
+      <td><a class="link-btn" href="task-records.html">${t.id}</a></td>
+      <td>${t.name}</td>
+      <td><span class="tag tag-primary">${t.channel}</span></td>
+      <td>
+        <span class="progress"><span class="progress-inner" style="width:${t.progress}%"></span></span>
+        <span class="pct">${t.progress}%</span>
+      </td>
+    </tr>
+  `).join('');
+  if (hint) hint.textContent = String(RUNNING_TASKS.length);
 }
 
 function updatePhoneClock() {
@@ -303,7 +353,7 @@ function renderPreview() {
           <div class="pv-n-body${emptyCls}">${text}</div>
         </div>
       </div>`;
-  } else if (ch === 'viber' || ch === 'telegram' || ch === 'messenger') {
+  } else if (ch === 'viber' || ch === 'messenger') {
     inner = `
       <div class="pv-header">
         <div class="pv-avatar"><i data-lucide="${CHANNELS[ch].icon}"></i></div>
@@ -558,13 +608,15 @@ function createTask() {
     return;
   }
 
-  const total = draft.audienceTags.reduce((sum, id) => sum + AUDIENCES.find(a => a.id === id).count, 0)
-    + draft.audienceFiles.length * 1000;
-  draft.channels.forEach(c => {
-    tasks.unshift({ name, channel: c, total, sent: 0 });
+  const channelLabel = CHANNELS[draft.channels[0]]?.label || draft.channels[0];
+  RUNNING_TASKS.unshift({
+    id: `T${Date.now()}`,
+    name,
+    channel: channelLabel,
+    progress: 0,
   });
 
-  updateGreeting();
+  renderRunningTasksTable();
   closeDrawer('taskDrawer');
   showToast('已提交审批');
 }
@@ -589,7 +641,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSidebar('reach', 'reach-task');
     renderTopbar('reach');
     bindDrawerClose();
-    updateGreeting();
+    renderApprovalQueue();
+    bindApprovalQueueActions();
+    renderRunningTasksTable();
     updatePhoneClock();
     setInterval(updatePhoneClock, 30 * 1000);
     bindPhoneScreen();

@@ -6,8 +6,29 @@ const TPL_STATUS = {
   disabled: { label: '已停用',   cls: 'tag-gray-outline' },
 };
 
-const CHANNELS = ['SMS', '邮件', 'Push', 'Inbox', 'IM', 'Bot', 'Viber', 'Telegram', '电销'];
+const TPL_APPROVAL_STATUS = {
+  pending:  { label: '待审批', cls: 'tag-orange' },
+  approved: { label: '已通过', cls: 'tag-success' },
+  rejected: { label: '已拒绝', cls: 'tag-danger' },
+};
+
+const CHANNELS = ['SMS', '邮件', 'Push', 'Inbox', 'IM', 'Bot', 'Viber', 'Messenger', '电销'];
 const TEMPLATE_TYPES = ['营销', 'OTP'];
+
+function mapAuditToApproval(auditStatus) {
+  if (auditStatus === '已通过') return 'approved';
+  if (auditStatus === '已驳回') return 'rejected';
+  return 'pending';
+}
+
+function tplContentText(t) {
+  const c = t.content || {};
+  return c.text || c.body || c.subject || c.title || '';
+}
+
+function fmtTpl(v) {
+  return (v === null || v === undefined || v === '') ? '-' : v;
+}
 
 /* ---------------- Mock 数据（18 条） ---------------- */
 let TEMPLATE_RECORDS = [
@@ -147,7 +168,7 @@ let TEMPLATE_RECORDS = [
     ],
   },
   {
-    id: 'tpl-011', name: 'Telegram 社群邀请', code: 'TPL-TG-0004', type: '营销', channel: 'Telegram',
+    id: 'tpl-011', name: 'Messenger 社群邀请', code: 'TPL-MSG-0004', type: '营销', channel: 'Messenger',
     langs: '英文', bizLine: 'BingoPlus', status: 'active', creator: 'lily@',
     createdAt: '2026-07-06 09:20', updatedAt: '2026-07-11 16:25', updatedBy: 'lily@',
     content: { title: 'Join Our Community', body: 'Join the official BingoPlus community for daily free quiz tickets and exclusive bonuses!', buttonText: 'Join Group' },
@@ -253,13 +274,16 @@ let TEMPLATE_RECORDS = [
 
 TEMPLATE_RECORDS.forEach(t => {
   if (t.status === 'reviewing' || t.status === 'rejected') t.status = 'draft';
+  t.approvalStatus = mapAuditToApproval(t.audit?.status);
+  t.approver = t.audit?.reviewer || null;
+  t.approvedAt = t.audit?.time || null;
 });
 
 /* ---------------- 状态 ---------------- */
 const PAGE_SIZE = 8;
 let currentPage = 1;
-let activeCat = 'all';
 let filtered = [...TEMPLATE_RECORDS];
+let selectedIds = new Set();
 let drawerMode = 'view'; // view | edit | create
 let currentTplId = null;
 let editDraft = null;
@@ -267,51 +291,113 @@ let lastFocusedInput = null;
 
 /* ---------------- KPI ---------------- */
 function renderKpis() {
-  const total = TEMPLATE_RECORDS.length;
-  const active = TEMPLATE_RECORDS.filter(t => t.status === 'active').length;
-  const disabled = TEMPLATE_RECORDS.filter(t => t.status === 'disabled').length;
-  document.getElementById('kpiGrid').innerHTML = [
-    { title: '模板总数', value: total, cls: '' },
-    { title: '生效中模板数', value: active, cls: 'kpi-green' },
-    { title: '草稿模板数', value: TEMPLATE_RECORDS.filter(t => t.status === 'draft').length, cls: 'kpi-blue' },
-    { title: '停用模板数', value: disabled, cls: '' },
-  ].map(k => `
+  const pending = TEMPLATE_RECORDS.filter(t => t.approvalStatus === 'pending').length;
+  document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi-card">
-      <div class="kpi-title">${k.title}</div>
-      <div class="kpi-body"><span class="kpi-value ${k.cls}">${k.value}</span></div>
-    </div>`).join('');
+      <div class="kpi-title">待审批模板</div>
+      <div class="kpi-body"><span class="kpi-value kpi-orange">${pending}</span></div>
+    </div>`;
 }
 
 /* ---------------- 筛选 ---------------- */
 function applyFilters() {
   const name = document.getElementById('fName').value.trim().toLowerCase();
   const code = document.getElementById('fCode').value.trim().toLowerCase();
-  const type = document.getElementById('fType').value;
   const channel = document.getElementById('fChannel').value;
   const status = document.getElementById('fStatus').value;
+  const approval = document.getElementById('fApproval').value;
+  const approver = document.getElementById('fApprover').value;
   const biz = document.getElementById('fBiz').value;
   const creator = document.getElementById('fCreator').value;
+  const content = document.getElementById('fContent').value.trim().toLowerCase();
 
-  filtered = TEMPLATE_RECORDS.filter(t => {
-    if (activeCat !== 'all' && t.channel !== activeCat) return false;
-    return (!name || t.name.toLowerCase().includes(name)) &&
-      (!code || t.code.toLowerCase().includes(code)) &&
-      (!type || t.type === type) &&
-      (!channel || t.channel === channel) &&
-      (!status || t.status === status) &&
-      (!biz || t.bizLine === biz) &&
-      (!creator || t.creator === creator);
-  });
+  filtered = TEMPLATE_RECORDS.filter(t =>
+    (!name || t.name.toLowerCase().includes(name)) &&
+    (!code || t.code.toLowerCase().includes(code)) &&
+    (!channel || t.channel === channel) &&
+    (!status || t.status === status) &&
+    (!approval || t.approvalStatus === approval) &&
+    (!approver || t.approver === approver) &&
+    (!biz || t.bizLine === biz) &&
+    (!creator || t.creator === creator) &&
+    (!content || tplContentText(t).toLowerCase().includes(content))
+  );
   currentPage = 1;
+  clearSelection();
   renderTable();
 }
 
 function resetFilters() {
-  activeCat = 'all';
-  document.querySelectorAll('#catChips .chip').forEach(c => c.classList.toggle('selected', c.dataset.cat === 'all'));
-  ['fName', 'fCode'].forEach(id => document.getElementById(id).value = '');
-  ['fType', 'fChannel', 'fStatus', 'fBiz', 'fCreator'].forEach(id => document.getElementById(id).value = '');
+  ['fName', 'fCode', 'fContent'].forEach(id => document.getElementById(id).value = '');
+  ['fChannel', 'fStatus', 'fApproval', 'fApprover', 'fBiz', 'fCreator'].forEach(id =>
+    document.getElementById(id).value = '');
   applyFilters();
+}
+
+/* ---------------- 多选与批量操作 ---------------- */
+function clearSelection() {
+  selectedIds.clear();
+  updateBatchBar();
+}
+
+function updateBatchBar() {
+  const bar = document.getElementById('batchBar');
+  const count = document.getElementById('batchCount');
+  if (!bar) return;
+  bar.hidden = selectedIds.size === 0;
+  if (count) count.textContent = String(selectedIds.size);
+
+  const checkAll = document.getElementById('checkAll');
+  if (checkAll) {
+    const pageIds = currentPageIds();
+    const checkedOnPage = pageIds.filter(id => selectedIds.has(id)).length;
+    checkAll.checked = pageIds.length > 0 && checkedOnPage === pageIds.length;
+    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < pageIds.length;
+  }
+}
+
+function currentPageIds() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  return filtered.slice(start, start + PAGE_SIZE).map(t => t.id);
+}
+
+function approveTemplate(id, silent) {
+  const t = TEMPLATE_RECORDS.find(x => x.id === id);
+  if (!t || t.approvalStatus !== 'pending') return false;
+  const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  t.approvalStatus = 'approved';
+  t.approver = 'marvin@';
+  t.approvedAt = now;
+  t.audit = { status: '已通过', reviewer: 'marvin@', time: now, rejectReason: null };
+  t.status = 'active';
+  if (!silent) showToast(`已通过模板「${t.name}」`);
+  return true;
+}
+
+function rejectTemplate(id, silent) {
+  const t = TEMPLATE_RECORDS.find(x => x.id === id);
+  if (!t || t.approvalStatus !== 'pending') return false;
+  const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  t.approvalStatus = 'rejected';
+  t.approver = 'marvin@';
+  t.approvedAt = now;
+  t.audit = { status: '已驳回', reviewer: 'marvin@', time: now, rejectReason: '审批人拒绝' };
+  if (!silent) showToast(`已拒绝模板「${t.name}」`);
+  return true;
+}
+
+function handleBatchAction(act) {
+  const ids = [...selectedIds];
+  let n = 0;
+  ids.forEach(id => {
+    if (act === 'approve' && approveTemplate(id, true)) n++;
+    if (act === 'reject' && rejectTemplate(id, true)) n++;
+  });
+  if (act === 'approve') showToast(`已批量通过 ${n} 个模板`);
+  if (act === 'reject') showToast(`已批量拒绝 ${n} 个模板`);
+  clearSelection();
+  renderKpis();
+  renderTable();
 }
 
 /* ---------------- 表格与分页 ---------------- */
@@ -322,35 +408,35 @@ function renderTable() {
   const rows = filtered.slice(start, start + PAGE_SIZE);
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="cell-empty">暂无符合条件的模板</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="cell-empty">暂无符合条件的模板</td></tr>`;
   } else {
     tbody.innerHTML = rows.map(t => {
-      const st = TPL_STATUS[t.status];
-      const toggleItem = t.status === 'active'
-        ? `<button class="more-item" data-act="disable" data-id="${t.id}">停用</button>`
-        : t.status === 'disabled'
-          ? `<button class="more-item" data-act="enable" data-id="${t.id}">启用</button>`
-          : '';
+      const ap = TPL_APPROVAL_STATUS[t.approvalStatus] || TPL_APPROVAL_STATUS.pending;
+      const contentText = tplContentText(t);
+      const approvalOps = t.approvalStatus === 'pending'
+        ? `<button class="link-btn" data-act="approve" data-id="${t.id}">通过</button>
+           <button class="link-btn link-btn-danger" data-act="reject" data-id="${t.id}">拒绝</button>`
+        : '';
       return `
         <tr>
+          <td class="col-check"><input type="checkbox" class="row-check" data-check="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} aria-label="选择 ${t.code}"></td>
+          <td class="cell-muted">${t.code}</td>
           <td class="col-name"><span class="cell-ellipsis" title="${t.name}">${t.name}</span></td>
-          <td class="col-name"><span class="cell-ellipsis" title="${t.code}">${t.code}</span></td>
-          <td>${t.type}</td>
           <td>${t.bizLine}</td>
           <td><span class="tag tag-primary">${t.channel}</span></td>
-          <td class="num"><button class="link-btn var-count-btn" data-vars="${t.id}">${t.variables.length}</button></td>
-          <td><span class="tag ${st.cls}">${st.label}</span></td>
-          <td class="cell-muted">${t.updatedAt}</td>
+          <td class="col-name"><span class="cell-ellipsis" title="${contentText}">${contentText || '-'}</span></td>
+          <td><span class="tag ${ap.cls}">${ap.label}</span></td>
+          <td>${t.creator}</td>
+          <td class="cell-muted">${t.createdAt}</td>
           <td>${t.updatedBy}</td>
+          <td class="cell-muted">${t.updatedAt}</td>
           <td class="col-ops">
+            ${approvalOps}
             <button class="link-btn" data-view="${t.id}">查看详情</button>
-            <button class="link-btn" data-edit="${t.id}">编辑</button>
             <span class="more-wrap">
               <button class="link-btn" data-more="${t.id}">更多<i data-lucide="chevron-down"></i></button>
               <span class="more-menu" hidden>
                 <button class="more-item" data-act="copy" data-id="${t.id}">复制</button>
-                ${toggleItem}
-                <button class="more-item" data-act="versions" data-id="${t.id}">查看版本</button>
                 <button class="more-item more-danger" data-act="delete" data-id="${t.id}">删除</button>
               </span>
             </span>
@@ -360,6 +446,7 @@ function renderTable() {
   }
   bindRowActions();
   renderPagination();
+  updateBatchBar();
   refreshIcons();
 }
 
@@ -374,14 +461,32 @@ function renderPagination() {
   html += `<button class="page-btn" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>&gt;</button>`;
   host.innerHTML = html;
   host.querySelectorAll('.page-btn:not([disabled])').forEach(btn => {
-    btn.addEventListener('click', () => { currentPage = Number(btn.dataset.page); renderTable(); });
+    btn.addEventListener('click', () => {
+      currentPage = Number(btn.dataset.page);
+      clearSelection();
+      renderTable();
+    });
   });
 }
 
 function bindRowActions() {
   const tbody = document.getElementById('tplTableBody');
   tbody.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => openTplDrawer('view', b.dataset.view)));
-  tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openTplDrawer('edit', b.dataset.edit)));
+
+  tbody.querySelectorAll('.row-check').forEach(cb =>
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedIds.add(cb.dataset.check);
+      else selectedIds.delete(cb.dataset.check);
+      updateBatchBar();
+    }));
+
+  tbody.querySelectorAll('.link-btn[data-act]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      if (btn.dataset.act === 'approve') approveTemplate(btn.dataset.id);
+      if (btn.dataset.act === 'reject') rejectTemplate(btn.dataset.id);
+      renderKpis();
+      renderTable();
+    }));
 
   bindMoreMenus(tbody);
 
@@ -389,15 +494,7 @@ function bindRowActions() {
     const t = TEMPLATE_RECORDS.find(x => x.id === item.dataset.id);
     closeAllMoreMenus();
     if (item.dataset.act === 'copy') copyTemplate(t.id);
-    if (item.dataset.act === 'disable') toggleStatus(t.id, 'disabled');
-    if (item.dataset.act === 'enable') toggleStatus(t.id, 'active');
-    if (item.dataset.act === 'versions') openTplDrawer('view', t.id, true);
     if (item.dataset.act === 'delete') deleteTemplate(t.id);
-  }));
-
-  tbody.querySelectorAll('[data-vars]').forEach(btn => btn.addEventListener('click', e => {
-    e.stopPropagation();
-    showVarPopover(btn, TEMPLATE_RECORDS.find(x => x.id === btn.dataset.vars));
   }));
 }
 
@@ -408,6 +505,10 @@ function copyTemplate(id) {
   copy.name = src.name + '（副本）';
   copy.code = src.code + '-COPY';
   copy.status = 'draft';
+  copy.approvalStatus = 'pending';
+  copy.approver = null;
+  copy.approvedAt = null;
+  copy.audit = { status: '未提交', reviewer: null, time: null, rejectReason: null };
   copy.updatedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
   copy.updatedBy = 'marvin@';
   TEMPLATE_RECORDS.unshift(copy);
@@ -415,31 +516,12 @@ function copyTemplate(id) {
   renderKpis(); applyFilters();
 }
 
-function toggleStatus(id, status) {
-  const t = TEMPLATE_RECORDS.find(x => x.id === id);
-  t.status = status;
-  showToast(`模板「${t.name}」已${status === 'active' ? '启用' : '停用'}`);
-  renderKpis(); renderTable();
-}
-
 function deleteTemplate(id) {
   const t = TEMPLATE_RECORDS.find(x => x.id === id);
   TEMPLATE_RECORDS = TEMPLATE_RECORDS.filter(x => x.id !== id);
+  selectedIds.delete(id);
   showToast(`模板「${t.name}」已删除`);
   renderKpis(); applyFilters();
-}
-
-function showVarPopover(anchor, tpl) {
-  document.querySelectorAll('.var-popover').forEach(p => p.remove());
-  const pop = document.createElement('div');
-  pop.className = 'var-popover';
-  pop.innerHTML = tpl.variables.length
-    ? tpl.variables.map(v => `<span class="var-tag">{{${v.name}}}</span>`).join('')
-    : '<span class="cell-muted">无变量</span>';
-  anchor.parentElement.style.position = 'relative';
-  anchor.parentElement.appendChild(pop);
-  const close = ev => { if (!pop.contains(ev.target) && ev.target !== anchor) { pop.remove(); document.removeEventListener('click', close); } };
-  setTimeout(() => document.addEventListener('click', close));
 }
 
 /* ---------------- 变量替换（预览用） ---------------- */
@@ -562,27 +644,20 @@ function collapseHtml(title, body, open) {
     </section>`;
 }
 
-function renderDrawerBody(tpl, mode, scrollToVersions) {
+function renderDrawerBody(tpl, mode) {
   const editable = mode === 'edit' || mode === 'create';
-  const st = TPL_STATUS[tpl.status] || TPL_STATUS.draft;
+  const ap = TPL_APPROVAL_STATUS[tpl.approvalStatus] || TPL_APPROVAL_STATUS.pending;
 
   let basicHtml;
   if (editable) {
     basicHtml = `
       <div class="field"><span class="field-label">模板名称</span><input class="input" id="fTplName" value="${tpl.name}"></div>
-      <div class="field"><span class="field-label">模板编码</span><input class="input" id="fTplCode" value="${tpl.code}" placeholder="如 TPL-SMS-0001"></div>
+      <div class="field"><span class="field-label">模板ID</span><input class="input" id="fTplCode" value="${tpl.code}" placeholder="如 TPL-SMS-0001"></div>
       <div class="field-row-2">
-        <div class="field"><span class="field-label">模板类型</span>
-          <select class="select" id="fTplType">
-            ${TEMPLATE_TYPES.map(t =>
-              `<option${t === tpl.type ? ' selected' : ''}>${t}</option>`).join('')}
-          </select></div>
-        <div class="field"><span class="field-label">通道类型</span>
+        <div class="field"><span class="field-label">通道</span>
           <select class="select" id="fTplChannel" ${mode === 'edit' ? 'disabled' : ''}>
             ${CHANNELS.map(c => `<option${c === tpl.channel ? ' selected' : ''}>${c}</option>`).join('')}
           </select></div>
-      </div>
-      <div class="field-row-2">
         <div class="field"><span class="field-label">产品线</span>
           <select class="select" id="fTplBiz">
             ${['BingoPlus','ArenaPlus','BP-VIP'].map(b =>
@@ -593,18 +668,15 @@ function renderDrawerBody(tpl, mode, scrollToVersions) {
     basicHtml = `
       <div class="desc-list">
         <div class="desc-item"><span class="desc-label">模板名称</span><span>${tpl.name}</span></div>
-        <div class="desc-item"><span class="desc-label">模板编码</span><span>${tpl.code}</span></div>
-        <div class="desc-item"><span class="desc-label">模板类型</span><span>${tpl.type}</span></div>
-        <div class="desc-item"><span class="desc-label">通道类型</span><span><span class="tag tag-primary">${tpl.channel}</span></span></div>
+        <div class="desc-item"><span class="desc-label">模板ID</span><span>${tpl.code}</span></div>
+        <div class="desc-item"><span class="desc-label">通道</span><span><span class="tag tag-primary">${tpl.channel}</span></span></div>
         <div class="desc-item"><span class="desc-label">产品线</span><span>${tpl.bizLine}</span></div>
-        <div class="desc-item"><span class="desc-label">当前状态</span><span class="tag ${st.cls}">${st.label}</span></div>
+        <div class="desc-item"><span class="desc-label">审批状态</span><span class="tag ${ap.cls}">${ap.label}</span></div>
+        <div class="desc-item"><span class="desc-label">审批人</span><span>${fmtTpl(tpl.approver)}</span></div>
+        <div class="desc-item"><span class="desc-label">审批时间</span><span>${fmtTpl(tpl.approvedAt)}</span></div>
         <div class="desc-item"><span class="desc-label">创建人 / 更新时间</span><span>${tpl.creator} · ${tpl.updatedAt}</span></div>
       </div>`;
   }
-
-  const versionBody = `<ul class="version-list">${tpl.versions.map(v =>
-    `<li><span class="ver-no">${v.ver}</span><span class="ver-summary">${v.summary}</span><span class="ver-meta">${v.user} · ${v.time}</span></li>`
-  ).join('')}</ul>`;
 
   document.getElementById('tplDrawerForm').innerHTML = `
     <section class="card detail-group" id="sectionBasic">
@@ -616,17 +688,11 @@ function renderDrawerBody(tpl, mode, scrollToVersions) {
     <section class="card detail-group" id="sectionVars">
       <h4 class="card-title">变量配置</h4>${variablesHtml(tpl, editable)}
     </section>
-    <section class="card detail-group" id="sectionVersions">
-      <h4 class="card-title">版本记录</h4>${versionBody}
-    </section>
   `;
 
   bindDrawerFormEvents(tpl, editable);
   enhanceSelects(document.getElementById('tplDrawerForm'));
   renderPreview(tpl);
-  if (scrollToVersions) {
-    setTimeout(() => document.getElementById('sectionVersions')?.scrollIntoView({ behavior: 'smooth' }), 300);
-  }
   refreshIcons();
 }
 
@@ -720,6 +786,7 @@ function newTemplateDraft() {
     bizLine: 'BingoPlus', status: 'draft', creator: 'marvin@',
     createdAt: '', updatedAt: '', updatedBy: 'marvin@',
     content: defaultContent('SMS'), variables: [],
+    approvalStatus: 'pending', approver: null, approvedAt: null,
     audit: { status: '未提交', reviewer: null, time: null, rejectReason: null },
     versions: [],
   };
@@ -728,16 +795,29 @@ function newTemplateDraft() {
 function renderDrawerFooter(mode) {
   const footer = document.getElementById('tplDrawerFooter');
   if (mode === 'view') {
+    const tpl = editDraft;
+    const pending = tpl?.approvalStatus === 'pending';
     footer.innerHTML = `
       <button class="btn btn-outline" data-close>关闭</button>
-      <button class="btn btn-primary" id="footerEditBtn">编辑</button>`;
-    footer.querySelector('#footerEditBtn').addEventListener('click', () => openTplDrawer('edit', currentTplId));
+      ${pending ? `
+        <button class="btn btn-outline btn-reject" id="footerRejectBtn">拒绝</button>
+        <button class="btn btn-primary" id="footerApproveBtn">通过</button>` : ''}`;
+    footer.querySelector('#footerApproveBtn')?.addEventListener('click', () => {
+      approveTemplate(currentTplId);
+      closeDrawer('tplDrawer');
+      renderKpis();
+      renderTable();
+    });
+    footer.querySelector('#footerRejectBtn')?.addEventListener('click', () => {
+      rejectTemplate(currentTplId);
+      closeDrawer('tplDrawer');
+      renderKpis();
+      renderTable();
+    });
   } else {
     footer.innerHTML = `
       <button class="btn btn-outline" data-close>取消</button>
-      <button class="btn btn-outline" id="footerDraftBtn">保存草稿</button>
       <button class="btn btn-primary" id="footerSaveBtn">提交</button>`;
-    footer.querySelector('#footerDraftBtn').addEventListener('click', () => saveTemplate(false));
     footer.querySelector('#footerSaveBtn').addEventListener('click', () => saveTemplate(true));
   }
   footer.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => closeDrawer('tplDrawer')));
@@ -748,32 +828,32 @@ function saveTemplate(submitReview) {
   const form = document.getElementById('tplDrawerForm');
   tpl.name = form.querySelector('#fTplName')?.value.trim() || tpl.name;
   tpl.code = form.querySelector('#fTplCode')?.value.trim() || tpl.code;
-  tpl.type = form.querySelector('#fTplType')?.value || tpl.type;
   tpl.bizLine = form.querySelector('#fTplBiz')?.value || tpl.bizLine;
   if (!tpl.name) { showToast('请输入模板名称'); return; }
-  if (!tpl.code) { showToast('请输入模板编码'); return; }
+  if (!tpl.code) { showToast('请输入模板ID'); return; }
 
   const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
   tpl.updatedAt = now;
   tpl.updatedBy = 'marvin@';
 
   if (submitReview) {
-    tpl.status = 'active';
-    showToast(`模板「${tpl.name}」已提交`);
-  } else {
     tpl.status = 'draft';
-    showToast(`模板「${tpl.name}」已保存为草稿`);
+    tpl.approvalStatus = 'pending';
+    tpl.approver = null;
+    tpl.approvedAt = null;
+    tpl.audit = { status: '审核中', reviewer: null, time: null, rejectReason: null };
+    showToast(`模板「${tpl.name}」已提交审批`);
   }
 
   if (drawerMode === 'create') {
     tpl.id = 'tpl-' + Date.now();
     tpl.createdAt = now;
-    tpl.versions.push({ ver: 'v0.1', time: now, user: 'marvin@', summary: submitReview ? '创建并提交' : '草稿创建' });
+    tpl.versions.push({ ver: 'v0.1', time: now, user: 'marvin@', summary: '创建并提交' });
     TEMPLATE_RECORDS.unshift(tpl);
   } else {
     const idx = TEMPLATE_RECORDS.findIndex(x => x.id === tpl.id);
     if (idx >= 0) TEMPLATE_RECORDS[idx] = tpl;
-    tpl.versions.unshift({ ver: 'v' + (tpl.versions.length + 1) + '.0', time: now, user: 'marvin@', summary: submitReview ? '提交' : '保存草稿' });
+    tpl.versions.unshift({ ver: 'v' + (tpl.versions.length + 1) + '.0', time: now, user: 'marvin@', summary: '提交' });
   }
 
   closeDrawer('tplDrawer');
@@ -781,7 +861,7 @@ function saveTemplate(submitReview) {
   applyFilters();
 }
 
-function openTplDrawer(mode, id, scrollToVersions) {
+function openTplDrawer(mode, id) {
   drawerMode = mode;
   currentTplId = id;
   const titles = { view: '模板详情', edit: '编辑模板', create: '新建模板' };
@@ -793,7 +873,7 @@ function openTplDrawer(mode, id, scrollToVersions) {
     editDraft = JSON.parse(JSON.stringify(TEMPLATE_RECORDS.find(x => x.id === id)));
   }
 
-  renderDrawerBody(editDraft, mode, scrollToVersions);
+  renderDrawerBody(editDraft, mode);
   renderDrawerFooter(mode);
   openDrawer('tplDrawer');
 }
@@ -804,27 +884,20 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTopbar('reach');
   bindDrawerClose();
 
-  document.querySelectorAll('#catChips .chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('#catChips .chip').forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-      activeCat = chip.dataset.cat;
-      applyFilters();
-    });
-  });
-
-  document.querySelectorAll('#timeRange .seg-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#timeRange .seg-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('customDates').hidden = btn.dataset.range !== 'custom';
-    });
-  });
-
   document.getElementById('queryBtn').addEventListener('click', applyFilters);
   document.getElementById('resetBtn').addEventListener('click', resetFilters);
-  ['fName', 'fCode'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
+  ['fName', 'fCode', 'fContent'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
   document.getElementById('newTplBtn').addEventListener('click', () => openTplDrawer('create'));
+
+  document.getElementById('checkAll').addEventListener('change', e => {
+    const pageIds = currentPageIds();
+    if (e.target.checked) pageIds.forEach(id => selectedIds.add(id));
+    else pageIds.forEach(id => selectedIds.delete(id));
+    renderTable();
+  });
+  document.querySelectorAll('#batchBar [data-batch]').forEach(btn =>
+    btn.addEventListener('click', () => handleBatchAction(btn.dataset.batch)));
 
   document.addEventListener('click', () => closeAllMoreMenus());
   document.querySelectorAll('.table-scroll').forEach(el => {

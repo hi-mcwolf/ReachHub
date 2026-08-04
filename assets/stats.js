@@ -1,7 +1,7 @@
 /* 触达数据统计页 */
 
 /* ---------------- 假数据 ---------------- */
-const STAT_CHANNELS = ['SMS', '邮件', 'Push', 'Inbox', 'IM', 'Bot', 'Viber', 'Telegram', '电销'];
+const STAT_CHANNELS = ['SMS', '邮件', 'Push', 'Inbox', 'IM', 'Bot', 'Viber', 'Messenger', '电销'];
 const BLUE_SHADES = ['#1E4FB8', '#2E6BE6', '#4A7DFF', '#6D96F5', '#8FAEF7', '#A9C0F8', '#C0D1FA', '#D5E1FC', '#E7EEFE'];
 
 let currentRange = '7d';

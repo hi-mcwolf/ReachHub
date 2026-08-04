@@ -15,7 +15,7 @@
       <div class="reach-layout">
     <!-- 中间预览区：手机主屏幕 -->
     <section class="preview-pane">
-      <div class="pane-title">触达通道</div>
+      <div class="pane-title">新建触达任务</div>
       <div class="pane-hint">点击屏幕中的通道图标即可新建触达任务</div>
       <div class="phone-screen" id="phoneScreen">
         <div class="phone-clock">
@@ -35,9 +35,6 @@
           <button class="app-item" data-channel="viber">
             <span class="app-icon"><i data-lucide="phone-call"></i></span><span>Viber</span>
           </button>
-          <button class="app-item" data-channel="telegram">
-            <span class="app-icon"><i data-lucide="send"></i></span><span>Telegram</span>
-          </button>
           <button class="app-item" data-channel="messenger">
             <span class="app-icon"><i data-lucide="message-circle"></i></span><span>Messenger</span>
           </button>
@@ -45,31 +42,52 @@
       </div>
     </section>
 
-    <!-- 右侧 AI 对话区 -->
+    <!-- 右侧信息区 -->
     <section class="list-pane">
       <div class="welcome-block">
-        <h2 id="greeting"></h2>
-        <p id="greetSub"></p>
+        <h2 id="greeting">Hi Marvin@，</h2>
       </div>
-      <div class="ai-chat-panel">
-        <div class="ai-chat-messages" id="aiChatMessages">
-          <div class="ai-msg ai-msg-bot">
-            <div class="ai-msg-label"><i data-lucide="sparkles"></i> AI 助手</div>
-            您好！我是触达 AI 助手，可帮您分析任务效果、推荐通道与文案。功能开发中，敬请期待。
-          </div>
-          <div class="ai-msg ai-msg-user">
-            <div class="ai-msg-label">marvin@</div>
-            帮我看看当前执行中的任务情况
-          </div>
-          <div class="ai-msg ai-msg-bot">
-            <div class="ai-msg-label"><i data-lucide="sparkles"></i> AI 助手</div>
-            您当前共有 2 个任务在执行：世界杯竞猜预热短信（SMS，进度 75%）、新用户充值召回邮件（邮件，进度 38%）。
-          </div>
-        </div>
-        <div class="ai-chat-input-bar">
-          <textarea class="textarea" rows="2" readonly placeholder="AI功能开发中，敬请期待"></textarea>
-          <button type="button" class="ai-chat-send" disabled aria-label="发送"><i data-lucide="send"></i></button>
-        </div>
+      <div class="home-sections">
+        <section class="card home-approval-info">
+          <h4 class="card-title">审批信息</h4>
+          <p>您当前角色为：申请人/审批人，由 lily@、ken@ 审批/可审批 lily@、ken@ 的申请</p>
+          <p class="home-approval-warn">您未配置审批信息，无法发送信息，若需配置请联系 @Marvin</p>
+        </section>
+
+        <section class="card">
+          <h4 class="card-title">审批数据</h4>
+          <p class="home-section-hint">您当前共有 <b id="approvalQueueCount">3</b> 个申请单待审批</p>
+          <table class="table home-mini-table">
+            <thead>
+              <tr>
+                <th>审批单ID</th>
+                <th>审批单名称</th>
+                <th>通道</th>
+                <th>申请时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="approvalQueueBody"></tbody>
+          </table>
+          <a class="link-more" href="task-records.html">more</a>
+        </section>
+
+        <section class="card">
+          <h4 class="card-title">执行中任务</h4>
+          <p class="home-section-hint">您当前共有 <b>3</b> 个任务在执行中</p>
+          <table class="table home-mini-table">
+            <thead>
+              <tr>
+                <th>任务ID</th>
+                <th>任务名称</th>
+                <th>通道</th>
+                <th>进度</th>
+              </tr>
+            </thead>
+            <tbody id="runningTaskBody"></tbody>
+          </table>
+          <a class="link-more" href="task-records.html">more</a>
+        </section>
       </div>
     </section>
       </div>

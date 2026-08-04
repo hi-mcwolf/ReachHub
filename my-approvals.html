@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的审批 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main">
+
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">我的审批</h1>
+              <p class="page-desc">查看和处理待审批的触达申请单</p>
+            </div>
+            <div class="stats-header-actions">
+              <span class="update-time" id="updateTime">2026-07-14 09:30 更新</span>
+            </div>
+          </div>
+
+          <section class="card filter-card">
+            <div class="filter-row">
+              <div class="filter-item">
+                <span class="filter-label">审批单名称/ID</span>
+                <input class="input" id="fKeyword" placeholder="输入名称或 ID 搜索">
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">通道</span>
+                <select class="select" id="fChannel">
+                  <option value="">全部</option>
+                  <option>SMS</option><option>邮件</option><option>Push</option>
+                  <option>Viber</option><option>Messenger</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">审批状态</span>
+                <select class="select" id="fStatus">
+                  <option value="">全部</option>
+                  <option value="pending">待审批</option>
+                  <option value="approved">已通过</option>
+                  <option value="rejected">已拒绝</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">申请人</span>
+                <select class="select" id="fApplicant">
+                  <option value="">全部申请人</option>
+                  <option>marvin@</option><option>lily@</option><option>ken@</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" id="queryBtn">查询</button>
+                <button class="btn btn-outline" id="resetBtn">重置</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="kpi-grid kpi-grid-3" id="kpiGrid"></section>
+
+          <section class="card table-card">
+            <h4 class="card-title">审批列表</h4>
+            <div class="table-scroll table-sticky">
+              <table class="table stats-table records-table">
+                <thead>
+                  <tr>
+                    <th>审批单 ID</th>
+                    <th class="col-name">审批单名称</th>
+                    <th>通道</th>
+                    <th>申请人</th>
+                    <th>申请时间</th>
+                    <th>审批状态</th>
+                    <th class="col-ops">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="approvalTableBody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <div class="pagination" id="pagination"></div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-root" id="approvalDetailDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-md">
+      <header class="drawer-header">
+        <h3>审批单详情</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body drawer-body--gray" id="approvalDetailBody"></div>
+      <footer class="drawer-footer" id="approvalDetailFooter">
+        <button class="btn btn-outline" data-close>关闭</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js"></script>
+  <script src="assets/reach-config.js"></script>
+  <script src="assets/my-approvals.js"></script>
+</body>
+</html>

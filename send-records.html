@@ -60,7 +60,13 @@
                 <select class="select" id="fChannel">
                   <option value="">全部</option><option>SMS</option><option>邮件</option><option>Push</option>
                   <option>Inbox</option><option>IM</option><option>Bot</option>
-                  <option>Viber</option><option>Telegram</option><option>电销</option>
+                  <option>Viber</option><option>Messenger</option><option>电销</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">任务类型</span>
+                <select class="select" id="fType">
+                  <option value="">全部</option><option>API</option><option>手动</option>
                 </select>
               </div>
               <div class="filter-item">
@@ -72,9 +78,9 @@
                 </select>
               </div>
               <div class="filter-item">
-                <span class="filter-label">接入方</span>
+                <span class="filter-label">任务来源</span>
                 <select class="select" id="fParty">
-                  <option value="">全部接入方</option><option>自营平台</option><option>渠道 A</option><option>渠道 B</option>
+                  <option value="">全部来源</option><option>自营平台</option><option>渠道 A</option><option>渠道 B</option>
                 </select>
               </div>
               <div class="filter-item">
@@ -92,14 +98,8 @@
                 </select>
               </div>
               <div class="filter-item">
-                <span class="filter-label">用户标识</span>
-                <input class="input" id="fUser" placeholder="用户账号/ID">
-              </div>
-              <div class="filter-item">
-                <span class="filter-label">触达策略</span>
-                <select class="select" id="fStrategy">
-                  <option value="">全部策略</option>
-                </select>
+                <span class="filter-label">发送对象</span>
+                <input class="input" id="fUser" placeholder="输入发送对象搜索">
               </div>
               <div class="filter-actions">
                 <button class="btn btn-primary" id="queryBtn">查询</button>
@@ -118,9 +118,9 @@
               <table class="table stats-table records-table">
                 <thead>
                   <tr>
-                    <th>记录 ID</th><th>发送时间</th><th class="col-name">任务名称</th><th>任务 ID</th><th>用户标识</th>
-                    <th>通道</th><th>供应商</th><th>账号/Sender</th><th class="col-name">发送内容摘要</th>
-                    <th>触达策略</th><th>发送状态</th><th>回执状态</th><th>失败原因</th><th>接入方</th>
+                    <th>记录 ID</th><th>发送时间</th><th>任务 ID</th><th class="col-name">任务名称</th><th>发送对象</th>
+                    <th>通道</th><th>供应商</th><th>账号</th><th class="col-name">发送内容</th>
+                    <th>发送状态</th><th>回执 ID</th><th>回执状态</th><th>失败原因</th><th>来源</th>
                     <th class="col-ops">操作</th>
                   </tr>
                 </thead>
@@ -159,7 +159,6 @@
   <script src="assets/reach-config.js"></script>
   <script src="assets/search-select.js"></script>
   <script src="assets/search-multi-select.js"></script>
-  <script src="assets/strategy-data.js"></script>
   <script src="assets/send-records.js"></script>
 </body>
 </html>

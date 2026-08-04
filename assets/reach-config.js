@@ -8,7 +8,7 @@ const RC_TEMPLATES = {
 
 const RC_CHANNEL_LABELS = {
   sms: 'SMS', email: '邮件', push: 'Push',
-  viber: 'Viber', telegram: 'Telegram',
+  viber: 'Viber', messenger: 'Messenger',
 };
 
 const RC_WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -154,7 +154,7 @@ function reachConfigDrawerHtml() {
               <button type="button" class="chip" data-channel="email">邮件</button>
               <button type="button" class="chip" data-channel="push">Push</button>
               <button type="button" class="chip" data-channel="viber">Viber</button>
-              <button type="button" class="chip" data-channel="telegram">Telegram</button>
+              <button type="button" class="chip" data-channel="messenger">Messenger</button>
             </div>
           </div>
           <div class="field">
