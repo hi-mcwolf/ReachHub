@@ -38,6 +38,12 @@
           <button class="app-item" data-channel="messenger">
             <span class="app-icon"><i data-lucide="message-circle"></i></span><span>Messenger</span>
           </button>
+          <button class="app-item" data-channel="telegram">
+            <span class="app-icon"><i data-lucide="send"></i></span><span>Telegram</span>
+          </button>
+          <button class="app-item" data-channel="inbox">
+            <span class="app-icon"><i data-lucide="inbox"></i></span><span>站内信</span>
+          </button>
         </div>
       </div>
     </section>
@@ -97,6 +103,21 @@
 
   <!-- 跟随鼠标的气泡提示 -->
   <div class="cursor-tip" id="cursorTip"></div>
+
+  <!-- 任务详情抽屉（首页） -->
+  <div class="drawer-root" id="homeTaskDetailDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-md">
+      <header class="drawer-header">
+        <h3 id="homeTaskDetailTitle">任务详情</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body drawer-body--gray" id="homeTaskDetailBody"></div>
+      <footer class="drawer-footer" id="homeTaskDetailFooter">
+        <button class="btn btn-outline" data-close>关闭</button>
+      </footer>
+    </aside>
+  </div>
 
   <!-- 新建任务抽屉 -->
   <div class="drawer-root" id="taskDrawer">

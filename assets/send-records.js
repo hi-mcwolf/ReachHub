@@ -6,6 +6,8 @@ const SEND_STATUS = {
   delivered: { label: '送达成功', cls: 'tag-success' },
   failed:    { label: '发送失败', cls: 'tag-danger' },
   cancelled: { label: '已取消',   cls: 'tag-gray' },
+  viewed:    { label: '查看',     cls: 'tag-info' },
+  clicked:   { label: '点击',     cls: 'tag-primary' },
 };
 
 const RECEIPT_STATUS = {
@@ -40,8 +42,8 @@ const SEND_RECORDS = (() => {
 
   const statusPlan = [
     'delivered', 'delivered', 'delivered', 'failed', 'delivered',
-    'sent', 'delivered', 'pending', 'delivered', 'failed',
-    'delivered', 'cancelled', 'delivered', 'sent', 'delivered',
+    'sent', 'viewed', 'pending', 'delivered', 'failed',
+    'delivered', 'cancelled', 'delivered', 'sent', 'clicked',
     'delivered', 'failed', 'delivered', 'delivered', 'pending',
     'delivered', 'delivered', 'sent', 'delivered', 'failed',
     'delivered', 'delivered', 'cancelled', 'delivered', 'delivered',
@@ -68,6 +70,7 @@ const SEND_RECORDS = (() => {
     let receipt = 'none';
     let failReason = null;
     if (status === 'delivered') receipt = i % 6 === 3 ? 'failed' : 'received';
+    if (status === 'viewed' || status === 'clicked') receipt = 'received';
     if (status === 'sent') receipt = 'waiting';
     if (status === 'failed') { receipt = 'none'; failReason = failReasons[task.channel]; }
 
@@ -121,6 +124,7 @@ function renderKpis() {
 function applyFilters() {
   const recordId = document.getElementById('fRecordId').value.trim().toLowerCase();
   const task = document.getElementById('fTask').value.trim().toLowerCase();
+  const content = document.getElementById('fContent').value.trim().toLowerCase();
   const type = document.getElementById('fType').value;
   const channel = document.getElementById('fChannel').value;
   const status = document.getElementById('fStatus').value;
@@ -133,6 +137,7 @@ function applyFilters() {
   filtered = SEND_RECORDS.filter(r =>
     (!recordId || r.recordId.toLowerCase().includes(recordId)) &&
     (!task || r.taskName.toLowerCase().includes(task) || r.taskId.toLowerCase().includes(task)) &&
+    (!content || (r.content || '').toLowerCase().includes(content)) &&
     (!productLines.length || productLines.includes(r.productLine)) &&
     (!type || r.taskType === type) &&
     (!channel || r.channel === channel) &&
@@ -147,7 +152,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ['fRecordId', 'fTask', 'fUser'].forEach(id => document.getElementById(id).value = '');
+  ['fRecordId', 'fTask', 'fContent', 'fUser'].forEach(id => document.getElementById(id).value = '');
   ['fType', 'fChannel', 'fStatus', 'fParty', 'fVendor', 'fSender'].forEach(id =>
     document.getElementById(id).value = '');
   productLineFilter?.setValue([]);
@@ -244,6 +249,13 @@ function buildTimeline(r) {
     base[4].state = 'error'; base[4].title = '收到回执（回执失败）';
   }
 
+  if (r.status === 'viewed') {
+    base.push({ title: '用户已查看', time: r.sendTime, state: 'done' });
+  } else if (r.status === 'clicked') {
+    base.push({ title: '用户已查看', time: r.sendTime, state: 'done' });
+    base.push({ title: '用户已点击', time: r.sendTime, state: 'done' });
+  }
+
   return `
     <ul class="timeline">
       ${base.map(s => `
@@ -334,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('queryBtn').addEventListener('click', applyFilters);
   document.getElementById('resetBtn').addEventListener('click', resetFilters);
-  ['fRecordId', 'fTask', 'fUser'].forEach(id =>
+  ['fRecordId', 'fTask', 'fContent', 'fUser'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
   document.getElementById('exportBtn').addEventListener('click', () => showToast('发送记录导出中，完成后将通知您'));
   document.getElementById('detailToTask').addEventListener('click', () => location.href = 'task-records.html');

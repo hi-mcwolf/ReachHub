@@ -8,6 +8,8 @@ const TASK_STATUS = {
   done:      { label: '已完成', cls: 'tag-success' },
   paused:    { label: '已暂停', cls: 'tag-gray-outline' },
   failed:    { label: '失败',   cls: 'tag-danger' },
+  enabled:   { label: '启用',   cls: 'tag-success' },
+  disabled:  { label: '禁用',   cls: 'tag-gray-outline' },
 };
 
 const APPROVAL_STATUS = {
@@ -147,7 +149,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260710009', name: '沉默用户唤醒短信', type: '促活', audience: '沉默用户',
     channels: ['SMS'], timing: '每周六 10:00 循环', strategy: '召回消息 7 天去重',
-    status: 'running', creator: 'ken@', createdAt: '2026-07-06 09:50', updatedAt: '2026-07-12 10:00',
+    status: 'enabled', creator: 'ken@', createdAt: '2026-07-06 09:50', updatedAt: '2026-07-12 10:00',
     sent: 6300, total: 8400, deliverRate: '95.6%', opens: null, clicks: 420, fails: 277,
     party: '自营平台', sender: 'BPLUS', template: '流失召回话术',
     contentSummary: '好久不见！您的老朋友 BingoPlus 为您准备了回归好礼…',
@@ -195,7 +197,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260707015', name: '流失 30 天召回邮件', type: '召回', audience: '流失预警用户',
     channels: ['邮件'], timing: '每周一 10:00 循环', strategy: '流失预警人群圈选',
-    status: 'paused', creator: 'lily@', createdAt: '2026-06-30 15:40', updatedAt: '2026-07-07 10:05',
+    status: 'disabled', creator: 'lily@', createdAt: '2026-06-30 15:40', updatedAt: '2026-07-07 10:05',
     sent: 1240, total: 1800, deliverRate: '93.2%', opens: 310, clicks: 96, fails: 84,
     party: '自营平台', sender: 'marketing@bingoplus.com', template: '流失召回话术',
     contentSummary: '您的专属回归礼包即将过期，登录即可领取…',
@@ -276,6 +278,7 @@ function renderKpis() {
 /* ---------------- 筛选 ---------------- */
 function applyFilters() {
   const name = document.getElementById('fName').value.trim().toLowerCase();
+  const content = document.getElementById('fContent').value.trim().toLowerCase();
   const type = document.getElementById('fType').value;
   const channel = document.getElementById('fChannel').value;
   const status = document.getElementById('fStatus').value;
@@ -288,6 +291,7 @@ function applyFilters() {
 
   filtered = TASK_RECORDS.filter(t =>
     (!name || t.name.toLowerCase().includes(name) || t.id.toLowerCase().includes(name)) &&
+    (!content || (t.contentSummary || '').toLowerCase().includes(content)) &&
     (!productLines.length || productLines.includes(t.productLine)) &&
     (!type || t.taskType === type) &&
     (!channel || t.channels.includes(channel)) &&
@@ -303,7 +307,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ['fName', 'fApprover'].forEach(id => document.getElementById(id).value = '');
+  ['fName', 'fContent', 'fApprover'].forEach(id => document.getElementById(id).value = '');
   ['fType', 'fChannel', 'fStatus', 'fApproval', 'fParty', 'fCreator'].forEach(id =>
     document.getElementById(id).value = '');
   productLineFilter?.setValue([]);
@@ -579,14 +583,53 @@ function openTaskDetail(id) {
     </section>`;
 
   bindChannelTabs(t);
-
-  const editBtn = document.getElementById('detailEditBtn');
-  const editable = ['draft', 'pending', 'paused'].includes(t.status);
-  editBtn.disabled = !editable;
-  editBtn.title = editable ? '' : '当前状态不可编辑';
+  renderTaskDetailFooter(t);
 
   openDrawer('taskDetailDrawer');
   refreshIcons();
+}
+
+function renderTaskDetailFooter(t) {
+  const footer = document.getElementById('taskDetailFooter');
+  if (!footer) return;
+
+  if (t.approvalStatus === 'pending') {
+    footer.innerHTML = `
+      <button class="btn btn-outline" data-close>关闭</button>
+      <button class="btn btn-outline btn-reject" id="detailRejectBtn">拒绝</button>
+      <button class="btn btn-primary" id="detailApproveBtn">通过</button>`;
+    footer.querySelector('#detailApproveBtn').addEventListener('click', () => {
+      t.approvalStatus = 'approved';
+      t.approver = 'marvin@';
+      t.approvedAt = '2026-07-14 10:00';
+      showToast(`已通过任务「${t.name}」`);
+      renderKpis();
+      renderTable();
+      closeDrawer('taskDetailDrawer');
+    });
+    footer.querySelector('#detailRejectBtn').addEventListener('click', () => {
+      t.approvalStatus = 'rejected';
+      t.approver = 'marvin@';
+      t.approvedAt = '2026-07-14 10:00';
+      showToast(`已拒绝任务「${t.name}」`);
+      renderKpis();
+      renderTable();
+      closeDrawer('taskDetailDrawer');
+    });
+  } else {
+    footer.innerHTML = `
+      <button class="btn btn-outline" data-close>关闭</button>
+      <button class="btn btn-outline" id="detailToSendRecords">查看发送记录</button>
+      <button class="btn btn-primary" id="detailEditBtn">编辑任务</button>`;
+    footer.querySelector('#detailToSendRecords').addEventListener('click', () => location.href = 'send-records.html');
+    const editBtn = footer.querySelector('#detailEditBtn');
+    const editable = ['draft', 'pending', 'paused'].includes(t.status);
+    editBtn.disabled = !editable;
+    editBtn.title = editable ? '' : '当前状态不可编辑';
+    editBtn.addEventListener('click', () => showToast('进入任务编辑（原型演示）'));
+  }
+  footer.querySelectorAll('[data-close]').forEach(btn =>
+    btn.addEventListener('click', () => closeDrawer('taskDetailDrawer')));
 }
 
 /* ---------------- 初始化 ---------------- */
@@ -614,7 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('queryBtn').addEventListener('click', applyFilters);
   document.getElementById('resetBtn').addEventListener('click', resetFilters);
-  ['fName', 'fApprover'].forEach(id =>
+  ['fName', 'fContent', 'fApprover'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
 
   // 全选与批量操作
@@ -627,8 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#batchBar [data-batch]').forEach(btn =>
     btn.addEventListener('click', () => handleBatchAction(btn.dataset.batch)));
   document.getElementById('exportBtn').addEventListener('click', () => showToast('任务记录导出中，完成后将通知您'));
-  document.getElementById('detailToSendRecords').addEventListener('click', () => location.href = 'send-records.html');
-  document.getElementById('detailEditBtn').addEventListener('click', () => showToast('进入任务编辑（原型演示）'));
 
   // 点击空白处收起更多菜单
   document.addEventListener('click', () => closeAllMoreMenus());

@@ -49,6 +49,10 @@
                 <input class="input" id="fName" placeholder="输入任务名称或 ID 搜索">
               </div>
               <div class="filter-item">
+                <span class="filter-label">内容</span>
+                <input class="input" id="fContent" placeholder="输入内容关键词搜索">
+              </div>
+              <div class="filter-item">
                 <span class="filter-label">任务类型</span>
                 <select class="select" id="fType">
                   <option value="">全部</option><option>API</option><option>手动</option>
@@ -72,6 +76,7 @@
                   <option value="">全部</option><option value="draft">草稿</option><option value="reviewing">审核中</option><option value="pending">待发送</option>
                   <option value="running">执行中</option><option value="done">已完成</option>
                   <option value="paused">已暂停</option><option value="failed">失败</option>
+                  <option value="enabled">启用</option><option value="disabled">禁用</option>
                 </select>
               </div>
               <div class="filter-item">
@@ -153,7 +158,7 @@
         <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
       </header>
       <div class="drawer-body drawer-body--gray" id="taskDetailBody"></div>
-      <footer class="drawer-footer">
+      <footer class="drawer-footer" id="taskDetailFooter">
         <button class="btn btn-outline" data-close>关闭</button>
         <button class="btn btn-outline" id="detailToSendRecords">查看发送记录</button>
         <button class="btn btn-primary" id="detailEditBtn">编辑任务</button>

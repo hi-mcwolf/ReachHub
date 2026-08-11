@@ -6,6 +6,8 @@ const CHANNELS = {
   push:     { label: 'Push',     tip: 'Push',     icon: 'bell' },
   viber:    { label: 'Viber',    tip: 'Viber',    icon: 'phone-call' },
   messenger:{ label: 'Messenger',tip: 'Messenger',icon: 'message-circle' },
+  telegram: { label: 'Telegram', tip: 'Telegram', icon: 'send' },
+  inbox:    { label: '站内信',   tip: '站内信',   icon: 'inbox' },
 };
 
 const AUDIENCES = [
@@ -17,28 +19,81 @@ const AUDIENCES = [
   { id: 'silent',  name: '沉默用户',     count: 8400 },
 ];
 
+const VIBER_BIZ_EXCLUDE_OPTIONS = [
+  { value: 'account_delivered', label: 'Account Delivered' },
+  { value: 'account_lined_bots', label: 'Account Lined Bots' },
+  { value: 'accounts_subscribed_bots', label: 'Accounts Subscribed Bots' },
+];
+const VIBER_BOT_EXCLUDE_OPTIONS = [
+  { value: 'bp_vip', label: 'BP VIP' },
+];
+const VIBER_BOT_OPTIONS = [
+  { value: 'bot_quiz', label: '@BPQuizBot' },
+  { value: 'bot_service', label: '@BPServiceBot' },
+  { value: 'bot_promo', label: '@BPPromoBot' },
+];
+
 const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
 const APPROVAL_QUEUE = [
-  { id: 'AP20260714003', name: 'Messenger 社群拉新', channel: 'Messenger', appliedAt: '2026-07-14 09:20' },
-  { id: 'AP20260713002', name: '世界杯决赛邮件预告', channel: '邮件', appliedAt: '2026-07-13 15:40' },
-  { id: 'AP20260712001', name: '沉默用户唤醒短信', channel: 'SMS', appliedAt: '2026-07-12 11:05' },
+  { id: 'AP20260714003', name: 'Messenger 社群拉新', channel: 'Messenger', appliedAt: '2026-07-14 09:20',
+    creator: 'lily@', audience: '新注册用户', taskType: '手动', timing: '定时 · 2026-07-15 10:00',
+    contentSummary: '加入官方社群，每日抽奖赢免费竞猜券！', template: '-' },
+  { id: 'AP20260713002', name: '世界杯决赛邮件预告', channel: '邮件', appliedAt: '2026-07-13 15:40',
+    creator: 'ken@', audience: '活跃用户', taskType: '手动', timing: '立即发送',
+    contentSummary: '决赛之夜即将来临，提前锁定您的冠军竞猜…', template: '世界杯竞猜提醒' },
+  { id: 'AP20260712001', name: '沉默用户唤醒短信', channel: 'SMS', appliedAt: '2026-07-12 11:05',
+    creator: 'marvin@', audience: '沉默用户', taskType: 'API', timing: '循环 · 每周一 09:00',
+    contentSummary: '好久不见！您的老朋友 BingoPlus 为您准备了回归好礼…', template: '流失召回话术' },
 ];
 
 const RUNNING_TASKS = [
-  { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75 },
-  { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38 },
-  { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52 },
+  { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75,
+    creator: 'marvin@', createdAt: '2026-07-12 10:20', approver: 'lily@', approvedAt: '2026-07-12 11:00',
+    audience: '活跃用户', taskType: 'API', timing: '2026-07-13 18:00 定时',
+    contentSummary: 'Only the best teams remain! Warm up for the Quarterfinals…', template: '世界杯竞猜提醒',
+    execution: { total: 12800, pushable: 12160, valid: 11776, duplicate: 384, blacklist: 256, dnc: 128,
+      pushCount: 9632, pushSuccess: 9459, pushFail: 173, pendingConfirm: 482 } },
+  { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38,
+    creator: 'lily@', createdAt: '2026-07-11 14:05', approver: 'marvin@', approvedAt: '2026-07-11 15:00',
+    audience: '新注册用户', taskType: '手动', timing: '每天 10:00 循环',
+    contentSummary: '尊敬的用户，本周充值满 500 即享 8% 加赠…', template: '充值优惠通知',
+    execution: { total: 5600, pushable: 5320, valid: 5152, duplicate: 168, blacklist: 112, dnc: 56,
+      pushCount: 2128, pushSuccess: 2051, pushFail: 77, pendingConfirm: 106 } },
+  { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52,
+    creator: 'ken@', createdAt: '2026-07-08 11:00', approver: 'lily@', approvedAt: '2026-07-08 12:00',
+    audience: 'VIP用户 · 沉默用户', taskType: 'API', timing: '每天 09:00 循环',
+    contentSummary: '您的专属权益即将到期，登录立即领取…', template: '-',
+    execution: { total: 21200, pushable: 20140, valid: 19504, duplicate: 636, blacklist: 424, dnc: 212,
+      pushCount: 11024, pushSuccess: 10814, pushFail: 210, pendingConfirm: 551 } },
 ];
 
 let draft = null;
 let panelAudienceMsel = null;
+let panelViberBizExcludeMsel = null;
+let panelViberBizBotsMsel = null;
+let panelViberBotExcludeMsel = null;
 let panelContentEditor = null;
 let activePanel = null;
 const CFG_ROWS = ['rowAudience', 'rowTiming', 'rowContent'];
 
 function newChannelConfig() {
   return { timing: null, content: null };
+}
+
+function newViberAudienceConfig() {
+  return { bizExclude: [], bizExcludeBots: [], botExclude: [], viberIdFile: null };
+}
+
+function destroyAudiencePanelWidgets() {
+  panelAudienceMsel?.destroy();
+  panelAudienceMsel = null;
+  panelViberBizExcludeMsel?.destroy();
+  panelViberBizExcludeMsel = null;
+  panelViberBizBotsMsel?.destroy();
+  panelViberBizBotsMsel = null;
+  panelViberBotExcludeMsel?.destroy();
+  panelViberBotExcludeMsel = null;
 }
 
 function hasContent(content) {
@@ -66,6 +121,7 @@ function initDraft(channel) {
     taskType: 'manual',
     audienceTags: [],
     audienceFiles: [],
+    viberAudience: newViberAudienceConfig(),
     strategies: [],
     channels: [channel],
     active: channel,
@@ -87,7 +143,7 @@ function renderApprovalQueue() {
   if (!body) return;
   body.innerHTML = APPROVAL_QUEUE.map(a => `
     <tr>
-      <td><a class="link-btn" href="my-approvals.html">${a.id}</a></td>
+      <td><button type="button" class="link-btn" data-detail-kind="approval" data-detail-id="${a.id}">${a.id}</button></td>
       <td>${a.name}</td>
       <td><span class="tag tag-primary">${a.channel}</span></td>
       <td>${a.appliedAt}</td>
@@ -100,21 +156,29 @@ function renderApprovalQueue() {
   if (countEl) countEl.textContent = String(APPROVAL_QUEUE.length);
 }
 
+function handleApprovalAct(act, id) {
+  const idx = APPROVAL_QUEUE.findIndex(a => a.id === id);
+  if (idx === -1) return;
+  const item = APPROVAL_QUEUE[idx];
+  APPROVAL_QUEUE.splice(idx, 1);
+  renderApprovalQueue();
+  showToast(act === 'approve'
+    ? `已通过审批单「${item.name}」`
+    : `已拒绝审批单「${item.name}」`);
+}
+
 function bindApprovalQueueActions() {
   const body = document.getElementById('approvalQueueBody');
   if (!body || body.dataset.bound) return;
   body.dataset.bound = '1';
   body.addEventListener('click', e => {
-    const btn = e.target.closest('[data-approval-act]');
-    if (!btn) return;
-    const idx = APPROVAL_QUEUE.findIndex(a => a.id === btn.dataset.id);
-    if (idx === -1) return;
-    const item = APPROVAL_QUEUE[idx];
-    APPROVAL_QUEUE.splice(idx, 1);
-    renderApprovalQueue();
-    showToast(btn.dataset.approvalAct === 'approve'
-      ? `已通过审批单「${item.name}」`
-      : `已拒绝审批单「${item.name}」`);
+    const actBtn = e.target.closest('[data-approval-act]');
+    if (actBtn) {
+      handleApprovalAct(actBtn.dataset.approvalAct, actBtn.dataset.id);
+      return;
+    }
+    const detailBtn = e.target.closest('[data-detail-id]');
+    if (detailBtn) openHomeTaskDetail(detailBtn.dataset.detailId, detailBtn.dataset.detailKind);
   });
 }
 
@@ -124,7 +188,7 @@ function renderRunningTasksTable() {
   if (!body) return;
   body.innerHTML = RUNNING_TASKS.slice(0, 3).map(t => `
     <tr>
-      <td><a class="link-btn" href="task-records.html">${t.id}</a></td>
+      <td><button type="button" class="link-btn" data-detail-kind="running" data-detail-id="${t.id}">${t.id}</button></td>
       <td>${t.name}</td>
       <td><span class="tag tag-primary">${t.channel}</span></td>
       <td>
@@ -134,6 +198,129 @@ function renderRunningTasksTable() {
     </tr>
   `).join('');
   if (hint) hint.textContent = String(RUNNING_TASKS.length);
+  bindRunningTaskActions();
+}
+
+function bindRunningTaskActions() {
+  const body = document.getElementById('runningTaskBody');
+  if (!body || body.dataset.bound) return;
+  body.dataset.bound = '1';
+  body.addEventListener('click', e => {
+    const detailBtn = e.target.closest('[data-detail-id]');
+    if (detailBtn) openHomeTaskDetail(detailBtn.dataset.detailId, detailBtn.dataset.detailKind);
+  });
+}
+
+/* ---------------- 首页任务详情抽屉 ---------------- */
+/* 字段结构与任务记录详情（task-records.js openTaskDetail）保持一致；
+   审批单（待审批）不展示执行信息板块 */
+const HOME_EXECUTION_TIPS = {
+  total: '任务目标人群总数',
+  pushable: '经过策略过滤后可推送的用户数',
+  valid: '有效且可触达的用户数',
+  duplicate: '因去重策略被排除的重复用户数',
+  blacklist: '命中黑名单被排除的用户数',
+  dnc: '命中 DNC（Do Not Contact）名单的用户数',
+  pushCount: '实际发起推送的总条数',
+  pushSuccess: '推送成功的条数',
+  pushFail: '推送失败的条数',
+  pendingConfirm: '已发送但待回执确认的数量',
+};
+
+const hfmt = v => (v === null || v === undefined || v === '' || v === '-') ? '-' : (typeof v === 'number' ? v.toLocaleString() : v);
+
+function homeExecMetric(label, key, value) {
+  return `<div class="desc-item"><span class="desc-label desc-label-with-tip">${label}${tipIcon(HOME_EXECUTION_TIPS[key])}</span><span>${hfmt(value)}</span></div>`;
+}
+
+function bindHomeDetailFooterClose(footer) {
+  footer.querySelectorAll('[data-close]').forEach(btn =>
+    btn.addEventListener('click', () => closeDrawer('homeTaskDetailDrawer')));
+}
+
+function openHomeTaskDetail(id, kind) {
+  const title = document.getElementById('homeTaskDetailTitle');
+  const body = document.getElementById('homeTaskDetailBody');
+  const footer = document.getElementById('homeTaskDetailFooter');
+  if (!body || !footer) return;
+
+  const isApproval = kind === 'approval';
+  const item = isApproval ? APPROVAL_QUEUE.find(a => a.id === id) : RUNNING_TASKS.find(t => t.id === id);
+  if (!item) return;
+
+  title.textContent = isApproval ? '审批单详情' : '任务详情';
+
+  const statusTag = isApproval
+    ? '<span class="tag tag-orange">审核中</span>'
+    : '<span class="tag tag-orange">执行中</span>';
+  const approvalTag = isApproval
+    ? '<span class="tag tag-orange">待审批</span>'
+    : '<span class="tag tag-success">已通过</span>';
+
+  const execSection = isApproval ? '' : `
+    <section class="card detail-group">
+      <h4 class="card-title">执行信息</h4>
+      <div class="desc-list">
+        ${homeExecMetric('总数', 'total', item.execution.total)}
+        ${homeExecMetric('可推送用户数', 'pushable', item.execution.pushable)}
+        ${homeExecMetric('有效用户数', 'valid', item.execution.valid)}
+        ${homeExecMetric('重复用户数', 'duplicate', item.execution.duplicate)}
+        ${homeExecMetric('黑名单用户数', 'blacklist', item.execution.blacklist)}
+        ${homeExecMetric('DNC用户数', 'dnc', item.execution.dnc)}
+        ${homeExecMetric('推送条数', 'pushCount', item.execution.pushCount)}
+        ${homeExecMetric('推送成功条数', 'pushSuccess', item.execution.pushSuccess)}
+        ${homeExecMetric('推送失败条数', 'pushFail', item.execution.pushFail)}
+        ${homeExecMetric('待确认数', 'pendingConfirm', item.execution.pendingConfirm)}
+      </div>
+    </section>`;
+
+  body.innerHTML = `
+    <section class="card detail-group">
+      <h4 class="card-title">基础信息</h4>
+      <div class="desc-list">
+        <div class="desc-item"><span class="desc-label">任务名称</span><span>${item.name}</span></div>
+        <div class="desc-item"><span class="desc-label">任务 ID</span><span>${item.id}</span></div>
+        <div class="desc-item"><span class="desc-label">创建人</span><span>${item.creator}</span></div>
+        <div class="desc-item"><span class="desc-label">创建时间</span><span>${isApproval ? item.appliedAt : item.createdAt}</span></div>
+        <div class="desc-item"><span class="desc-label">任务状态</span><span>${statusTag}</span></div>
+        <div class="desc-item"><span class="desc-label">审批状态</span><span>${approvalTag}</span></div>
+        <div class="desc-item"><span class="desc-label">审批人</span><span>${isApproval ? '-' : hfmt(item.approver)}</span></div>
+        <div class="desc-item"><span class="desc-label">审批时间</span><span>${isApproval ? '-' : hfmt(item.approvedAt)}</span></div>
+      </div>
+    </section>
+    <section class="card detail-group">
+      <h4 class="card-title">配置信息</h4>
+      <div class="desc-list">
+        <div class="desc-item"><span class="desc-label">发送对象</span><span>${hfmt(item.audience)}</span></div>
+        <div class="desc-item"><span class="desc-label">任务类型</span><span>${item.taskType}</span></div>
+        <div class="desc-item"><span class="desc-label">通道配置</span><span><span class="tag tag-primary">${item.channel}</span></span></div>
+        <div class="desc-item"><span class="desc-label">发送时机</span><span>${hfmt(item.timing)}</span></div>
+        <div class="desc-item"><span class="desc-label">内容摘要</span><span>${hfmt(item.contentSummary)}</span></div>
+        <div class="desc-item"><span class="desc-label">模板名称</span><span>${hfmt(item.template)}</span></div>
+      </div>
+    </section>
+    ${execSection}`;
+
+  if (isApproval) {
+    footer.innerHTML = `
+      <button class="btn btn-outline" data-close>关闭</button>
+      <button class="btn btn-outline btn-reject" id="homeDetailRejectBtn">拒绝</button>
+      <button class="btn btn-primary" id="homeDetailApproveBtn">通过</button>`;
+    footer.querySelector('#homeDetailApproveBtn').addEventListener('click', () => {
+      handleApprovalAct('approve', id);
+      closeDrawer('homeTaskDetailDrawer');
+    });
+    footer.querySelector('#homeDetailRejectBtn').addEventListener('click', () => {
+      handleApprovalAct('reject', id);
+      closeDrawer('homeTaskDetailDrawer');
+    });
+  } else {
+    footer.innerHTML = `<button class="btn btn-outline" data-close>关闭</button>`;
+  }
+  bindHomeDetailFooterClose(footer);
+
+  openDrawer('homeTaskDetailDrawer');
+  refreshIcons();
 }
 
 function updatePhoneClock() {
@@ -353,11 +540,32 @@ function renderPreview() {
           <div class="pv-n-body${emptyCls}">${text}</div>
         </div>
       </div>`;
-  } else if (ch === 'viber' || ch === 'messenger') {
+  } else if (ch === 'viber') {
+    const account = (typeof content === 'object' && (content?.biz?.account || content?.bot?.account)) || 'BingoPlus 官方';
     inner = `
       <div class="pv-header">
         <div class="pv-avatar"><i data-lucide="${CHANNELS[ch].icon}"></i></div>
-        <div class="pv-sender">BingoPlus 官方 · ${CHANNELS[ch].label}</div>
+        <div class="pv-sender">${account} · ${CHANNELS[ch].label}</div>
+      </div>
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">${timeStr}</div>`;
+  } else if (ch === 'messenger' || ch === 'telegram') {
+    const account = (typeof content === 'object' && content?.account) || `BingoPlus 官方 · ${CHANNELS[ch].label}`;
+    const mediaType = (typeof content === 'object' && content?.type) || 'Text';
+    inner = `
+      <div class="pv-header">
+        <div class="pv-avatar"><i data-lucide="${CHANNELS[ch].icon}"></i></div>
+        <div class="pv-sender">${account}</div>
+      </div>
+      ${mediaType !== 'Text' ? `<div class="pv-media-tag"><i data-lucide="image"></i>${mediaType}</div>` : ''}
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">${timeStr}</div>`;
+  } else if (ch === 'inbox') {
+    const title = (typeof content === 'object' && content?.title) || 'BingoPlus';
+    inner = `
+      <div class="pv-header">
+        <div class="pv-avatar"><i data-lucide="${CHANNELS[ch].icon}"></i></div>
+        <div class="pv-sender">${title}</div>
       </div>
       <div class="pv-bubble${emptyCls}">${text}</div>
       <div class="pv-time-hint">${timeStr}</div>`;
@@ -368,8 +576,7 @@ function renderPreview() {
 }
 
 function closePanel() {
-  panelAudienceMsel?.destroy();
-  panelAudienceMsel = null;
+  destroyAudiencePanelWidgets();
   panelContentEditor?.destroy();
   panelContentEditor = null;
   activePanel = null;
@@ -379,8 +586,7 @@ function closePanel() {
 }
 
 function openPanel(type) {
-  panelAudienceMsel?.destroy();
-  panelAudienceMsel = null;
+  destroyAudiencePanelWidgets();
   panelContentEditor?.destroy();
   panelContentEditor = null;
   activePanel = type;
@@ -396,6 +602,7 @@ function openPanel(type) {
       <div class="tabs" id="audTabs">
         <button type="button" class="tab active" data-aud-tab="tags">星灵标签</button>
         <button type="button" class="tab" data-aud-tab="upload">上传</button>
+        <button type="button" class="tab" data-aud-tab="viber">Viber</button>
       </div>
       <div class="tab-pane" id="audPaneTags">
         <div id="audTagMsel"></div>
@@ -408,9 +615,37 @@ function openPanel(type) {
             <a class="link-btn" id="downloadTplBtn"><i data-lucide="download"></i>模板下载</a>
           </div>
           <p class="upload-drop-hint">支持拖拽或粘贴文件、文件夹到此处上传</p>
+          <p class="upload-hint-limit">单个文件不应超过500,000</p>
           <input type="file" id="uploadFileInput" accept=".csv,.xlsx,.txt" hidden>
           <input type="file" id="uploadFolderInput" webkitdirectory hidden>
           <ul class="upload-list" id="uploadList"></ul>
+        </div>
+      </div>
+      <div class="tab-pane" hidden id="audPaneViber">
+        <p class="panel-hint">仅用于Viber通道</p>
+        <div class="field">
+          <span class="field-label">Biz message Exclude</span>
+          <div id="audViberBizExcludeMsel"></div>
+        </div>
+        <div class="field" id="audViberBizBotsField" hidden>
+          <span class="field-label">选择 Bot</span>
+          <div id="audViberBizBotsMsel"></div>
+        </div>
+        <div class="field">
+          <span class="field-label">Bot message Exclude</span>
+          <div id="audViberBotExcludeMsel"></div>
+        </div>
+        <div class="field">
+          <span class="field-label">Viber ID</span>
+          <div class="upload-area" tabindex="0" id="viberIdUploadArea">
+            <div class="upload-btns">
+              <button type="button" class="btn btn-outline btn-sm" id="uploadViberIdBtn"><i data-lucide="file-up"></i>上传文件</button>
+              <a class="link-btn" id="downloadViberIdTplBtn"><i data-lucide="download"></i>模板下载</a>
+            </div>
+            <p class="upload-drop-hint">支持拖拽或粘贴文件到此处上传</p>
+            <input type="file" id="viberIdFileInput" accept=".csv,.xlsx,.txt" hidden>
+            <ul class="upload-list" id="viberIdFileList"></ul>
+          </div>
         </div>
       </div>
       <div class="panel-actions">
@@ -425,11 +660,73 @@ function openPanel(type) {
       });
       panel.querySelector('#audPaneTags').hidden = tab !== 'tags';
       panel.querySelector('#audPaneUpload').hidden = tab !== 'upload';
+      panel.querySelector('#audPaneViber').hidden = tab !== 'viber';
     };
     switchAudTab(defaultAudTab);
     panel.querySelectorAll('#audTabs .tab').forEach(tab => {
       tab.addEventListener('click', () => switchAudTab(tab.dataset.audTab));
     });
+
+    const viberCfg = draft.viberAudience || newViberAudienceConfig();
+    const bizBotsField = panel.querySelector('#audViberBizBotsField');
+    const syncBizBotsVisibility = selected => {
+      bizBotsField.hidden = !selected.includes('account_lined_bots') && !selected.includes('accounts_subscribed_bots');
+    };
+    panelViberBizExcludeMsel = createSearchMultiSelect({
+      container: panel.querySelector('#audViberBizExcludeMsel'),
+      options: VIBER_BIZ_EXCLUDE_OPTIONS,
+      selected: viberCfg.bizExclude,
+      placeholder: '请选择 Exclude 项',
+      searchPlaceholder: '搜索…',
+      onChange: syncBizBotsVisibility,
+    });
+    syncBizBotsVisibility(viberCfg.bizExclude);
+    panelViberBizBotsMsel = createSearchMultiSelect({
+      container: panel.querySelector('#audViberBizBotsMsel'),
+      options: VIBER_BOT_OPTIONS,
+      selected: viberCfg.bizExcludeBots,
+      placeholder: '请选择 Bot',
+      searchPlaceholder: '搜索 Bot…',
+    });
+    panelViberBotExcludeMsel = createSearchMultiSelect({
+      container: panel.querySelector('#audViberBotExcludeMsel'),
+      options: VIBER_BOT_EXCLUDE_OPTIONS,
+      selected: viberCfg.botExclude,
+      placeholder: '请选择 Exclude 项',
+      searchPlaceholder: '搜索…',
+    });
+
+    let pendingViberIdFile = viberCfg.viberIdFile;
+    const renderViberIdFileList = () => {
+      panel.querySelector('#viberIdFileList').innerHTML = pendingViberIdFile
+        ? `<li><i data-lucide="file-check-2"></i>${pendingViberIdFile}<button type="button" class="icon-btn" id="rmViberIdFile"><i data-lucide="x"></i></button></li>`
+        : '';
+      panel.querySelector('#rmViberIdFile')?.addEventListener('click', () => {
+        pendingViberIdFile = null;
+        renderViberIdFileList();
+      });
+      refreshIcons();
+    };
+    renderViberIdFileList();
+    const viberIdFileInput = panel.querySelector('#viberIdFileInput');
+    const viberIdUploadArea = panel.querySelector('#viberIdUploadArea');
+    const viberIdAccept = '.csv,.xlsx,.txt';
+    const setViberIdFile = files => {
+      if (!files.length) return;
+      pendingViberIdFile = files[0].name;
+      renderViberIdFileList();
+    };
+    panel.querySelector('#uploadViberIdBtn').addEventListener('click', () => viberIdFileInput.click());
+    viberIdFileInput.addEventListener('change', () => {
+      setViberIdFile([...viberIdFileInput.files].filter(f => matchFileAccept(f, viberIdAccept)));
+      viberIdFileInput.value = '';
+    });
+    bindDropPasteUpload({
+      zone: viberIdUploadArea,
+      accept: viberIdAccept,
+      onFiles: setViberIdFile,
+    });
+    panel.querySelector('#downloadViberIdTplBtn').addEventListener('click', () => showToast('Viber ID 上传模板已开始下载'));
 
     panelAudienceMsel = createSearchMultiSelect({
       container: panel.querySelector('#audTagMsel'),
@@ -502,6 +799,12 @@ function openPanel(type) {
       }
       draft.audienceTags = tags;
       draft.audienceFiles = pendingFiles;
+      draft.viberAudience = {
+        bizExclude: panelViberBizExcludeMsel.getValue(),
+        bizExcludeBots: panelViberBizBotsMsel.getValue(),
+        botExclude: panelViberBotExcludeMsel.getValue(),
+        viberIdFile: pendingViberIdFile,
+      };
       closePanel();
       renderRows();
     });
