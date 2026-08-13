@@ -121,7 +121,6 @@ function initDraft(channel) {
     name: '',
     productLine: '',
     taskType: 'manual',
-    audienceMode: 'manual',
     audienceTags: [],
     audienceFiles: [],
     audienceLabel: '',
@@ -138,6 +137,7 @@ function initDraft(channel) {
   });
   setTaskDrawerMode('create');
   closePanel();
+  syncTaskTypeUi();
   renderRows();
   renderPreview();
 }
@@ -153,8 +153,22 @@ function setTaskDrawerMode(mode) {
   if (submit) submit.textContent = locked ? '保存' : '提交审批';
   if (nameEl) nameEl.disabled = locked;
   if (plEl) plEl.disabled = locked;
+  document.querySelectorAll('input[name="taskType"]').forEach(r => { r.disabled = locked; });
   document.getElementById('rowAudience')?.classList.toggle('cfg-row-locked', locked);
   document.getElementById('rowTiming')?.classList.toggle('cfg-row-locked', locked);
+}
+
+function isSystemTask() {
+  return draft?.taskType === 'system';
+}
+
+function syncTaskTypeUi() {
+  const hideWhoWhen = isSystemTask();
+  const audField = document.getElementById('ntAudienceField');
+  const timingField = document.getElementById('ntTimingField');
+  if (audField) audField.hidden = hideWhoWhen;
+  if (timingField) timingField.hidden = hideWhoWhen;
+  if (hideWhoWhen && (activePanel === 'audience' || activePanel === 'timing')) closePanel();
 }
 
 function toDraftChannel(label) {
@@ -212,8 +226,7 @@ function openTaskEdit(task) {
   draft = {
     name: task.name || '',
     productLine: task.productLine || '',
-    taskType: task.taskType === 'API' ? 'api' : 'manual',
-    audienceMode: 'manual',
+    taskType: (task.taskType === 'API' || task.taskType === '系统调用' || task.taskType === 'system') ? 'system' : 'manual',
     audienceTags: audienceTagsFromRecord(task),
     audienceFiles: [],
     audienceLabel: task.audience || '',
@@ -230,6 +243,7 @@ function openTaskEdit(task) {
   });
   setTaskDrawerMode('edit');
   closePanel();
+  syncTaskTypeUi();
   renderRows();
   renderPreview();
   openDrawer('taskDrawer');
@@ -596,19 +610,16 @@ function timingLabel(t) {
 
 function renderRows() {
   const av = document.getElementById('audienceValue');
-  if (draft.audienceMode === 'system') {
-    av.innerHTML = '<span class="cfg-summary">系统调用</span>';
-  } else {
-    const parts = [];
-    if (draft.audienceTags.length) {
-      parts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
-    }
-    if (draft.audienceFiles.length) parts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
-    if (!parts.length && draft.audienceLabel) parts.push(draft.audienceLabel);
-    av.innerHTML = parts.length
-      ? `<span class="cfg-summary">${parts.join(' ｜ ')}</span>`
-      : '<span class="placeholder">请选择人群</span>';
+  if (!av) return;
+  const parts = [];
+  if (draft.audienceTags.length) {
+    parts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
   }
+  if (draft.audienceFiles.length) parts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
+  if (!parts.length && draft.audienceLabel) parts.push(draft.audienceLabel);
+  av.innerHTML = parts.length
+    ? `<span class="cfg-summary">${parts.join(' ｜ ')}</span>`
+    : '<span class="placeholder">请选择人群</span>';
 
   const cfg = draft.perChannel[draft.active];
   const tv = document.getElementById('timingValue');
@@ -719,6 +730,7 @@ function closePanel() {
 }
 
 function openPanel(type) {
+  if (isSystemTask() && (type === 'audience' || type === 'timing')) return;
   if (taskDrawerMode === 'edit' && (type === 'audience' || type === 'timing')) return;
   destroyAudiencePanelWidgets();
   panelContentEditor?.destroy();
@@ -730,16 +742,8 @@ function openPanel(type) {
 
   if (type === 'audience') {
     document.getElementById('rowAudience').classList.add('active');
-    const mode0 = draft.audienceMode || 'manual';
     panel.innerHTML = `
       <div class="panel-title">选择人群</div>
-      <div class="field">
-        <div class="radio-group" id="audModeGroup">
-          <label><input type="radio" name="audMode" value="manual" ${mode0 === 'manual' ? 'checked' : ''}>手动选择</label>
-          <label><input type="radio" name="audMode" value="system" ${mode0 === 'system' ? 'checked' : ''}>系统调用</label>
-        </div>
-      </div>
-      <div id="audManualBlock">
       <p class="panel-hint">星灵标签与上传至少选择 1 项</p>
       <div class="tabs" id="audTabs">
         <button type="button" class="tab active" data-aud-tab="tags">星灵标签</button>
@@ -790,20 +794,10 @@ function openPanel(type) {
           </div>
         </div>
       </div>
-      </div>
       <div class="panel-actions">
         <button type="button" class="btn btn-outline" id="panelCancel">取消</button>
         <button type="button" class="btn btn-primary" id="panelOk">确认</button>
       </div>`;
-
-    const manualBlock = panel.querySelector('#audManualBlock');
-    const syncAudMode = mode => {
-      manualBlock.hidden = mode !== 'manual';
-    };
-    syncAudMode(mode0);
-    panel.querySelectorAll('input[name="audMode"]').forEach(r => {
-      r.addEventListener('change', () => syncAudMode(r.value));
-    });
 
     const defaultAudTab = draft.audienceFiles.length && !draft.audienceTags.length ? 'upload' : 'tags';
     const switchAudTab = tab => {
@@ -944,16 +938,6 @@ function openPanel(type) {
     panel.querySelector('#downloadTplBtn').addEventListener('click', () => showToast('人群上传模板已开始下载'));
 
     panel.querySelector('#panelOk').addEventListener('click', () => {
-      const mode = panel.querySelector('input[name="audMode"]:checked')?.value || 'manual';
-      draft.audienceMode = mode;
-      if (mode === 'system') {
-        draft.audienceTags = [];
-        draft.audienceFiles = [];
-        draft.viberAudience = newViberAudienceConfig();
-        closePanel();
-        renderRows();
-        return;
-      }
       const tags = panelAudienceMsel.getValue();
       if (!tags.length && !pendingFiles.length) {
         showToast('星灵标签与上传至少选择 1 项');
@@ -1059,13 +1043,19 @@ function createTask() {
   if (!name) { showToast('请输入名称'); return; }
   if (!document.getElementById('ntProductLine').value) { showToast('请选择产品线'); return; }
   draft.taskType = document.querySelector('input[name="taskType"]:checked')?.value || 'manual';
-  if (draft.audienceMode !== 'system' && !draft.audienceTags.length && !draft.audienceFiles.length) {
+  if (!isSystemTask() && !draft.audienceTags.length && !draft.audienceFiles.length) {
     showToast('请选择人群（星灵标签或上传至少 1 项）');
     return;
   }
-  const missing = draft.channels.find(c => !draft.perChannel[c].timing || !hasContent(draft.perChannel[c].content));
+  const missing = draft.channels.find(c => {
+    if (!hasContent(draft.perChannel[c].content)) return true;
+    if (!isSystemTask() && !draft.perChannel[c].timing) return true;
+    return false;
+  });
   if (missing) {
-    showToast(`请完成「${CHANNELS[missing].tip}」通道的时机与内容配置`);
+    showToast(isSystemTask()
+      ? `请完成「${CHANNELS[missing].tip}」通道的内容配置`
+      : `请完成「${CHANNELS[missing].tip}」通道的时机与内容配置`);
     return;
   }
 
@@ -1130,7 +1120,12 @@ function bindTaskDrawer() {
     if (draft && draft.active === 'email') renderPreview();
   });
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
-    r.addEventListener('change', () => { if (draft) draft.taskType = r.value; });
+    r.addEventListener('change', () => {
+      if (!draft) return;
+      draft.taskType = r.value;
+      syncTaskTypeUi();
+      renderRows();
+    });
   });
   document.getElementById('createTaskBtn')?.addEventListener('click', submitTaskDrawer);
 }

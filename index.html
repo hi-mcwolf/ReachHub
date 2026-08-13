@@ -152,15 +152,15 @@
             </select>
           </div>
 
-          <div class="field" hidden>
+          <div class="field">
             <span class="field-label">任务类型</span>
             <div class="radio-group" id="ntTaskType">
               <label><input type="radio" name="taskType" value="manual" checked>手动发送</label>
-              <label><input type="radio" name="taskType" value="api">API调用</label>
+              <label><input type="radio" name="taskType" value="system">系统调用</label>
             </div>
           </div>
 
-          <div class="field">
+          <div class="field" id="ntAudienceField">
             <span class="field-label">人群（Who）</span>
             <div class="cfg-row" id="rowAudience">
               <div class="cfg-value" id="audienceValue"><span class="placeholder">请选择人群</span></div>
@@ -168,7 +168,7 @@
             </div>
           </div>
 
-          <div class="field">
+          <div class="field" id="ntTimingField">
             <span class="field-label">时间（When）</span>
             <div class="cfg-row" id="rowTiming">
               <div class="cfg-value" id="timingValue"><span class="placeholder">请选择发送时机</span></div>
