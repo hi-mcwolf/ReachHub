@@ -176,7 +176,7 @@ function mockShortLink() {
   return `https://bpl.us/${id}`;
 }
 
-function createContentEditor({ container, channel, value, onChange, showTemplateTools = true }) {
+function createContentEditor({ container, channel, value, onChange, showTemplateTools = true, showSmsConfigMode = true }) {
   const ch = normalizeChannel(channel);
   let data = ensureContentValue(ch, value);
   let quill = null;
@@ -298,29 +298,16 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
 
   /* ---------------- 短信 ---------------- */
   function renderSms() {
-    const mode = data.configMode || 'unified';
-    container.innerHTML = `
-      <div class="content-editor-wrap">
+    const mode = showSmsConfigMode ? (data.configMode || 'unified') : 'unified';
+    const modeFieldHtml = showSmsConfigMode ? `
         <div class="field">
           <span class="field-label">内容配置方式</span>
           <div class="radio-group">
             <label><input type="radio" name="ceSmsMode" value="unified" ${mode === 'unified' ? 'checked' : ''}>统一配置${tipIcon('所有用户收到的内容一致')}</label>
             <label><input type="radio" name="ceSmsMode" value="separate" ${mode === 'separate' ? 'checked' : ''}>分别配置${tipIcon('用户收到的内容可分别配置')}</label>
           </div>
-        </div>
-        <div class="ce-sms-unified" ${mode !== 'unified' ? 'hidden' : ''}>
-          <div class="field-label-row">
-            <span class="field-label">内容编辑</span>
-            ${templateToolsHtml(showTemplateTools)}
-          </div>
-          <button type="button" class="link-btn ce-insert-shortlink"><i data-lucide="link-2"></i>插入短链</button>
-          <div class="shortlink-row ce-shortlink-row" hidden>
-            <input class="input ce-shortlink-input" placeholder="请输入链接地址" value="${data.shortLinkUrl || ''}">
-            <button type="button" class="btn btn-outline btn-sm ce-shortlink-convert">转换</button>
-          </div>
-          <p class="ce-shortlink-result" ${data.shortLinkResult ? '' : 'hidden'}>${data.shortLinkResult || ''}</p>
-          <textarea class="textarea ce-text" data-char-max="160" rows="8" placeholder="请输入发送内容…">${data.text || ''}</textarea>
-        </div>
+        </div>` : '';
+    const separateHtml = showSmsConfigMode ? `
         <div class="ce-sms-separate" ${mode !== 'separate' ? 'hidden' : ''}>
           <div class="upload-area" tabindex="0">
             <div class="upload-btns">
@@ -334,7 +321,24 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
             <input type="file" class="ce-sms-folder-input" webkitdirectory hidden>
             <ul class="upload-list ce-sms-file-list"></ul>
           </div>
+        </div>` : '';
+    container.innerHTML = `
+      <div class="content-editor-wrap">
+        ${modeFieldHtml}
+        <div class="ce-sms-unified" ${mode !== 'unified' ? 'hidden' : ''}>
+          <div class="field-label-row">
+            <span class="field-label">内容编辑</span>
+            ${templateToolsHtml(showTemplateTools)}
+          </div>
+          <button type="button" class="link-btn ce-insert-shortlink"><i data-lucide="link-2"></i>插入短链</button>
+          <div class="shortlink-row ce-shortlink-row" hidden>
+            <input class="input ce-shortlink-input" placeholder="请输入链接地址" value="${data.shortLinkUrl || ''}">
+            <button type="button" class="btn btn-outline btn-sm ce-shortlink-convert">转换</button>
+          </div>
+          <p class="ce-shortlink-result" ${data.shortLinkResult ? '' : 'hidden'}>${data.shortLinkResult || ''}</p>
+          <textarea class="textarea ce-text" data-char-max="160" rows="8" placeholder="请输入发送内容…">${data.text || ''}</textarea>
         </div>
+        ${separateHtml}
       </div>`;
 
     const unifiedPane = container.querySelector('.ce-sms-unified');
@@ -342,7 +346,7 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
     container.querySelectorAll('input[name="ceSmsMode"]').forEach(r => {
       r.addEventListener('change', () => {
         unifiedPane.hidden = r.value !== 'unified';
-        separatePane.hidden = r.value !== 'separate';
+        if (separatePane) separatePane.hidden = r.value !== 'separate';
         if (r.checked) emit();
       });
     });
@@ -367,45 +371,49 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
     });
 
     let pendingFiles = [...(data.files || [])];
-    const renderFileList = () => {
-      container.querySelector('.ce-sms-file-list').innerHTML = pendingFiles.map((f, i) => `
-        <li><i data-lucide="file-check-2"></i>${f}<button type="button" class="icon-btn" data-sms-rm="${i}"><i data-lucide="x"></i></button></li>
-      `).join('');
-      container.querySelectorAll('[data-sms-rm]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          pendingFiles.splice(Number(btn.dataset.smsRm), 1);
-          renderFileList();
-          emit();
+    if (showSmsConfigMode) {
+      const renderFileList = () => {
+        container.querySelector('.ce-sms-file-list').innerHTML = pendingFiles.map((f, i) => `
+          <li><i data-lucide="file-check-2"></i>${f}<button type="button" class="icon-btn" data-sms-rm="${i}"><i data-lucide="x"></i></button></li>
+        `).join('');
+        container.querySelectorAll('[data-sms-rm]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            pendingFiles.splice(Number(btn.dataset.smsRm), 1);
+            renderFileList();
+            emit();
+          });
         });
-      });
-      refreshIcons();
-    };
-    renderFileList();
+        refreshIcons();
+      };
+      renderFileList();
 
-    const smsAccept = '.csv,.xlsx,.txt';
-    const fileInput = container.querySelector('.ce-sms-file-input');
-    const folderInput = container.querySelector('.ce-sms-folder-input');
-    const uploadArea = container.querySelector('.ce-sms-separate .upload-area');
-    const addFiles = files => { files.forEach(f => pendingFiles.push(f.name)); renderFileList(); emit(); };
-    const addFolders = folders => { folders.forEach(({ name, count }) => pendingFiles.push(`${name}/（${count} 个文件）`)); renderFileList(); emit(); };
-    container.querySelector('.ce-sms-upload-file').addEventListener('click', () => fileInput.click());
-    container.querySelector('.ce-sms-upload-folder').addEventListener('click', () => folderInput.click());
-    fileInput.addEventListener('change', () => {
-      addFiles([...fileInput.files].filter(f => matchFileAccept(f, smsAccept)));
-      fileInput.value = '';
-    });
-    folderInput.addEventListener('change', () => {
-      if (folderInput.files.length) {
-        const dir = folderInput.files[0].webkitRelativePath.split('/')[0];
-        addFolders([{ name: dir, count: folderInput.files.length }]);
-      }
-      folderInput.value = '';
-    });
-    bindDropPasteUpload({ zone: uploadArea, accept: smsAccept, allowFolder: true, onFiles: addFiles, onFolders: addFolders });
-    container.querySelector('.ce-sms-download-tpl').addEventListener('click', () => showToast('短信上传模板已开始下载'));
+      const smsAccept = '.csv,.xlsx,.txt';
+      const fileInput = container.querySelector('.ce-sms-file-input');
+      const folderInput = container.querySelector('.ce-sms-folder-input');
+      const uploadArea = container.querySelector('.ce-sms-separate .upload-area');
+      const addFiles = files => { files.forEach(f => pendingFiles.push(f.name)); renderFileList(); emit(); };
+      const addFolders = folders => { folders.forEach(({ name, count }) => pendingFiles.push(`${name}/（${count} 个文件）`)); renderFileList(); emit(); };
+      container.querySelector('.ce-sms-upload-file').addEventListener('click', () => fileInput.click());
+      container.querySelector('.ce-sms-upload-folder').addEventListener('click', () => folderInput.click());
+      fileInput.addEventListener('change', () => {
+        addFiles([...fileInput.files].filter(f => matchFileAccept(f, smsAccept)));
+        fileInput.value = '';
+      });
+      folderInput.addEventListener('change', () => {
+        if (folderInput.files.length) {
+          const dir = folderInput.files[0].webkitRelativePath.split('/')[0];
+          addFolders([{ name: dir, count: folderInput.files.length }]);
+        }
+        folderInput.value = '';
+      });
+      bindDropPasteUpload({ zone: uploadArea, accept: smsAccept, allowFolder: true, onFiles: addFiles, onFolders: addFolders });
+      container.querySelector('.ce-sms-download-tpl').addEventListener('click', () => showToast('短信上传模板已开始下载'));
+    }
 
     currentGetValue = () => ({
-      configMode: container.querySelector('input[name="ceSmsMode"]:checked')?.value || mode,
+      configMode: showSmsConfigMode
+        ? (container.querySelector('input[name="ceSmsMode"]:checked')?.value || 'unified')
+        : 'unified',
       text: ta.value,
       shortLinkUrl: container.querySelector('.ce-shortlink-input')?.value ?? data.shortLinkUrl,
       shortLinkResult: shortlinkResult.hidden ? '' : shortlinkResult.textContent,

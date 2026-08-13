@@ -282,7 +282,9 @@ a { text-decoration: none; color: inherit; }
 .select { height: 32px; cursor: pointer; }
 .select-sm { height: 28px; font-size: 12px; width: auto; padding: 0 8px; }
 
-.radio-group { display: flex; gap: 24px; }
+.radio-group { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.content-editor-wrap.is-readonly,
+#tplContentEditor.is-readonly { pointer-events: none; opacity: 0.85; }
 .radio-group label {
   display: inline-flex;
   align-items: center;
@@ -714,6 +716,13 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
 }
 .cfg-row:hover { border-color: var(--primary); }
 .cfg-row.active { border-color: var(--primary); background: var(--primary-weak); }
+.cfg-row-locked,
+.cfg-row-locked:hover {
+  cursor: default;
+  border-color: var(--line);
+  background: var(--bg, #f7f8fa);
+}
+.cfg-row-locked > .lucide { visibility: hidden; }
 .cfg-row .cfg-value { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
 .cfg-row .placeholder { color: var(--text-3); }
 .cfg-row .cfg-summary {
@@ -746,6 +755,29 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
 }
 .tab:hover { color: var(--text-1); }
 .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
+.tab-wrap {
+  display: inline-flex;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab-wrap .tab {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-right: 4px;
+}
+.tab-wrap.active { border-bottom-color: var(--primary); }
+.tab-wrap.active .tab { color: var(--primary); font-weight: 500; }
+.tab-close {
+  border: none;
+  background: none;
+  padding: 0 10px 0 2px;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.tab-close:hover { color: var(--danger, #e5484d); }
 .tab-add {
   border: none;
   background: none;

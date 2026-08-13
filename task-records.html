@@ -73,10 +73,13 @@
               <div class="filter-item">
                 <span class="filter-label">任务状态</span>
                 <select class="select" id="fStatus">
-                  <option value="">全部</option><option value="draft">草稿</option><option value="reviewing">审核中</option><option value="pending">待发送</option>
-                  <option value="running">执行中</option><option value="done">已完成</option>
-                  <option value="paused">已暂停</option><option value="failed">失败</option>
-                  <option value="enabled">启用</option><option value="disabled">禁用</option>
+                  <option value="">全部</option>
+                  <option value="pending">待发送</option>
+                  <option value="running">执行中</option>
+                  <option value="done">已完成</option>
+                  <option value="paused">已暂停</option>
+                  <option value="failed">失败</option>
+                  <option value="stopped">已终止</option>
                 </select>
               </div>
               <div class="filter-item">
@@ -166,6 +169,90 @@
     </aside>
   </div>
 
+  <!-- 编辑任务抽屉（与新建任务同构） -->
+  <div class="drawer-root" id="taskDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-xl">
+      <header class="drawer-header">
+        <h3 id="taskDrawerTitle">编辑任务</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+
+      <div class="nt-cols">
+        <section class="nt-preview">
+          <div class="pane-caption">预览</div>
+          <div id="ntPreview"></div>
+        </section>
+
+        <section class="nt-config">
+          <div class="field">
+            <span class="field-label">名称</span>
+            <input class="input" id="ntName" placeholder="请输入名称">
+          </div>
+
+          <div class="field">
+            <span class="field-label">产品线</span>
+            <select class="select" id="ntProductLine">
+              <option value="">请选择产品线</option>
+              <option value="BP-VIP">BP-VIP</option>
+              <option value="BingoPlus">BingoPlus</option>
+              <option value="BP-CONTENT OPERATION CENTER">BP-CONTENT OPERATION CENTER</option>
+            </select>
+          </div>
+
+          <div class="field" hidden>
+            <span class="field-label">任务类型</span>
+            <div class="radio-group" id="ntTaskType">
+              <label><input type="radio" name="taskType" value="manual" checked>手动发送</label>
+              <label><input type="radio" name="taskType" value="api">API调用</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">人群（Who）</span>
+            <div class="cfg-row" id="rowAudience">
+              <div class="cfg-value" id="audienceValue"><span class="placeholder">请选择人群</span></div>
+              <i data-lucide="chevron-right"></i>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">时间（When）</span>
+            <div class="cfg-row" id="rowTiming">
+              <div class="cfg-value" id="timingValue"><span class="placeholder">请选择发送时机</span></div>
+              <i data-lucide="chevron-right"></i>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">内容（What）</span>
+            <div class="cfg-row" id="rowContent">
+              <div class="cfg-value" id="contentValue"><span class="placeholder">请配置发送内容</span></div>
+              <i data-lucide="chevron-right"></i>
+            </div>
+          </div>
+
+          <div class="field" hidden>
+            <span class="field-label">触达策略</span>
+            <div class="cfg-row" id="rowStrategy">
+              <div class="cfg-value" id="strategyValue"><span class="placeholder">请选择触达策略</span></div>
+              <i data-lucide="chevron-right"></i>
+            </div>
+          </div>
+        </section>
+
+        <section class="nt-panel" id="ntPanel">
+          <div class="panel-empty">点击左侧配置项查看详情</div>
+        </section>
+      </div>
+
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>取消</button>
+        <button class="btn btn-primary" id="createTaskBtn">保存</button>
+      </footer>
+    </aside>
+  </div>
+
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="assets/common.js"></script>
   <script src="assets/content-editor.js"></script>
@@ -173,6 +260,7 @@
   <script src="assets/search-select.js"></script>
   <script src="assets/search-multi-select.js"></script>
   <script src="assets/strategy-data.js"></script>
+  <script src="assets/reach.js"></script>
   <script src="assets/task-records.js"></script>
 </body>
 </html>

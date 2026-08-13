@@ -1,28 +1,13 @@
 /* 模板管理页：列表 + 筛选 + 详情/编辑/新建抽屉 */
 
-const TPL_STATUS = {
-  draft:    { label: '草稿',     cls: 'tag-gray' },
-  active:   { label: '已生效',   cls: 'tag-success' },
-  disabled: { label: '已停用',   cls: 'tag-gray-outline' },
-};
-
-const TPL_APPROVAL_STATUS = {
-  pending:  { label: '待审批', cls: 'tag-orange' },
-  approved: { label: '已通过', cls: 'tag-success' },
-  rejected: { label: '已拒绝', cls: 'tag-danger' },
-};
-
-const CHANNELS = ['SMS', '邮件', 'Push', 'Inbox', 'IM', 'Bot', 'Viber', 'Messenger', '电销'];
-const TEMPLATE_TYPES = ['营销', 'OTP'];
-
-function mapAuditToApproval(auditStatus) {
-  if (auditStatus === '已通过') return 'approved';
-  if (auditStatus === '已驳回') return 'rejected';
-  return 'pending';
-}
+const CHANNELS = ['SMS', '邮件', 'Push', 'Viber', 'Messenger', 'Telegram', '站内信'];
 
 function tplContentText(t) {
   const c = t.content || {};
+  if (typeof contentSummary === 'function') {
+    const s = contentSummary(c, 80);
+    if (s && s !== '-') return s;
+  }
   return c.text || c.body || c.subject || c.title || '';
 }
 
@@ -79,7 +64,7 @@ let TEMPLATE_RECORDS = [
     ],
   },
   {
-    id: 'tpl-004', name: '系统维护通知', code: 'TPL-INBOX-0003', type: 'OTP', channel: 'Inbox',
+    id: 'tpl-004', name: '系统维护通知', code: 'TPL-INBOX-0003', type: 'OTP', channel: '站内信',
     langs: '中文', bizLine: 'BingoPlus', status: 'active', creator: 'marvin@',
     createdAt: '2026-06-25 16:40', updatedAt: '2026-07-06 09:25', updatedBy: 'marvin@',
     content: { title: '系统升级维护通知', body: '系统将于 {{expire_time}} 进行升级维护，期间部分功能暂不可用，敬请谅解。', buttonText: '查看详情' },
@@ -92,7 +77,7 @@ let TEMPLATE_RECORDS = [
     ],
   },
   {
-    id: 'tpl-005', name: '客服满意度回访', code: 'TPL-IM-0007', type: 'OTP', channel: 'IM',
+    id: 'tpl-005', name: '客服满意度回访', code: 'TPL-INBOX-0007', type: 'OTP', channel: '站内信',
     langs: '中文', bizLine: 'BingoPlus', status: 'reviewing', creator: 'lily@',
     createdAt: '2026-07-01 10:15', updatedAt: '2026-07-11 14:05', updatedBy: 'lily@',
     content: { title: '服务评价邀请', body: '感谢您使用在线客服，邀请您对本次服务进行评价，您的反馈对我们很重要。', buttonText: '去评价' },
@@ -103,7 +88,7 @@ let TEMPLATE_RECORDS = [
     ],
   },
   {
-    id: 'tpl-006', name: '竞猜 Bot 自动提醒', code: 'TPL-BOT-0015', type: '营销', channel: 'Bot',
+    id: 'tpl-006', name: '竞猜 Bot 自动提醒', code: 'TPL-TELEGRAM-0015', type: '营销', channel: 'Telegram',
     langs: '英文', bizLine: 'BingoPlus', status: 'active', creator: 'ken@',
     createdAt: '2026-07-02 11:20', updatedAt: '2026-07-09 16:40', updatedBy: 'ken@',
     content: { title: 'Quiz Starting Soon', body: 'The match you follow starts in 30 minutes. Submit your prediction now!', buttonText: 'Submit Prediction' },
@@ -179,10 +164,10 @@ let TEMPLATE_RECORDS = [
     ],
   },
   {
-    id: 'tpl-012', name: '电销 VIP 回访话术', code: 'TPL-TELE-0001', type: '营销', channel: '电销',
+    id: 'tpl-012', name: '电销 VIP 回访话术', code: 'TPL-SMS-0006', type: '营销', channel: 'SMS',
     langs: '中文', bizLine: 'BP-VIP', status: 'active', creator: 'ken@',
     createdAt: '2026-06-18 13:30', updatedAt: '2026-07-04 09:50', updatedBy: 'ken@',
-    content: { title: 'VIP 回访', body: '您好 {{user_name}}，我是 BingoPlus VIP 专属客服。注意到您近期较少登录，为您准备了专属回归礼包，价值 {{bonus_amount}}，请问方便了解一下吗？', buttonText: '确认意向' },
+    content: { text: '您好 {{user_name}}，我是 BingoPlus VIP 专属客服。注意到您近期较少登录，为您准备了专属回归礼包，价值 {{bonus_amount}}，请问方便了解一下吗？' },
     variables: [
       { name: 'user_name', desc: '用户昵称', example: 'VIP用户', required: true },
       { name: 'bonus_amount', desc: '礼包价值', example: '2,000', required: true },
@@ -245,7 +230,7 @@ let TEMPLATE_RECORDS = [
     ],
   },
   {
-    id: 'tpl-017', name: '站内信活动预告', code: 'TPL-INBOX-0011', type: '营销', channel: 'Inbox',
+    id: 'tpl-017', name: '站内信活动预告', code: 'TPL-INBOX-0011', type: '营销', channel: '站内信',
     langs: '中文', bizLine: 'BingoPlus', status: 'draft', creator: 'ken@',
     createdAt: '2026-07-11 15:00', updatedAt: '2026-07-11 15:00', updatedBy: 'ken@',
     content: { title: '七月大促即将开启', body: '七月大促活动将于 {{expire_time}} 正式开启，提前锁定您的优惠名额！', buttonText: '预约提醒' },
@@ -258,7 +243,7 @@ let TEMPLATE_RECORDS = [
     ],
   },
   {
-    id: 'tpl-018', name: 'IM 充值成功通知', code: 'TPL-IM-0020', type: 'OTP', channel: 'IM',
+    id: 'tpl-018', name: 'IM 充值成功通知', code: 'TPL-INBOX-0020', type: 'OTP', channel: '站内信',
     langs: '中文', bizLine: 'BingoPlus', status: 'disabled', creator: 'lily@',
     createdAt: '2026-06-22 10:30', updatedAt: '2026-07-01 14:22', updatedBy: 'marvin@',
     content: { title: '充值成功', body: '您已成功充值 {{bonus_amount}}，账户余额已更新。感谢您的支持！', buttonText: '查看余额' },
@@ -272,41 +257,20 @@ let TEMPLATE_RECORDS = [
   },
 ];
 
-TEMPLATE_RECORDS.forEach(t => {
-  if (t.status === 'reviewing' || t.status === 'rejected') t.status = 'draft';
-  t.approvalStatus = mapAuditToApproval(t.audit?.status);
-  t.approver = t.audit?.reviewer || null;
-  t.approvedAt = t.audit?.time || null;
-});
-
 /* ---------------- 状态 ---------------- */
 const PAGE_SIZE = 8;
 let currentPage = 1;
 let filtered = [...TEMPLATE_RECORDS];
-let selectedIds = new Set();
 let drawerMode = 'view'; // view | edit | create
 let currentTplId = null;
 let editDraft = null;
-let lastFocusedInput = null;
-
-/* ---------------- KPI ---------------- */
-function renderKpis() {
-  const pending = TEMPLATE_RECORDS.filter(t => t.approvalStatus === 'pending').length;
-  document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-title">待审批模板</div>
-      <div class="kpi-body"><span class="kpi-value kpi-orange">${pending}</span></div>
-    </div>`;
-}
+let tplContentEditor = null;
 
 /* ---------------- 筛选 ---------------- */
 function applyFilters() {
   const name = document.getElementById('fName').value.trim().toLowerCase();
   const code = document.getElementById('fCode').value.trim().toLowerCase();
   const channel = document.getElementById('fChannel').value;
-  const status = document.getElementById('fStatus').value;
-  const approval = document.getElementById('fApproval').value;
-  const approver = document.getElementById('fApprover').value;
   const biz = document.getElementById('fBiz').value;
   const creator = document.getElementById('fCreator').value;
   const content = document.getElementById('fContent').value.trim().toLowerCase();
@@ -315,89 +279,18 @@ function applyFilters() {
     (!name || t.name.toLowerCase().includes(name)) &&
     (!code || t.code.toLowerCase().includes(code)) &&
     (!channel || t.channel === channel) &&
-    (!status || t.status === status) &&
-    (!approval || t.approvalStatus === approval) &&
-    (!approver || t.approver === approver) &&
     (!biz || t.bizLine === biz) &&
     (!creator || t.creator === creator) &&
     (!content || tplContentText(t).toLowerCase().includes(content))
   );
   currentPage = 1;
-  clearSelection();
   renderTable();
 }
 
 function resetFilters() {
   ['fName', 'fCode', 'fContent'].forEach(id => document.getElementById(id).value = '');
-  ['fChannel', 'fStatus', 'fApproval', 'fApprover', 'fBiz', 'fCreator'].forEach(id =>
-    document.getElementById(id).value = '');
+  ['fChannel', 'fBiz', 'fCreator'].forEach(id => document.getElementById(id).value = '');
   applyFilters();
-}
-
-/* ---------------- 多选与批量操作 ---------------- */
-function clearSelection() {
-  selectedIds.clear();
-  updateBatchBar();
-}
-
-function updateBatchBar() {
-  const bar = document.getElementById('batchBar');
-  const count = document.getElementById('batchCount');
-  if (!bar) return;
-  bar.hidden = selectedIds.size === 0;
-  if (count) count.textContent = String(selectedIds.size);
-
-  const checkAll = document.getElementById('checkAll');
-  if (checkAll) {
-    const pageIds = currentPageIds();
-    const checkedOnPage = pageIds.filter(id => selectedIds.has(id)).length;
-    checkAll.checked = pageIds.length > 0 && checkedOnPage === pageIds.length;
-    checkAll.indeterminate = checkedOnPage > 0 && checkedOnPage < pageIds.length;
-  }
-}
-
-function currentPageIds() {
-  const start = (currentPage - 1) * PAGE_SIZE;
-  return filtered.slice(start, start + PAGE_SIZE).map(t => t.id);
-}
-
-function approveTemplate(id, silent) {
-  const t = TEMPLATE_RECORDS.find(x => x.id === id);
-  if (!t || t.approvalStatus !== 'pending') return false;
-  const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
-  t.approvalStatus = 'approved';
-  t.approver = 'marvin@';
-  t.approvedAt = now;
-  t.audit = { status: '已通过', reviewer: 'marvin@', time: now, rejectReason: null };
-  t.status = 'active';
-  if (!silent) showToast(`已通过模板「${t.name}」`);
-  return true;
-}
-
-function rejectTemplate(id, silent) {
-  const t = TEMPLATE_RECORDS.find(x => x.id === id);
-  if (!t || t.approvalStatus !== 'pending') return false;
-  const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
-  t.approvalStatus = 'rejected';
-  t.approver = 'marvin@';
-  t.approvedAt = now;
-  t.audit = { status: '已驳回', reviewer: 'marvin@', time: now, rejectReason: '审批人拒绝' };
-  if (!silent) showToast(`已拒绝模板「${t.name}」`);
-  return true;
-}
-
-function handleBatchAction(act) {
-  const ids = [...selectedIds];
-  let n = 0;
-  ids.forEach(id => {
-    if (act === 'approve' && approveTemplate(id, true)) n++;
-    if (act === 'reject' && rejectTemplate(id, true)) n++;
-  });
-  if (act === 'approve') showToast(`已批量通过 ${n} 个模板`);
-  if (act === 'reject') showToast(`已批量拒绝 ${n} 个模板`);
-  clearSelection();
-  renderKpis();
-  renderTable();
 }
 
 /* ---------------- 表格与分页 ---------------- */
@@ -408,31 +301,24 @@ function renderTable() {
   const rows = filtered.slice(start, start + PAGE_SIZE);
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="12" class="cell-empty">暂无符合条件的模板</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="cell-empty">暂无符合条件的模板</td></tr>`;
   } else {
     tbody.innerHTML = rows.map(t => {
-      const ap = TPL_APPROVAL_STATUS[t.approvalStatus] || TPL_APPROVAL_STATUS.pending;
       const contentText = tplContentText(t);
-      const approvalOps = t.approvalStatus === 'pending'
-        ? `<button class="link-btn" data-act="approve" data-id="${t.id}">通过</button>
-           <button class="link-btn link-btn-danger" data-act="reject" data-id="${t.id}">拒绝</button>`
-        : '';
       return `
         <tr>
-          <td class="col-check"><input type="checkbox" class="row-check" data-check="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} aria-label="选择 ${t.code}"></td>
           <td class="cell-muted">${t.code}</td>
           <td class="col-name"><span class="cell-ellipsis" title="${t.name}">${t.name}</span></td>
           <td>${t.bizLine}</td>
           <td><span class="tag tag-primary">${t.channel}</span></td>
           <td class="col-name"><span class="cell-ellipsis" title="${contentText}">${contentText || '-'}</span></td>
-          <td><span class="tag ${ap.cls}">${ap.label}</span></td>
           <td>${t.creator}</td>
           <td class="cell-muted">${t.createdAt}</td>
           <td>${t.updatedBy}</td>
           <td class="cell-muted">${t.updatedAt}</td>
           <td class="col-ops">
-            ${approvalOps}
             <button class="link-btn" data-view="${t.id}">查看详情</button>
+            <button class="link-btn" data-edit="${t.id}">编辑</button>
             <span class="more-wrap">
               <button class="link-btn" data-more="${t.id}">更多<i data-lucide="chevron-down"></i></button>
               <span class="more-menu" hidden>
@@ -446,7 +332,6 @@ function renderTable() {
   }
   bindRowActions();
   renderPagination();
-  updateBatchBar();
   refreshIcons();
 }
 
@@ -463,7 +348,6 @@ function renderPagination() {
   host.querySelectorAll('.page-btn:not([disabled])').forEach(btn => {
     btn.addEventListener('click', () => {
       currentPage = Number(btn.dataset.page);
-      clearSelection();
       renderTable();
     });
   });
@@ -472,21 +356,7 @@ function renderPagination() {
 function bindRowActions() {
   const tbody = document.getElementById('tplTableBody');
   tbody.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => openTplDrawer('view', b.dataset.view)));
-
-  tbody.querySelectorAll('.row-check').forEach(cb =>
-    cb.addEventListener('change', () => {
-      if (cb.checked) selectedIds.add(cb.dataset.check);
-      else selectedIds.delete(cb.dataset.check);
-      updateBatchBar();
-    }));
-
-  tbody.querySelectorAll('.link-btn[data-act]').forEach(btn =>
-    btn.addEventListener('click', () => {
-      if (btn.dataset.act === 'approve') approveTemplate(btn.dataset.id);
-      if (btn.dataset.act === 'reject') rejectTemplate(btn.dataset.id);
-      renderKpis();
-      renderTable();
-    }));
+  tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openTplDrawer('edit', b.dataset.edit)));
 
   bindMoreMenus(tbody);
 
@@ -503,166 +373,156 @@ function copyTemplate(id) {
   const copy = JSON.parse(JSON.stringify(src));
   copy.id = 'tpl-' + Date.now();
   copy.name = src.name + '（副本）';
-  copy.code = src.code + '-COPY';
-  copy.status = 'draft';
-  copy.approvalStatus = 'pending';
-  copy.approver = null;
-  copy.approvedAt = null;
-  copy.audit = { status: '未提交', reviewer: null, time: null, rejectReason: null };
+  copy.code = nextTplCode(src.channel);
   copy.updatedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
   copy.updatedBy = 'marvin@';
   TEMPLATE_RECORDS.unshift(copy);
-  showToast(`已复制模板「${src.name}」为草稿`);
-  renderKpis(); applyFilters();
+  showToast(`已复制模板「${src.name}」`);
+  applyFilters();
 }
 
 function deleteTemplate(id) {
   const t = TEMPLATE_RECORDS.find(x => x.id === id);
   TEMPLATE_RECORDS = TEMPLATE_RECORDS.filter(x => x.id !== id);
-  selectedIds.delete(id);
   showToast(`模板「${t.name}」已删除`);
-  renderKpis(); applyFilters();
+  applyFilters();
 }
 
-/* ---------------- 变量替换（预览用） ---------------- */
-function applyVars(text, variables) {
-  if (!text) return '';
-  let out = text;
-  variables.forEach(v => { out = out.replace(new RegExp(`\\{\\{${v.name}\\}\\}`, 'g'), v.example); });
-  return out;
+function previewPlain(content) {
+  if (!content) return '';
+  if (typeof content === 'string') return content;
+  if (content.text) return content.text;
+  if (content.body) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = content.body;
+    return tmp.textContent || '';
+  }
+  if (content.biz?.body) return content.biz.body;
+  if (content.bot?.singleCustomBody) return content.bot.singleCustomBody;
+  return content.title || content.subject || '';
 }
 
-/* ---------------- 预览渲染 ---------------- */
 function renderPreview(tpl) {
   const host = document.getElementById('tplPreview');
-  const c = tpl.content;
-  const ch = tpl.channel;
-  let inner = '';
+  if (!host) return;
+  const c = tpl.content || {};
+  const ch = normalizeChannel(tpl.channel);
+  const text = previewPlain(c) || '您配置的内容将实时显示在这里…';
+  const emptyCls = text && text !== '您配置的内容将实时显示在这里…' ? '' : ' empty';
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const emailSubject = c.subject || tpl.name || '触达通知';
+  const emailSender = c.sender || 'marketing@bingoplus.com';
+  const pushTitle = c.title || 'BingoPlus';
 
-  if (ch === 'SMS') {
-    const text = applyVars(c.text || '', tpl.variables);
+  let inner = '';
+  if (ch === 'sms') {
     inner = `
       <div class="pv-header"><div class="pv-avatar"><i data-lucide="message-square"></i></div>
-        <div class="pv-sender">${c.signature || 'BPLUS'}</div></div>
-      <div class="pv-bubble">${text || '请输入短信内容…'}</div>
-      <div class="pv-time-hint">刚刚 · ${(c.text || '').length} 字</div>`;
-  } else if (ch === '邮件') {
+        <div class="pv-sender">106 9013 3***</div></div>
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">刚刚</div>`;
+  } else if (ch === 'email') {
     inner = `
       <div class="pv-mail">
-        <div class="pv-mail-row"><span>发件人</span>marketing@bingoplus.com</div>
-        <div class="pv-mail-row"><span>主题</span>${applyVars(c.subject || '', tpl.variables) || '邮件标题'}</div>
-        ${c.subtitle ? `<div class="pv-mail-row"><span>副标题</span>${applyVars(c.subtitle, tpl.variables)}</div>` : ''}
-        <div class="pv-mail-body">${applyVars(c.body || '', tpl.variables) || '邮件正文…'}</div>
-        ${c.ctaText ? `<div class="tpl-cta-preview">${c.ctaText}</div>` : ''}
+        <div class="pv-mail-row"><span>发件人</span>${emailSender}</div>
+        <div class="pv-mail-row"><span>主题</span>${emailSubject}</div>
+        <div class="pv-mail-body${emptyCls}">${text}</div>
       </div>`;
-  } else if (ch === 'Push') {
-    const now = new Date();
+  } else if (ch === 'push') {
     inner = `
-      <div class="pv-lock-time"><div class="t">${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}</div></div>
+      <div class="pv-lock-time"><div class="t">${timeStr}</div></div>
       <div class="pv-notify">
         <div class="pv-app-icon"><i data-lucide="bell"></i></div>
         <div>
-          <div class="pv-n-title">${applyVars(c.title || '', tpl.variables) || 'Push 标题'}</div>
-          <div class="pv-n-body">${applyVars(c.body || '', tpl.variables) || 'Push 正文…'}</div>
+          <div class="pv-n-title">${pushTitle}</div>
+          <div class="pv-n-body${emptyCls}">${text}</div>
         </div>
       </div>`;
   } else {
     inner = `
-      <div class="pv-msg-card">
-        <div class="pv-msg-title">${applyVars(c.title || '', tpl.variables) || '消息标题'}</div>
-        <div class="pv-msg-body">${applyVars(c.body || '', tpl.variables) || '消息正文…'}</div>
-        ${c.buttonText ? `<button class="btn btn-primary btn-sm tpl-msg-btn">${c.buttonText}</button>` : ''}
-      </div>`;
+      <div class="pv-header">
+        <div class="pv-avatar"><i data-lucide="message-circle"></i></div>
+        <div class="pv-sender">${tpl.channel}</div>
+      </div>
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">${timeStr}</div>`;
   }
   host.innerHTML = `<div class="pv-screen">${inner}</div>`;
   refreshIcons();
 }
 
-/* ---------------- 抽屉：内容表单（按通道） ---------------- */
-function contentFieldsHtml(tpl, editable) {
-  const c = tpl.content;
-  const ch = tpl.channel;
-  const dis = editable ? '' : 'disabled';
+const CHANNEL_CODE = {
+  SMS: 'SMS', 邮件: 'EMAIL', Push: 'PUSH', Viber: 'VIBER',
+  Messenger: 'MESSENGER', Telegram: 'TELEGRAM', 站内信: 'INBOX',
+};
 
-  if (ch === 'SMS') {
-    return `
-      <div class="field"><span class="field-label">文本内容</span>
-        <textarea class="textarea tpl-field" data-key="text" data-char-max="160" rows="5" ${dis}>${c.text || ''}</textarea>
-      </div>
-      <div class="field"><label class="check-item"><input type="checkbox" class="tpl-field" data-key="hasShortLink" ${c.hasShortLink ? 'checked' : ''} ${dis}> 包含短链</label></div>
-      <div class="field"><span class="field-label">签名配置</span>
-        <input class="input tpl-field" data-key="signature" value="${c.signature || ''}" ${dis}></div>`;
-  }
-  if (ch === '邮件') {
-    return `
-      <div class="field"><span class="field-label">邮件标题</span><input class="input tpl-field" data-key="subject" value="${c.subject || ''}" ${dis}></div>
-      <div class="field"><span class="field-label">邮件副标题（可选）</span><input class="input tpl-field" data-key="subtitle" value="${c.subtitle || ''}" ${dis}></div>
-      <div class="field"><span class="field-label">正文</span><textarea class="textarea tpl-field" data-key="body" rows="6" ${dis}>${c.body || ''}</textarea></div>
-      <div class="field"><span class="field-label">CTA 按钮文案</span><input class="input tpl-field" data-key="ctaText" value="${c.ctaText || ''}" ${dis}></div>
-      <div class="field"><span class="field-label">落地页链接</span><input class="input tpl-field" data-key="ctaLink" value="${c.ctaLink || ''}" ${dis}></div>`;
-  }
-  if (ch === 'Push') {
-    return `
-      <div class="field"><span class="field-label">Push 标题</span><input class="input tpl-field" data-key="title" value="${c.title || ''}" ${dis} placeholder="建议不超过 20 字符"></div>
-      <div class="field"><span class="field-label">Push 正文</span><textarea class="textarea tpl-field" data-key="body" rows="4" ${dis}>${c.body || ''}</textarea></div>
-      <div class="field"><span class="field-label">跳转链接 / 页面</span><input class="input tpl-field" data-key="link" value="${c.link || ''}" ${dis}></div>
-      <div class="field"><span class="field-label">图标 / 图片</span><div class="img-placeholder"><i data-lucide="image"></i>${c.imageHint || '点击上传图片（原型占位）'}</div></div>`;
-  }
-  return `
-    <div class="field"><span class="field-label">标题</span><input class="input tpl-field" data-key="title" value="${c.title || ''}" ${dis}></div>
-    <div class="field"><span class="field-label">消息正文</span><textarea class="textarea tpl-field" data-key="body" rows="5" ${dis}>${c.body || ''}</textarea></div>
-    <div class="field"><span class="field-label">操作按钮文案</span><input class="input tpl-field" data-key="buttonText" value="${c.buttonText || ''}" ${dis}></div>`;
+function nextTplCode(channel) {
+  const key = CHANNEL_CODE[channel] || String(channel || 'SMS').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'SMS';
+  const prefix = `TPL-${key}-`;
+  let max = 0;
+  TEMPLATE_RECORDS.forEach(t => {
+    if (!t.code?.startsWith(prefix)) return;
+    const n = Number(t.code.slice(prefix.length));
+    if (!Number.isNaN(n)) max = Math.max(max, n);
+  });
+  return prefix + String(max + 1).padStart(4, '0');
 }
 
-function variablesHtml(tpl, editable) {
-  const rows = tpl.variables.map((v, i) => `
-    <tr>
-      <td><code>{{${v.name}}}</code></td>
-      <td>${editable ? `<input class="input input-sm var-field" data-idx="${i}" data-f="desc" value="${v.desc}">` : v.desc}</td>
-      <td>${editable ? `<input class="input input-sm var-field" data-idx="${i}" data-f="example" value="${v.example}">` : v.example}</td>
-      <td>${editable ? `<input type="checkbox" class="var-field" data-idx="${i}" data-f="required" ${v.required ? 'checked' : ''}>` : (v.required ? '是' : '否')}</td>
-      <td>${editable ? `<button class="link-btn var-del" data-idx="${i}">删除</button>` : `<button class="link-btn var-insert" data-var="${v.name}">插入</button>`}</td>
-    </tr>`).join('');
-
-  return `
-    <table class="table var-table">
-      <thead><tr><th>变量名</th><th>含义</th><th>示例值</th><th>必填</th><th>操作</th></tr></thead>
-      <tbody id="varTableBody">${rows || '<tr><td colspan="5" class="cell-empty">暂无变量</td></tr>'}</tbody>
-    </table>
-    ${editable ? '<button class="btn btn-outline btn-sm" id="addVarBtn"><i data-lucide="plus"></i>新增变量</button>' : ''}
-    ${editable ? '<div class="var-insert-hint">点击变量标签可插入到当前聚焦的内容输入框：</div><div class="var-insert-tags" id="varInsertTags">' +
-      tpl.variables.map(v => `<button class="var-tag-btn" data-var="${v.name}">{{${v.name}}}</button>`).join('') + '</div>' : ''}`;
-}
-
-function collapseHtml(title, body, open) {
-  return `
-    <section class="collapse-section${open ? ' open' : ''}">
-      <button class="collapse-head" type="button">
-        <span>${title}</span><i data-lucide="chevron-down" class="collapse-chev"></i>
-      </button>
-      <div class="collapse-body">${body}</div>
-    </section>`;
+function mountTplContentEditor(tpl, editable) {
+  tplContentEditor?.destroy();
+  tplContentEditor = null;
+  const host = document.getElementById('tplContentEditor');
+  if (!host) return;
+  const value = typeof ensureContentValue === 'function'
+    ? ensureContentValue(tpl.channel, tpl.content)
+    : (tpl.content || defaultContentValue(tpl.channel));
+  tpl.content = value;
+  host.classList.toggle('is-readonly', !editable);
+  tplContentEditor = createContentEditor({
+    container: host,
+    channel: tpl.channel,
+    value,
+    showTemplateTools: false,
+    showSmsConfigMode: false,
+    onChange: () => {
+      tpl.content = tplContentEditor.getValue();
+      renderPreview(tpl);
+    },
+  });
+  if (!editable) {
+    host.classList.add('is-readonly');
+    const lock = () => {
+      host.querySelectorAll('input, textarea, select, button').forEach(el => { el.disabled = true; });
+      host.querySelectorAll('.ql-editor').forEach(el => el.setAttribute('contenteditable', 'false'));
+    };
+    lock();
+    setTimeout(lock, 400);
+  }
 }
 
 function renderDrawerBody(tpl, mode) {
   const editable = mode === 'edit' || mode === 'create';
-  const ap = TPL_APPROVAL_STATUS[tpl.approvalStatus] || TPL_APPROVAL_STATUS.pending;
+  const channelDisabled = mode === 'edit';
 
   let basicHtml;
   if (editable) {
     basicHtml = `
       <div class="field"><span class="field-label">模板名称</span><input class="input" id="fTplName" value="${tpl.name}"></div>
-      <div class="field"><span class="field-label">模板ID</span><input class="input" id="fTplCode" value="${tpl.code}" placeholder="如 TPL-SMS-0001"></div>
-      <div class="field-row-2">
-        <div class="field"><span class="field-label">通道</span>
-          <select class="select" id="fTplChannel" ${mode === 'edit' ? 'disabled' : ''}>
-            ${CHANNELS.map(c => `<option${c === tpl.channel ? ' selected' : ''}>${c}</option>`).join('')}
-          </select></div>
-        <div class="field"><span class="field-label">产品线</span>
-          <select class="select" id="fTplBiz">
-            ${['BingoPlus','ArenaPlus','BP-VIP'].map(b =>
-              `<option${b === tpl.bizLine ? ' selected' : ''}>${b}</option>`).join('')}
-          </select></div>
+      <div class="field"><span class="field-label">产品线</span>
+        <select class="select" id="fTplBiz">
+          ${['BingoPlus','ArenaPlus','BP-VIP'].map(b =>
+            `<option${b === tpl.bizLine ? ' selected' : ''}>${b}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <span class="field-label">通道</span>
+        <div class="radio-group" id="fTplChannel">
+          ${CHANNELS.map(c => `
+            <label><input type="radio" name="tplChannel" value="${c}" ${c === tpl.channel ? 'checked' : ''} ${channelDisabled ? 'disabled' : ''}>${c}</label>
+          `).join('')}
+        </div>
       </div>`;
   } else {
     basicHtml = `
@@ -671,9 +531,6 @@ function renderDrawerBody(tpl, mode) {
         <div class="desc-item"><span class="desc-label">模板ID</span><span>${tpl.code}</span></div>
         <div class="desc-item"><span class="desc-label">通道</span><span><span class="tag tag-primary">${tpl.channel}</span></span></div>
         <div class="desc-item"><span class="desc-label">产品线</span><span>${tpl.bizLine}</span></div>
-        <div class="desc-item"><span class="desc-label">审批状态</span><span class="tag ${ap.cls}">${ap.label}</span></div>
-        <div class="desc-item"><span class="desc-label">审批人</span><span>${fmtTpl(tpl.approver)}</span></div>
-        <div class="desc-item"><span class="desc-label">审批时间</span><span>${fmtTpl(tpl.approvedAt)}</span></div>
         <div class="desc-item"><span class="desc-label">创建人 / 更新时间</span><span>${tpl.creator} · ${tpl.updatedAt}</span></div>
       </div>`;
   }
@@ -683,181 +540,80 @@ function renderDrawerBody(tpl, mode) {
       <h4 class="card-title">基础信息</h4>${basicHtml}
     </section>
     <section class="card detail-group" id="sectionContent">
-      <h4 class="card-title">模板内容</h4>${contentFieldsHtml(tpl, editable)}
-    </section>
-    <section class="card detail-group" id="sectionVars">
-      <h4 class="card-title">变量配置</h4>${variablesHtml(tpl, editable)}
+      <h4 class="card-title">模板内容</h4>
+      <div id="tplContentEditor"></div>
     </section>
   `;
 
-  bindDrawerFormEvents(tpl, editable);
+  if (editable && mode === 'create') {
+    document.querySelectorAll('input[name="tplChannel"]').forEach(r => {
+      r.addEventListener('change', () => {
+        tpl.channel = r.value;
+        tpl.content = defaultContentValue(tpl.channel);
+        mountTplContentEditor(tpl, true);
+        renderPreview(tpl);
+      });
+    });
+  }
+
   enhanceSelects(document.getElementById('tplDrawerForm'));
+  mountTplContentEditor(tpl, editable);
   renderPreview(tpl);
   refreshIcons();
 }
 
-function bindDrawerFormEvents(tpl, editable) {
-  const form = document.getElementById('tplDrawerForm');
-
-  form.querySelectorAll('.collapse-head').forEach(head => {
-    head.addEventListener('click', () => head.closest('.collapse-section')?.classList.toggle('open'));
-  });
-
-  if (!editable) {
-    form.querySelectorAll('.var-insert').forEach(btn => btn.addEventListener('click', () => showToast(`变量 {{${btn.dataset.var}}} 可在编辑模式插入`)));
-    initCharCounters(form);
-    return;
-  }
-
-  const syncContent = () => {
-    form.querySelectorAll('.tpl-field').forEach(el => {
-      const key = el.dataset.key;
-      if (el.type === 'checkbox') tpl.content[key] = el.checked;
-      else tpl.content[key] = el.value;
-    });
-    renderPreview(tpl);
-  };
-
-  form.querySelectorAll('.tpl-field').forEach(el => {
-    el.addEventListener('focus', () => { lastFocusedInput = el; });
-    el.addEventListener('input', syncContent);
-    el.addEventListener('change', syncContent);
-  });
-
-  if (drawerMode === 'create') {
-    form.querySelector('#fTplChannel')?.addEventListener('change', e => {
-      tpl.channel = e.target.value;
-      tpl.content = defaultContent(tpl.channel);
-      document.getElementById('sectionContent').innerHTML = `<h4 class="card-title">模板内容</h4>${contentFieldsHtml(tpl, true)}`;
-      bindDrawerFormEvents(tpl, true);
-    });
-  }
-
-  form.querySelector('#addVarBtn')?.addEventListener('click', () => {
-    const name = 'var_' + (tpl.variables.length + 1);
-    tpl.variables.push({ name, desc: '新变量', example: '示例值', required: false });
-    document.getElementById('sectionVars').innerHTML = `<h4 class="card-title">变量配置</h4>${variablesHtml(tpl, true)}`;
-    bindDrawerFormEvents(tpl, true);
-  });
-
-  form.querySelectorAll('.var-del').forEach(btn => btn.addEventListener('click', () => {
-    tpl.variables.splice(Number(btn.dataset.idx), 1);
-    document.getElementById('sectionVars').innerHTML = `<h4 class="card-title">变量配置</h4>${variablesHtml(tpl, true)}`;
-    bindDrawerFormEvents(tpl, true);
-  }));
-
-  form.querySelectorAll('.var-field').forEach(el => {
-    el.addEventListener('change', () => {
-      const v = tpl.variables[Number(el.dataset.idx)];
-      if (el.dataset.f === 'required') v.required = el.checked;
-      else v[el.dataset.f] = el.value;
-    });
-  });
-
-  form.querySelectorAll('.var-tag-btn').forEach(btn => btn.addEventListener('click', () => insertVariable(btn.dataset.var)));
-
-  function insertVariable(varName) {
-    const token = `{{${varName}}}`;
-    if (lastFocusedInput) {
-      const el = lastFocusedInput;
-      const start = el.selectionStart ?? el.value.length;
-      const end = el.selectionEnd ?? el.value.length;
-      el.value = el.value.slice(0, start) + token + el.value.slice(end);
-      el.dispatchEvent(new Event('input'));
-      el.focus();
-    } else {
-      showToast(`已复制 ${token}，请先聚焦内容输入框`);
-    }
-  }
-
-  initCharCounters(form);
-}
-
-function defaultContent(channel) {
-  if (channel === 'SMS') return { text: '', hasShortLink: false, signature: 'BPLUS' };
-  if (channel === '邮件') return { subject: '', subtitle: '', body: '', ctaText: '', ctaLink: '' };
-  if (channel === 'Push') return { title: '', body: '', link: '', imageHint: '' };
-  return { title: '', body: '', buttonText: '' };
-}
-
 function newTemplateDraft() {
   return {
-    id: null, name: '', code: '', type: '营销', channel: 'SMS', langs: '中文',
-    bizLine: 'BingoPlus', status: 'draft', creator: 'marvin@',
+    id: null, name: '', code: '', channel: 'SMS', langs: '中文',
+    bizLine: 'BingoPlus', creator: 'marvin@',
     createdAt: '', updatedAt: '', updatedBy: 'marvin@',
-    content: defaultContent('SMS'), variables: [],
-    approvalStatus: 'pending', approver: null, approvedAt: null,
-    audit: { status: '未提交', reviewer: null, time: null, rejectReason: null },
-    versions: [],
+    content: defaultContentValue('SMS'),
   };
 }
 
 function renderDrawerFooter(mode) {
   const footer = document.getElementById('tplDrawerFooter');
   if (mode === 'view') {
-    const tpl = editDraft;
-    const pending = tpl?.approvalStatus === 'pending';
-    footer.innerHTML = `
-      <button class="btn btn-outline" data-close>关闭</button>
-      ${pending ? `
-        <button class="btn btn-outline btn-reject" id="footerRejectBtn">拒绝</button>
-        <button class="btn btn-primary" id="footerApproveBtn">通过</button>` : ''}`;
-    footer.querySelector('#footerApproveBtn')?.addEventListener('click', () => {
-      approveTemplate(currentTplId);
-      closeDrawer('tplDrawer');
-      renderKpis();
-      renderTable();
-    });
-    footer.querySelector('#footerRejectBtn')?.addEventListener('click', () => {
-      rejectTemplate(currentTplId);
-      closeDrawer('tplDrawer');
-      renderKpis();
-      renderTable();
-    });
+    footer.innerHTML = `<button class="btn btn-outline" data-close>关闭</button>`;
   } else {
     footer.innerHTML = `
       <button class="btn btn-outline" data-close>取消</button>
       <button class="btn btn-primary" id="footerSaveBtn">提交</button>`;
-    footer.querySelector('#footerSaveBtn').addEventListener('click', () => saveTemplate(true));
+    footer.querySelector('#footerSaveBtn').addEventListener('click', saveTemplate);
   }
   footer.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => closeDrawer('tplDrawer')));
 }
 
-function saveTemplate(submitReview) {
+function saveTemplate() {
   const tpl = editDraft;
   const form = document.getElementById('tplDrawerForm');
   tpl.name = form.querySelector('#fTplName')?.value.trim() || tpl.name;
-  tpl.code = form.querySelector('#fTplCode')?.value.trim() || tpl.code;
   tpl.bizLine = form.querySelector('#fTplBiz')?.value || tpl.bizLine;
+  if (drawerMode === 'create') {
+    const ch = form.querySelector('input[name="tplChannel"]:checked')?.value;
+    if (ch) tpl.channel = ch;
+  }
+  if (tplContentEditor) tpl.content = tplContentEditor.getValue();
   if (!tpl.name) { showToast('请输入模板名称'); return; }
-  if (!tpl.code) { showToast('请输入模板ID'); return; }
+  if (!tpl.code) tpl.code = nextTplCode(tpl.channel);
 
   const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
   tpl.updatedAt = now;
   tpl.updatedBy = 'marvin@';
 
-  if (submitReview) {
-    tpl.status = 'draft';
-    tpl.approvalStatus = 'pending';
-    tpl.approver = null;
-    tpl.approvedAt = null;
-    tpl.audit = { status: '审核中', reviewer: null, time: null, rejectReason: null };
-    showToast(`模板「${tpl.name}」已提交审批`);
-  }
-
   if (drawerMode === 'create') {
     tpl.id = 'tpl-' + Date.now();
     tpl.createdAt = now;
-    tpl.versions.push({ ver: 'v0.1', time: now, user: 'marvin@', summary: '创建并提交' });
+    tpl.creator = 'marvin@';
     TEMPLATE_RECORDS.unshift(tpl);
+    showToast(`模板「${tpl.name}」已创建`);
   } else {
     const idx = TEMPLATE_RECORDS.findIndex(x => x.id === tpl.id);
     if (idx >= 0) TEMPLATE_RECORDS[idx] = tpl;
-    tpl.versions.unshift({ ver: 'v' + (tpl.versions.length + 1) + '.0', time: now, user: 'marvin@', summary: '提交' });
+    showToast(`模板「${tpl.name}」已保存`);
   }
 
   closeDrawer('tplDrawer');
-  renderKpis();
   applyFilters();
 }
 
@@ -890,21 +646,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
   document.getElementById('newTplBtn').addEventListener('click', () => openTplDrawer('create'));
 
-  document.getElementById('checkAll').addEventListener('change', e => {
-    const pageIds = currentPageIds();
-    if (e.target.checked) pageIds.forEach(id => selectedIds.add(id));
-    else pageIds.forEach(id => selectedIds.delete(id));
-    renderTable();
-  });
-  document.querySelectorAll('#batchBar [data-batch]').forEach(btn =>
-    btn.addEventListener('click', () => handleBatchAction(btn.dataset.batch)));
-
   document.addEventListener('click', () => closeAllMoreMenus());
   document.querySelectorAll('.table-scroll').forEach(el => {
     el.addEventListener('scroll', closeAllMoreMenus, { passive: true });
   });
 
-  renderKpis();
   applyFilters();
   refreshIcons();
 });

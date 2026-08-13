@@ -1,15 +1,12 @@
 /* 任务记录页：筛选 + KPI + 任务列表 + 详情抽屉 */
 
 const TASK_STATUS = {
-  draft:     { label: '草稿',   cls: 'tag-gray' },
-  reviewing: { label: '审核中', cls: 'tag-orange' },
-  pending:   { label: '待发送', cls: 'tag-info' },
-  running:   { label: '执行中', cls: 'tag-orange' },
-  done:      { label: '已完成', cls: 'tag-success' },
-  paused:    { label: '已暂停', cls: 'tag-gray-outline' },
-  failed:    { label: '失败',   cls: 'tag-danger' },
-  enabled:   { label: '启用',   cls: 'tag-success' },
-  disabled:  { label: '禁用',   cls: 'tag-gray-outline' },
+  pending: { label: '待发送', cls: 'tag-info' },
+  running: { label: '执行中', cls: 'tag-orange' },
+  done:    { label: '已完成', cls: 'tag-success' },
+  paused:  { label: '已暂停', cls: 'tag-gray-outline' },
+  failed:  { label: '失败',   cls: 'tag-danger' },
+  stopped: { label: '已终止', cls: 'tag-gray' },
 };
 
 const APPROVAL_STATUS = {
@@ -42,7 +39,7 @@ function enrichTaskRecords() {
     if (t.audienceCount == null) t.audienceCount = t.total;
     if (!t.taskType) t.taskType = i % 3 === 0 ? 'API' : '手动';
     if (!t.approvalStatus) {
-      if (t.status === 'reviewing' || t.status === 'draft') t.approvalStatus = 'pending';
+      if (t.status === 'pending') t.approvalStatus = 'pending';
       else if (t.status === 'failed' && i % 2 === 0) t.approvalStatus = 'rejected';
       else t.approvalStatus = 'approved';
     }
@@ -141,7 +138,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260711008', name: 'Messenger 社群拉新', type: '营销活动', audience: '活跃用户',
     channels: ['Messenger'], timing: '2026-07-14 12:00 定时', strategy: '单活动触达频控',
-    status: 'reviewing', creator: 'lily@', createdAt: '2026-07-11 16:25', updatedAt: '2026-07-12 09:10',
+    status: 'pending', creator: 'lily@', createdAt: '2026-07-11 16:25', updatedAt: '2026-07-12 09:10',
     sent: null, total: 12800, deliverRate: null, opens: null, clicks: null, fails: null,
     party: '自营平台', sender: '@BingoPlusBot', template: '-',
     contentSummary: '加入官方社群，每日抽奖赢免费竞猜券！',
@@ -149,7 +146,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260710009', name: '沉默用户唤醒短信', type: '促活', audience: '沉默用户',
     channels: ['SMS'], timing: '每周六 10:00 循环', strategy: '召回消息 7 天去重',
-    status: 'enabled', creator: 'ken@', createdAt: '2026-07-06 09:50', updatedAt: '2026-07-12 10:00',
+    status: 'running', creator: 'ken@', createdAt: '2026-07-06 09:50', updatedAt: '2026-07-12 10:00',
     sent: 6300, total: 8400, deliverRate: '95.6%', opens: null, clicks: 420, fails: 277,
     party: '自营平台', sender: 'BPLUS', template: '流失召回话术',
     contentSummary: '好久不见！您的老朋友 BingoPlus 为您准备了回归好礼…',
@@ -157,7 +154,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260710010', name: '世界杯决赛邮件预告', type: '营销活动', audience: '活跃用户 · VIP用户',
     channels: ['邮件'], timing: '2026-07-18 10:00 定时', strategy: '多语言模板适配',
-    status: 'draft', creator: 'marvin@', createdAt: '2026-07-10 14:30', updatedAt: '2026-07-10 14:30',
+    status: 'pending', creator: 'marvin@', createdAt: '2026-07-10 14:30', updatedAt: '2026-07-10 14:30',
     sent: null, total: 15100, deliverRate: null, opens: null, clicks: null, fails: null,
     party: '自营平台', sender: 'marketing@bingoplus.com', template: '世界杯竞猜提醒',
     contentSummary: '决赛之夜即将来临，提前锁定您的冠军竞猜…',
@@ -189,7 +186,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260708014', name: 'Bot 自动竞猜提醒', type: '促活', audience: '竞猜参与用户',
     channels: ['Bot'], timing: '赛前 30 分钟触发', strategy: '菲律宾 SIM 注册法合规',
-    status: 'failed', creator: 'ken@', createdAt: '2026-07-08 09:00', updatedAt: '2026-07-08 19:35',
+    status: 'stopped', creator: 'ken@', createdAt: '2026-07-08 09:00', updatedAt: '2026-07-08 19:35',
     sent: 45, total: 5200, deliverRate: '0.9%', opens: null, clicks: null, fails: 5155,
     party: '渠道 B', sender: '@BPQuizBot', template: '-',
     contentSummary: '您关注的比赛即将开始，快来提交您的竞猜…',
@@ -197,7 +194,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260707015', name: '流失 30 天召回邮件', type: '召回', audience: '流失预警用户',
     channels: ['邮件'], timing: '每周一 10:00 循环', strategy: '流失预警人群圈选',
-    status: 'disabled', creator: 'lily@', createdAt: '2026-06-30 15:40', updatedAt: '2026-07-07 10:05',
+    status: 'paused', creator: 'lily@', createdAt: '2026-06-30 15:40', updatedAt: '2026-07-07 10:05',
     sent: 1240, total: 1800, deliverRate: '93.2%', opens: 310, clicks: 96, fails: 84,
     party: '自营平台', sender: 'marketing@bingoplus.com', template: '流失召回话术',
     contentSummary: '您的专属回归礼包即将过期，登录即可领取…',
@@ -237,7 +234,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260701020', name: '七月大促预热草稿', type: '营销活动', audience: '全量用户',
     channels: ['SMS', '邮件', 'Push'], timing: '未配置', strategy: '-',
-    status: 'draft', creator: 'lily@', createdAt: '2026-07-01 11:00', updatedAt: '2026-07-01 11:00',
+    status: 'pending', creator: 'lily@', createdAt: '2026-07-01 11:00', updatedAt: '2026-07-01 11:00',
     sent: null, total: 320000, deliverRate: null, opens: null, clicks: null, fails: null,
     party: '自营平台', sender: '-', template: '-',
     contentSummary: '-',
@@ -362,7 +359,7 @@ function handleBatchAction(act) {
     showToast(`已批量恢复 ${n} 个任务`);
   }
   if (act === 'stop') {
-    tasks.forEach(t => { if (['running', 'paused', 'pending'].includes(t.status)) t.status = 'failed'; });
+    tasks.forEach(t => { if (['running', 'paused', 'pending'].includes(t.status)) t.status = 'stopped'; });
     showToast(`已批量终止 ${n} 个任务`);
   }
   clearSelection();
@@ -383,15 +380,15 @@ function renderTable() {
     tbody.innerHTML = rows.map(t => {
       const st = TASK_STATUS[t.status];
       const audienceText = `${t.audience}（${t.audienceCount.toLocaleString()}人）`;
-      const pauseItem = t.status === 'running'
-        ? `<button class="more-item" data-act="pause" data-id="${t.id}">暂停</button>`
-        : t.status === 'paused'
-          ? `<button class="more-item" data-act="resume" data-id="${t.id}">恢复</button>`
-          : '';
       const approvalOps = t.approvalStatus === 'pending'
         ? `<button class="link-btn" data-act="approve" data-id="${t.id}">通过</button>
            <button class="link-btn link-btn-danger" data-act="reject" data-id="${t.id}">拒绝</button>`
         : '';
+      const morePause = t.status === 'running'
+        ? '<button class="more-item" data-act="pause" data-id="' + t.id + '">暂停</button>'
+        : t.status === 'paused'
+          ? '<button class="more-item" data-act="resume" data-id="' + t.id + '">恢复</button>'
+          : '';
       return `
         <tr>
           <td class="col-check"><input type="checkbox" class="row-check" data-check="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} aria-label="选择 ${t.id}"></td>
@@ -410,12 +407,13 @@ function renderTable() {
           <td class="col-ops">
             ${approvalOps}
             <button class="link-btn" data-detail="${t.id}">查看详情</button>
+            <button class="link-btn" data-edit="${t.id}">编辑</button>
             <span class="more-wrap">
               <button class="link-btn" data-more="${t.id}">更多<i data-lucide="chevron-down"></i></button>
               <span class="more-menu" hidden>
-                ${pauseItem}
                 <button class="more-item" data-act="copy" data-id="${t.id}">复制任务</button>
                 <button class="more-item" data-act="records" data-id="${t.id}">查看发送记录</button>
+                ${morePause}
                 <button class="more-item more-danger" data-act="stop" data-id="${t.id}">终止任务</button>
               </span>
             </span>
@@ -454,6 +452,8 @@ function bindRowActions() {
 
   tbody.querySelectorAll('[data-detail]').forEach(btn =>
     btn.addEventListener('click', () => openTaskDetail(btn.dataset.detail)));
+  tbody.querySelectorAll('[data-edit]').forEach(btn =>
+    btn.addEventListener('click', () => startTaskEdit(btn.dataset.edit)));
 
   tbody.querySelectorAll('.row-check').forEach(cb =>
     cb.addEventListener('change', () => {
@@ -465,15 +465,17 @@ function bindRowActions() {
   tbody.querySelectorAll('.link-btn[data-act]').forEach(btn =>
     btn.addEventListener('click', () => {
       const t = TASK_RECORDS.find(x => x.id === btn.dataset.id);
-      if (!t || t.approvalStatus !== 'pending') return;
+      if (!t) return;
+      const act = btn.dataset.act;
+      if (t.approvalStatus !== 'pending') return;
       const now = '2026-07-14 10:00';
-      if (btn.dataset.act === 'approve') {
+      if (act === 'approve') {
         t.approvalStatus = 'approved';
         showToast(`已通过任务「${t.name}」`);
-      } else {
+      } else if (act === 'reject') {
         t.approvalStatus = 'rejected';
         showToast(`已拒绝任务「${t.name}」`);
-      }
+      } else return;
       t.approver = 'marvin@';
       t.approvedAt = now;
       renderKpis();
@@ -486,6 +488,8 @@ function bindRowActions() {
     item.addEventListener('click', () => {
       const t = TASK_RECORDS.find(x => x.id === item.dataset.id);
       closeAllMoreMenus();
+      if (item.dataset.act === 'copy') showToast(`已复制任务「${t.name}」为草稿`);
+      if (item.dataset.act === 'records') location.href = 'send-records.html';
       if (item.dataset.act === 'pause') {
         t.status = 'paused';
         showToast(`任务「${t.name}」已暂停`);
@@ -496,14 +500,20 @@ function bindRowActions() {
         showToast(`任务「${t.name}」已恢复`);
         renderKpis(); renderTable();
       }
-      if (item.dataset.act === 'copy') showToast(`已复制任务「${t.name}」为草稿`);
-      if (item.dataset.act === 'records') location.href = 'send-records.html';
       if (item.dataset.act === 'stop') {
-        t.status = 'failed';
+        t.status = 'stopped';
         showToast(`任务「${t.name}」已终止`);
         renderKpis(); renderTable();
       }
     }));
+}
+
+function startTaskEdit(id) {
+  const t = TASK_RECORDS.find(x => x.id === id);
+  if (!t) return;
+  closeDrawer('taskDetailDrawer');
+  if (typeof openTaskEdit === 'function') openTaskEdit(t);
+  else showToast('编辑抽屉未加载');
 }
 
 /* ---------------- 详情抽屉 ---------------- */
@@ -623,10 +633,10 @@ function renderTaskDetailFooter(t) {
       <button class="btn btn-primary" id="detailEditBtn">编辑任务</button>`;
     footer.querySelector('#detailToSendRecords').addEventListener('click', () => location.href = 'send-records.html');
     const editBtn = footer.querySelector('#detailEditBtn');
-    const editable = ['draft', 'pending', 'paused'].includes(t.status);
+    const editable = ['pending', 'paused'].includes(t.status);
     editBtn.disabled = !editable;
     editBtn.title = editable ? '' : '当前状态不可编辑';
-    editBtn.addEventListener('click', () => showToast('进入任务编辑（原型演示）'));
+    editBtn.addEventListener('click', () => startTaskEdit(t.id));
   }
   footer.querySelectorAll('[data-close]').forEach(btn =>
     btn.addEventListener('click', () => closeDrawer('taskDetailDrawer')));

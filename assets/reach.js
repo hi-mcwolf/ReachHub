@@ -75,6 +75,8 @@ let panelViberBizBotsMsel = null;
 let panelViberBotExcludeMsel = null;
 let panelContentEditor = null;
 let activePanel = null;
+let taskDrawerMode = 'create';
+let editingTaskId = null;
 const CFG_ROWS = ['rowAudience', 'rowTiming', 'rowContent'];
 
 function newChannelConfig() {
@@ -119,8 +121,10 @@ function initDraft(channel) {
     name: '',
     productLine: '',
     taskType: 'manual',
+    audienceMode: 'manual',
     audienceTags: [],
     audienceFiles: [],
+    audienceLabel: '',
     viberAudience: newViberAudienceConfig(),
     strategies: [],
     channels: [channel],
@@ -132,9 +136,104 @@ function initDraft(channel) {
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
     r.checked = r.value === 'manual';
   });
+  setTaskDrawerMode('create');
   closePanel();
   renderRows();
   renderPreview();
+}
+
+function setTaskDrawerMode(mode) {
+  taskDrawerMode = mode;
+  const locked = mode === 'edit';
+  const title = document.getElementById('taskDrawerTitle');
+  const submit = document.getElementById('createTaskBtn');
+  const nameEl = document.getElementById('ntName');
+  const plEl = document.getElementById('ntProductLine');
+  if (title) title.textContent = locked ? '编辑任务' : '新建';
+  if (submit) submit.textContent = locked ? '保存' : '提交审批';
+  if (nameEl) nameEl.disabled = locked;
+  if (plEl) plEl.disabled = locked;
+  document.getElementById('rowAudience')?.classList.toggle('cfg-row-locked', locked);
+  document.getElementById('rowTiming')?.classList.toggle('cfg-row-locked', locked);
+}
+
+function toDraftChannel(label) {
+  const key = typeof normalizeChannel === 'function' ? normalizeChannel(label) : String(label || '').toLowerCase();
+  if (CHANNELS[key]) return key;
+  const fallback = { 电销: 'sms', im: 'inbox', bot: 'telegram', call: 'sms' };
+  return fallback[key] || 'sms';
+}
+
+function parseTimingDisplay(str) {
+  if (!str || str === '-') return { type: 'now' };
+  if (str.includes('审批通过后') || str.includes('立即')) return { type: 'now' };
+  if (str.includes('循环')) {
+    const time = (str.match(/\d{2}:\d{2}/) || ['10:00'])[0];
+    return { type: 'recurring', freq: str.includes('周') ? 'weekly' : 'daily', weekday: '周一', time };
+  }
+  const m = str.match(/(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/);
+  if (m) return { type: 'scheduled', datetime: `${m[1]}T${m[2]}` };
+  return { type: 'scheduled', datetime: str };
+}
+
+function audienceTagsFromRecord(t) {
+  return String(t.audience || '').split(/[·,，|｜]/).map(s => s.trim()).filter(Boolean)
+    .map(n => AUDIENCES.find(a => a.name === n)?.id).filter(Boolean);
+}
+
+function ensureProductLineOption(value) {
+  const sel = document.getElementById('ntProductLine');
+  if (!sel || !value) return;
+  if (![...sel.options].some(o => o.value === value)) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = value;
+    sel.appendChild(opt);
+  }
+  sel.value = value;
+}
+
+function openTaskEdit(task) {
+  if (!task || !document.getElementById('taskDrawer')) return;
+  editingTaskId = task.id;
+  const channels = [...new Set((task.channels || ['SMS']).map(toDraftChannel))];
+  const active = channels[0] || 'sms';
+  const timing = parseTimingDisplay(task.timing);
+  const perChannel = {};
+  channels.forEach(c => {
+    const label = CHANNELS[c]?.label || c;
+    const cc = task.channelContents?.[label] || task.channelContents?.[task.channels.find(x => toDraftChannel(x) === c)] || {};
+    const raw = cc.content || cc.contentSummary || task.contentSummary || '';
+    const content = typeof ensureContentValue === 'function'
+      ? ensureContentValue(c, raw === '-' ? '' : raw)
+      : (typeof raw === 'object' ? raw : { text: raw });
+    perChannel[c] = { timing: { ...timing }, content };
+  });
+  draft = {
+    name: task.name || '',
+    productLine: task.productLine || '',
+    taskType: task.taskType === 'API' ? 'api' : 'manual',
+    audienceMode: 'manual',
+    audienceTags: audienceTagsFromRecord(task),
+    audienceFiles: [],
+    audienceLabel: task.audience || '',
+    viberAudience: newViberAudienceConfig(),
+    strategies: [],
+    channels,
+    active,
+    perChannel,
+  };
+  document.getElementById('ntName').value = draft.name;
+  ensureProductLineOption(draft.productLine);
+  document.querySelectorAll('input[name="taskType"]').forEach(r => {
+    r.checked = r.value === draft.taskType;
+  });
+  setTaskDrawerMode('edit');
+  closePanel();
+  renderRows();
+  renderPreview();
+  openDrawer('taskDrawer');
+  initCharCounters(document.getElementById('taskDrawer'));
 }
 
 function renderApprovalQueue() {
@@ -359,12 +458,25 @@ function bindPhoneScreen() {
   });
 }
 
-function renderChannelTabs(host, { allowAdd = false, onSwitch, onAdd } = {}) {
+function contentTabHandlers(tabsHost, editorHost) {
+  return {
+    allowAdd: true,
+    onSwitch: c => switchContentChannel(c, tabsHost, editorHost),
+    onAdd: c => addContentChannel(c, tabsHost, editorHost),
+    onRemove: c => removeContentChannel(c, tabsHost, editorHost),
+  };
+}
+
+function renderChannelTabs(host, { allowAdd = false, onSwitch, onAdd, onRemove } = {}) {
   if (!host || !draft) return;
   const remaining = Object.keys(CHANNELS).filter(c => !draft.channels.includes(c));
+  const canRemove = draft.channels.length > 1;
   host.innerHTML = `
     ${draft.channels.map(c => `
-      <button type="button" class="tab${c === draft.active ? ' active' : ''}" data-tab="${c}">${CHANNELS[c].tip}</button>
+      <span class="tab-wrap${c === draft.active ? ' active' : ''}">
+        <button type="button" class="tab${c === draft.active ? ' active' : ''}" data-tab="${c}">${CHANNELS[c].tip}</button>
+        ${canRemove ? `<button type="button" class="tab-close" data-remove="${c}" aria-label="删除通道">×</button>` : ''}
+      </span>
     `).join('')}
     ${allowAdd && remaining.length ? '<button type="button" class="tab-add" id="tabAdd" title="添加通道"><i data-lucide="plus"></i></button>' : ''}
   `;
@@ -374,6 +486,13 @@ function renderChannelTabs(host, { allowAdd = false, onSwitch, onAdd } = {}) {
       const next = tab.dataset.tab;
       if (next === draft.active) return;
       onSwitch?.(next);
+    });
+  });
+
+  host.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      onRemove?.(btn.dataset.remove);
     });
   });
 
@@ -428,11 +547,7 @@ function mountContentEditor(container) {
 function switchContentChannel(nextChannel, tabsHost, editorHost) {
   saveActiveContentEditor();
   draft.active = nextChannel;
-  renderChannelTabs(tabsHost, {
-    allowAdd: true,
-    onSwitch: c => switchContentChannel(c, tabsHost, editorHost),
-    onAdd: c => addContentChannel(c, tabsHost, editorHost),
-  });
+  renderChannelTabs(tabsHost, contentTabHandlers(tabsHost, editorHost));
   mountContentEditor(editorHost);
   renderPreview();
   renderRows();
@@ -442,13 +557,26 @@ function addContentChannel(channel, tabsHost, editorHost) {
   if (draft.channels.includes(channel)) return;
   saveActiveContentEditor();
   draft.channels.push(channel);
-  draft.perChannel[channel] = newChannelConfig();
+  const cfg = newChannelConfig();
+  if (taskDrawerMode === 'edit') {
+    const src = draft.channels.find(c => c !== channel && draft.perChannel[c]?.timing);
+    if (src) cfg.timing = JSON.parse(JSON.stringify(draft.perChannel[src].timing));
+  }
+  draft.perChannel[channel] = cfg;
   draft.active = channel;
-  renderChannelTabs(tabsHost, {
-    allowAdd: true,
-    onSwitch: c => switchContentChannel(c, tabsHost, editorHost),
-    onAdd: c => addContentChannel(c, tabsHost, editorHost),
-  });
+  renderChannelTabs(tabsHost, contentTabHandlers(tabsHost, editorHost));
+  mountContentEditor(editorHost);
+  renderPreview();
+  renderRows();
+}
+
+function removeContentChannel(channel, tabsHost, editorHost) {
+  if (draft.channels.length <= 1) return;
+  saveActiveContentEditor();
+  draft.channels = draft.channels.filter(c => c !== channel);
+  delete draft.perChannel[channel];
+  if (draft.active === channel) draft.active = draft.channels[0];
+  renderChannelTabs(tabsHost, contentTabHandlers(tabsHost, editorHost));
   mountContentEditor(editorHost);
   renderPreview();
   renderRows();
@@ -468,14 +596,19 @@ function timingLabel(t) {
 
 function renderRows() {
   const av = document.getElementById('audienceValue');
-  const parts = [];
-  if (draft.audienceTags.length) {
-    parts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id).name).join(' · '));
+  if (draft.audienceMode === 'system') {
+    av.innerHTML = '<span class="cfg-summary">系统调用</span>';
+  } else {
+    const parts = [];
+    if (draft.audienceTags.length) {
+      parts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
+    }
+    if (draft.audienceFiles.length) parts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
+    if (!parts.length && draft.audienceLabel) parts.push(draft.audienceLabel);
+    av.innerHTML = parts.length
+      ? `<span class="cfg-summary">${parts.join(' ｜ ')}</span>`
+      : '<span class="placeholder">请选择人群</span>';
   }
-  if (draft.audienceFiles.length) parts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
-  av.innerHTML = parts.length
-    ? `<span class="cfg-summary">${parts.join(' ｜ ')}</span>`
-    : '<span class="placeholder">请选择人群</span>';
 
   const cfg = draft.perChannel[draft.active];
   const tv = document.getElementById('timingValue');
@@ -586,6 +719,7 @@ function closePanel() {
 }
 
 function openPanel(type) {
+  if (taskDrawerMode === 'edit' && (type === 'audience' || type === 'timing')) return;
   destroyAudiencePanelWidgets();
   panelContentEditor?.destroy();
   panelContentEditor = null;
@@ -596,13 +730,21 @@ function openPanel(type) {
 
   if (type === 'audience') {
     document.getElementById('rowAudience').classList.add('active');
+    const mode0 = draft.audienceMode || 'manual';
     panel.innerHTML = `
       <div class="panel-title">选择人群</div>
+      <div class="field">
+        <div class="radio-group" id="audModeGroup">
+          <label><input type="radio" name="audMode" value="manual" ${mode0 === 'manual' ? 'checked' : ''}>手动选择</label>
+          <label><input type="radio" name="audMode" value="system" ${mode0 === 'system' ? 'checked' : ''}>系统调用</label>
+        </div>
+      </div>
+      <div id="audManualBlock">
       <p class="panel-hint">星灵标签与上传至少选择 1 项</p>
       <div class="tabs" id="audTabs">
         <button type="button" class="tab active" data-aud-tab="tags">星灵标签</button>
         <button type="button" class="tab" data-aud-tab="upload">上传</button>
-        <button type="button" class="tab" data-aud-tab="viber">Viber</button>
+        <button type="button" class="tab" data-aud-tab="viber">viber附加信息</button>
       </div>
       <div class="tab-pane" id="audPaneTags">
         <div id="audTagMsel"></div>
@@ -648,10 +790,20 @@ function openPanel(type) {
           </div>
         </div>
       </div>
+      </div>
       <div class="panel-actions">
         <button type="button" class="btn btn-outline" id="panelCancel">取消</button>
         <button type="button" class="btn btn-primary" id="panelOk">确认</button>
       </div>`;
+
+    const manualBlock = panel.querySelector('#audManualBlock');
+    const syncAudMode = mode => {
+      manualBlock.hidden = mode !== 'manual';
+    };
+    syncAudMode(mode0);
+    panel.querySelectorAll('input[name="audMode"]').forEach(r => {
+      r.addEventListener('change', () => syncAudMode(r.value));
+    });
 
     const defaultAudTab = draft.audienceFiles.length && !draft.audienceTags.length ? 'upload' : 'tags';
     const switchAudTab = tab => {
@@ -792,6 +944,16 @@ function openPanel(type) {
     panel.querySelector('#downloadTplBtn').addEventListener('click', () => showToast('人群上传模板已开始下载'));
 
     panel.querySelector('#panelOk').addEventListener('click', () => {
+      const mode = panel.querySelector('input[name="audMode"]:checked')?.value || 'manual';
+      draft.audienceMode = mode;
+      if (mode === 'system') {
+        draft.audienceTags = [];
+        draft.audienceFiles = [];
+        draft.viberAudience = newViberAudienceConfig();
+        closePanel();
+        renderRows();
+        return;
+      }
       const tags = panelAudienceMsel.getValue();
       if (!tags.length && !pendingFiles.length) {
         showToast('星灵标签与上传至少选择 1 项');
@@ -873,11 +1035,7 @@ function openPanel(type) {
 
     const tabsHost = panel.querySelector('#ntContentChannelTabs');
     const editorHost = panel.querySelector('#ntContentEditor');
-    renderChannelTabs(tabsHost, {
-      allowAdd: true,
-      onSwitch: c => switchContentChannel(c, tabsHost, editorHost),
-      onAdd: c => addContentChannel(c, tabsHost, editorHost),
-    });
+    renderChannelTabs(tabsHost, contentTabHandlers(tabsHost, editorHost));
     mountContentEditor(editorHost);
 
     panel.querySelector('#panelOk').addEventListener('click', () => {
@@ -901,7 +1059,7 @@ function createTask() {
   if (!name) { showToast('请输入名称'); return; }
   if (!document.getElementById('ntProductLine').value) { showToast('请选择产品线'); return; }
   draft.taskType = document.querySelector('input[name="taskType"]:checked')?.value || 'manual';
-  if (!draft.audienceTags.length && !draft.audienceFiles.length) {
+  if (draft.audienceMode !== 'system' && !draft.audienceTags.length && !draft.audienceFiles.length) {
     showToast('请选择人群（星灵标签或上传至少 1 项）');
     return;
   }
@@ -924,9 +1082,49 @@ function createTask() {
   showToast('已提交审批');
 }
 
+function saveEditedTask() {
+  saveActiveContentEditor();
+  const missing = draft.channels.find(c => !hasContent(draft.perChannel[c].content));
+  if (missing) {
+    showToast(`请完成「${CHANNELS[missing].tip}」通道的内容配置`);
+    return;
+  }
+  const t = typeof TASK_RECORDS !== 'undefined' ? TASK_RECORDS.find(x => x.id === editingTaskId) : null;
+  if (!t) { showToast('未找到任务'); return; }
+  t.channels = draft.channels.map(c => CHANNELS[c].label);
+  t.channelContents = {};
+  draft.channels.forEach(c => {
+    const label = CHANNELS[c].label;
+    t.channelContents[label] = {
+      contentSummary: contentSummary(draft.perChannel[c].content, 80),
+      template: t.template || '-',
+      timing: t.timing,
+      content: draft.perChannel[c].content,
+    };
+  });
+  t.contentSummary = contentSummary(draft.perChannel[draft.channels[0]].content, 80);
+  t.updatedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  t.updatedBy = 'marvin@';
+  closeDrawer('taskDrawer');
+  showToast(`任务「${t.name}」已保存`);
+  if (typeof renderTable === 'function') renderTable();
+  if (typeof renderKpis === 'function') renderKpis();
+}
+
+function submitTaskDrawer() {
+  if (taskDrawerMode === 'edit') saveEditedTask();
+  else createTask();
+}
+
 function bindTaskDrawer() {
-  document.getElementById('rowAudience')?.addEventListener('click', () => openPanel('audience'));
-  document.getElementById('rowTiming')?.addEventListener('click', () => openPanel('timing'));
+  document.getElementById('rowAudience')?.addEventListener('click', () => {
+    if (taskDrawerMode === 'edit') return;
+    openPanel('audience');
+  });
+  document.getElementById('rowTiming')?.addEventListener('click', () => {
+    if (taskDrawerMode === 'edit') return;
+    openPanel('timing');
+  });
   document.getElementById('rowContent')?.addEventListener('click', () => openPanel('content'));
   document.getElementById('ntName')?.addEventListener('input', () => {
     if (draft && draft.active === 'email') renderPreview();
@@ -934,7 +1132,7 @@ function bindTaskDrawer() {
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
     r.addEventListener('change', () => { if (draft) draft.taskType = r.value; });
   });
-  document.getElementById('createTaskBtn')?.addEventListener('click', createTask);
+  document.getElementById('createTaskBtn')?.addEventListener('click', submitTaskDrawer);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
