@@ -38,7 +38,10 @@
           <button class="app-item" data-channel="messenger">
             <span class="app-icon"><i data-lucide="message-circle"></i></span><span>Messenger</span>
           </button>
-          <button class="app-item" data-channel="telegram">
+          <button class="app-item" data-channel="whatsapp">
+            <span class="app-icon"><i data-lucide="message-circle-more"></i></span><span>WhatsApp</span>
+          </button>
+          <button class="app-item app-item-disabled" data-channel="telegram">
             <span class="app-icon"><i data-lucide="send"></i></span><span>Telegram</span>
           </button>
           <button class="app-item" data-channel="inbox">
@@ -107,7 +110,7 @@
   <!-- 任务详情抽屉（首页） -->
   <div class="drawer-root" id="homeTaskDetailDrawer">
     <div class="drawer-mask" data-close></div>
-    <aside class="drawer drawer-md">
+    <aside class="drawer drawer-lg">
       <header class="drawer-header">
         <h3 id="homeTaskDetailTitle">任务详情</h3>
         <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
@@ -174,6 +177,11 @@
               <div class="cfg-value" id="timingValue"><span class="placeholder">请选择发送时机</span></div>
               <i data-lucide="chevron-right"></i>
             </div>
+          </div>
+
+          <div class="field" id="ntTaskCodeField" hidden>
+            <span class="field-label">任务code</span>
+            <input class="input" id="ntTaskCode" placeholder="请输入任务code">
           </div>
 
           <div class="field">

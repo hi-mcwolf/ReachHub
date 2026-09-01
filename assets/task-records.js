@@ -4,7 +4,6 @@ const TASK_STATUS = {
   pending: { label: '待发送', cls: 'tag-info' },
   running: { label: '执行中', cls: 'tag-orange' },
   done:    { label: '已完成', cls: 'tag-success' },
-  paused:  { label: '已暂停', cls: 'tag-gray-outline' },
   failed:  { label: '失败',   cls: 'tag-danger' },
   stopped: { label: '已终止', cls: 'tag-gray' },
 };
@@ -37,7 +36,8 @@ function enrichTaskRecords() {
   TASK_RECORDS.forEach((t, i) => {
     if (!t.productLine) t.productLine = ['BP-VIP', 'BingoPlus', 'BP-CONTENT OPERATION CENTER'][i % 3];
     if (t.audienceCount == null) t.audienceCount = t.total;
-    if (!t.taskType) t.taskType = i % 3 === 0 ? 'API' : '手动';
+    if (!t.taskType) t.taskType = i % 3 === 0 ? '系统调用' : '手动发送';
+    if (t.taskType === '系统调用' && !t.taskCode) t.taskCode = 'TC-' + t.id.slice(1);
     if (!t.approvalStatus) {
       if (t.status === 'pending') t.approvalStatus = 'pending';
       else if (t.status === 'failed' && i % 2 === 0) t.approvalStatus = 'rejected';
@@ -98,7 +98,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260713003', name: 'VIP 流失预警电销', type: '召回', audience: 'VIP用户 · 流失预警用户',
     channels: ['电销'], timing: '工作日 10:00-19:00', strategy: '电销工作时段限制',
-    status: 'paused', creator: 'marvin@', createdAt: '2026-07-10 09:30', updatedAt: '2026-07-12 16:20',
+    status: 'running', creator: 'marvin@', createdAt: '2026-07-10 09:30', updatedAt: '2026-07-12 16:20',
     sent: 384, total: 960, deliverRate: '87.5%', opens: null, clicks: null, fails: 48,
     party: '自营平台', sender: '400 880 1***', template: '流失召回话术',
     contentSummary: '您好，我们注意到您已有一段时间未登录…',
@@ -193,8 +193,8 @@ const TASK_RECORDS = [
   },
   {
     id: 'T20260707015', name: '流失 30 天召回邮件', type: '召回', audience: '流失预警用户',
-    channels: ['邮件'], timing: '每周一 10:00 循环', strategy: '流失预警人群圈选',
-    status: 'paused', creator: 'lily@', createdAt: '2026-06-30 15:40', updatedAt: '2026-07-07 10:05',
+    channels: ['邮件'], timing: '每周一 10:00 循环', strategy: '流失预警人群圈选', taskType: '系统调用',
+    status: 'stopped', creator: 'lily@', createdAt: '2026-06-30 15:40', updatedAt: '2026-07-07 10:05',
     sent: 1240, total: 1800, deliverRate: '93.2%', opens: 310, clicks: 96, fails: 84,
     party: '自营平台', sender: 'marketing@bingoplus.com', template: '流失召回话术',
     contentSummary: '您的专属回归礼包即将过期，登录即可领取…',
@@ -275,6 +275,7 @@ function renderKpis() {
 /* ---------------- 筛选 ---------------- */
 function applyFilters() {
   const name = document.getElementById('fName').value.trim().toLowerCase();
+  const taskCode = document.getElementById('fTaskCode').value.trim().toLowerCase();
   const content = document.getElementById('fContent').value.trim().toLowerCase();
   const type = document.getElementById('fType').value;
   const channel = document.getElementById('fChannel').value;
@@ -288,6 +289,7 @@ function applyFilters() {
 
   filtered = TASK_RECORDS.filter(t =>
     (!name || t.name.toLowerCase().includes(name) || t.id.toLowerCase().includes(name)) &&
+    (!taskCode || (t.taskCode || '').toLowerCase().includes(taskCode)) &&
     (!content || (t.contentSummary || '').toLowerCase().includes(content)) &&
     (!productLines.length || productLines.includes(t.productLine)) &&
     (!type || t.taskType === type) &&
@@ -304,7 +306,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ['fName', 'fContent', 'fApprover'].forEach(id => document.getElementById(id).value = '');
+  ['fName', 'fTaskCode', 'fContent', 'fApprover'].forEach(id => document.getElementById(id).value = '');
   ['fType', 'fChannel', 'fStatus', 'fApproval', 'fParty', 'fCreator'].forEach(id =>
     document.getElementById(id).value = '');
   productLineFilter?.setValue([]);
@@ -350,16 +352,8 @@ function handleBatchAction(act) {
     tasks.forEach(t => { if (t.approvalStatus === 'pending') { t.approvalStatus = 'rejected'; t.approver = 'marvin@'; t.approvedAt = '2026-07-14 10:00'; } });
     showToast(`已批量拒绝 ${n} 个任务`);
   }
-  if (act === 'pause') {
-    tasks.forEach(t => { if (t.status === 'running') t.status = 'paused'; });
-    showToast(`已批量暂停 ${n} 个任务`);
-  }
-  if (act === 'resume') {
-    tasks.forEach(t => { if (t.status === 'paused') t.status = 'running'; });
-    showToast(`已批量恢复 ${n} 个任务`);
-  }
   if (act === 'stop') {
-    tasks.forEach(t => { if (['running', 'paused', 'pending'].includes(t.status)) t.status = 'stopped'; });
+    tasks.forEach(t => { if (['running', 'pending'].includes(t.status)) t.status = 'stopped'; });
     showToast(`已批量终止 ${n} 个任务`);
   }
   clearSelection();
@@ -375,25 +369,28 @@ function renderTable() {
   const rows = filtered.slice(start, start + PAGE_SIZE);
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="14" class="cell-empty">暂无符合条件的任务</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="15" class="cell-empty">暂无符合条件的任务</td></tr>`;
   } else {
     tbody.innerHTML = rows.map(t => {
       const st = TASK_STATUS[t.status];
       const audienceText = `${t.audience}（${t.audienceCount.toLocaleString()}人）`;
+      const isSystem = t.taskType === '系统调用';
       const approvalOps = t.approvalStatus === 'pending'
         ? `<button class="link-btn" data-act="approve" data-id="${t.id}">通过</button>
            <button class="link-btn link-btn-danger" data-act="reject" data-id="${t.id}">拒绝</button>`
         : '';
-      const morePause = t.status === 'running'
-        ? '<button class="more-item" data-act="pause" data-id="' + t.id + '">暂停</button>'
-        : t.status === 'paused'
-          ? '<button class="more-item" data-act="resume" data-id="' + t.id + '">恢复</button>'
-          : '';
+      let moreStop = '';
+      if (isSystem) {
+        moreStop = t.status === 'stopped'
+          ? `<button class="more-item" data-act="change" data-id="${t.id}">变更</button>`
+          : `<button class="more-item more-danger" data-act="stop" data-id="${t.id}">终止任务</button>`;
+      }
       return `
         <tr>
           <td class="col-check"><input type="checkbox" class="row-check" data-check="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} aria-label="选择 ${t.id}"></td>
           <td class="cell-muted">${t.id}</td>
           <td class="col-name"><span class="cell-ellipsis" title="${t.name}">${t.name}</span></td>
+          <td class="cell-muted">${isSystem ? fmt(t.taskCode) : '-'}</td>
           <td>${t.productLine}</td>
           <td><span class="cell-ellipsis" title="${audienceText}">${audienceText}</span></td>
           <td>${t.channels.map(c => `<span class="tag">${c}</span>`).join('')}</td>
@@ -407,14 +404,12 @@ function renderTable() {
           <td class="col-ops">
             ${approvalOps}
             <button class="link-btn" data-detail="${t.id}">查看详情</button>
-            <button class="link-btn" data-edit="${t.id}">编辑</button>
             <span class="more-wrap">
               <button class="link-btn" data-more="${t.id}">更多<i data-lucide="chevron-down"></i></button>
               <span class="more-menu" hidden>
                 <button class="more-item" data-act="copy" data-id="${t.id}">复制任务</button>
                 <button class="more-item" data-act="records" data-id="${t.id}">查看发送记录</button>
-                ${morePause}
-                <button class="more-item more-danger" data-act="stop" data-id="${t.id}">终止任务</button>
+                ${moreStop}
               </span>
             </span>
           </td>
@@ -452,8 +447,6 @@ function bindRowActions() {
 
   tbody.querySelectorAll('[data-detail]').forEach(btn =>
     btn.addEventListener('click', () => openTaskDetail(btn.dataset.detail)));
-  tbody.querySelectorAll('[data-edit]').forEach(btn =>
-    btn.addEventListener('click', () => startTaskEdit(btn.dataset.edit)));
 
   tbody.querySelectorAll('.row-check').forEach(cb =>
     cb.addEventListener('change', () => {
@@ -490,30 +483,21 @@ function bindRowActions() {
       closeAllMoreMenus();
       if (item.dataset.act === 'copy') showToast(`已复制任务「${t.name}」为草稿`);
       if (item.dataset.act === 'records') location.href = 'send-records.html';
-      if (item.dataset.act === 'pause') {
-        t.status = 'paused';
-        showToast(`任务「${t.name}」已暂停`);
-        renderKpis(); renderTable();
-      }
-      if (item.dataset.act === 'resume') {
-        t.status = 'running';
-        showToast(`任务「${t.name}」已恢复`);
-        renderKpis(); renderTable();
-      }
       if (item.dataset.act === 'stop') {
         t.status = 'stopped';
         showToast(`任务「${t.name}」已终止`);
         renderKpis(); renderTable();
       }
+      if (item.dataset.act === 'change') startTaskChange(t.id);
     }));
 }
 
-function startTaskEdit(id) {
+function startTaskChange(id) {
   const t = TASK_RECORDS.find(x => x.id === id);
   if (!t) return;
   closeDrawer('taskDetailDrawer');
-  if (typeof openTaskEdit === 'function') openTaskEdit(t);
-  else showToast('编辑抽屉未加载');
+  if (typeof openTaskChange === 'function') openTaskChange(t);
+  else showToast('变更抽屉未加载');
 }
 
 /* ---------------- 详情抽屉 ---------------- */
@@ -521,8 +505,16 @@ function channelDetailHtml(t, channel) {
   const cc = t.channelContents?.[channel] || {};
   return `
     <div class="desc-item"><span class="desc-label">发送时机</span><span>${fmt(cc.timing ?? t.timing)}</span></div>
-    <div class="desc-item"><span class="desc-label">内容摘要</span><span>${fmt(cc.contentSummary ?? t.contentSummary)}</span></div>
     <div class="desc-item"><span class="desc-label">模板名称</span><span>${fmt(cc.template ?? t.template)}</span></div>`;
+}
+
+function taskPreviewItems(t) {
+  return t.channels.map(c => {
+    const cc = t.channelContents?.[c] || {};
+    let content = cc.content ?? cc.contentSummary ?? t.contentSummary ?? '';
+    if (content === '-') content = '';
+    return { channel: c, label: c, content, fallbackTitle: t.name };
+  });
 }
 
 function bindChannelTabs(t) {
@@ -554,7 +546,11 @@ function openTaskDetail(id) {
       <div class="desc-item"><span class="desc-label">通道配置</span><span><span class="tag tag-primary">${t.channels[0]}</span></span></div>
       ${channelDetailHtml(t, t.channels[0])}`;
 
-  document.getElementById('taskDetailBody').innerHTML = `
+  const body = document.getElementById('taskDetailBody');
+  body.classList.add('drawer-body--split');
+  body.innerHTML = `
+    <aside class="detail-preview" id="taskDetailPreview"></aside>
+    <div class="detail-main">
     <section class="card detail-group">
       <h4 class="card-title">基础信息</h4>
       <div class="desc-list">
@@ -573,6 +569,7 @@ function openTaskDetail(id) {
       <div class="desc-list">
         <div class="desc-item"><span class="desc-label">发送对象</span><span>${fmt(t.audience)}</span></div>
         <div class="desc-item"><span class="desc-label">任务类型</span><span>${t.taskType}</span></div>
+        ${t.taskType === '系统调用' ? `<div class="desc-item"><span class="desc-label">任务code</span><span>${fmt(t.taskCode)}</span></div>` : ''}
         ${channelBlock}
       </div>
     </section>
@@ -590,8 +587,10 @@ function openTaskDetail(id) {
         ${execMetric('推送失败条数', 'pushFail', t.execution.pushFail)}
         ${execMetric('待确认数', 'pendingConfirm', t.execution.pendingConfirm)}
       </div>
-    </section>`;
+    </section>
+    </div>`;
 
+  mountDetailPreview(document.getElementById('taskDetailPreview'), taskPreviewItems(t));
   bindChannelTabs(t);
   renderTaskDetailFooter(t);
 
@@ -629,14 +628,8 @@ function renderTaskDetailFooter(t) {
   } else {
     footer.innerHTML = `
       <button class="btn btn-outline" data-close>关闭</button>
-      <button class="btn btn-outline" id="detailToSendRecords">查看发送记录</button>
-      <button class="btn btn-primary" id="detailEditBtn">编辑任务</button>`;
+      <button class="btn btn-outline" id="detailToSendRecords">查看发送记录</button>`;
     footer.querySelector('#detailToSendRecords').addEventListener('click', () => location.href = 'send-records.html');
-    const editBtn = footer.querySelector('#detailEditBtn');
-    const editable = ['pending', 'paused'].includes(t.status);
-    editBtn.disabled = !editable;
-    editBtn.title = editable ? '' : '当前状态不可编辑';
-    editBtn.addEventListener('click', () => startTaskEdit(t.id));
   }
   footer.querySelectorAll('[data-close]').forEach(btn =>
     btn.addEventListener('click', () => closeDrawer('taskDetailDrawer')));
@@ -667,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('queryBtn').addEventListener('click', applyFilters);
   document.getElementById('resetBtn').addEventListener('click', resetFilters);
-  ['fName', 'fContent', 'fApprover'].forEach(id =>
+  ['fName', 'fTaskCode', 'fContent', 'fApprover'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
 
   // 全选与批量操作

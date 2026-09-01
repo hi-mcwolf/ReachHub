@@ -52,6 +52,10 @@
                 <input class="input" id="fTask" placeholder="输入任务名称或 ID 搜索">
               </div>
               <div class="filter-item">
+                <span class="filter-label">任务code</span>
+                <input class="input" id="fTaskCode" placeholder="输入任务code搜索">
+              </div>
+              <div class="filter-item">
                 <span class="filter-label">内容</span>
                 <input class="input" id="fContent" placeholder="输入内容关键词搜索">
               </div>
@@ -64,13 +68,13 @@
                 <select class="select" id="fChannel">
                   <option value="">全部</option><option>SMS</option><option>邮件</option><option>Push</option>
                   <option>Inbox</option><option>IM</option><option>Bot</option>
-                  <option>Viber</option><option>Messenger</option><option>电销</option>
+                  <option>Viber</option><option>Messenger</option><option>WhatsApp</option><option>电销</option>
                 </select>
               </div>
               <div class="filter-item">
                 <span class="filter-label">任务类型</span>
                 <select class="select" id="fType">
-                  <option value="">全部</option><option>API</option><option>手动</option>
+                  <option value="">全部</option><option>系统调用</option><option>手动发送</option>
                 </select>
               </div>
               <div class="filter-item">
@@ -123,7 +127,7 @@
               <table class="table stats-table records-table">
                 <thead>
                   <tr>
-                    <th>记录 ID</th><th>发送时间</th><th>任务 ID</th><th class="col-name">任务名称</th><th>发送对象</th>
+                    <th>记录 ID</th><th>发送时间</th><th>任务 ID</th><th class="col-name">任务名称</th><th>任务code</th><th>发送对象</th>
                     <th>通道</th><th>供应商</th><th>账号</th><th class="col-name">发送内容</th>
                     <th>发送状态</th><th>回执 ID</th><th>回执状态</th><th>失败原因</th><th>来源</th>
                     <th class="col-ops">操作</th>
@@ -145,7 +149,7 @@
   <!-- 发送详情抽屉 -->
   <div class="drawer-root" id="sendDetailDrawer">
     <div class="drawer-mask" data-close></div>
-    <aside class="drawer drawer-md">
+    <aside class="drawer drawer-lg">
       <header class="drawer-header">
         <h3>发送详情</h3>
         <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>

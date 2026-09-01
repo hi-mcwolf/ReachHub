@@ -6,7 +6,8 @@ const CHANNELS = {
   push:     { label: 'Push',     tip: 'Push',     icon: 'bell' },
   viber:    { label: 'Viber',    tip: 'Viber',    icon: 'phone-call' },
   messenger:{ label: 'Messenger',tip: 'Messenger',icon: 'message-circle' },
-  telegram: { label: 'Telegram', tip: 'Telegram', icon: 'send' },
+  whatsapp: { label: 'WhatsApp', tip: 'WhatsApp', icon: 'message-circle-more' },
+  telegram: { label: 'Telegram', tip: 'Telegram', icon: 'send', disabled: true },
   inbox:    { label: '站内信',   tip: '站内信',   icon: 'inbox' },
 };
 
@@ -37,32 +38,32 @@ const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '�
 
 const APPROVAL_QUEUE = [
   { id: 'AP20260714003', name: 'Messenger 社群拉新', channel: 'Messenger', appliedAt: '2026-07-14 09:20',
-    creator: 'lily@', audience: '新注册用户', taskType: '手动', timing: '定时 · 2026-07-15 10:00',
+    creator: 'lily@', audience: '新注册用户', taskType: '手动发送', timing: '定时 · 2026-07-15 10:00',
     contentSummary: '加入官方社群，每日抽奖赢免费竞猜券！', template: '-' },
   { id: 'AP20260713002', name: '世界杯决赛邮件预告', channel: '邮件', appliedAt: '2026-07-13 15:40',
-    creator: 'ken@', audience: '活跃用户', taskType: '手动', timing: '立即发送',
+    creator: 'ken@', audience: '活跃用户', taskType: '手动发送', timing: '立即发送',
     contentSummary: '决赛之夜即将来临，提前锁定您的冠军竞猜…', template: '世界杯竞猜提醒' },
   { id: 'AP20260712001', name: '沉默用户唤醒短信', channel: 'SMS', appliedAt: '2026-07-12 11:05',
-    creator: 'marvin@', audience: '沉默用户', taskType: 'API', timing: '循环 · 每周一 09:00',
+    creator: 'marvin@', audience: '沉默用户', taskType: '系统调用', taskCode: 'TC-20260712001', timing: '循环 · 每周一 09:00',
     contentSummary: '好久不见！您的老朋友 BingoPlus 为您准备了回归好礼…', template: '流失召回话术' },
 ];
 
 const RUNNING_TASKS = [
   { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75,
     creator: 'marvin@', createdAt: '2026-07-12 10:20', approver: 'lily@', approvedAt: '2026-07-12 11:00',
-    audience: '活跃用户', taskType: 'API', timing: '2026-07-13 18:00 定时',
+    audience: '活跃用户', taskType: '系统调用', taskCode: 'TC-20260713001', timing: '2026-07-13 18:00 定时',
     contentSummary: 'Only the best teams remain! Warm up for the Quarterfinals…', template: '世界杯竞猜提醒',
     execution: { total: 12800, pushable: 12160, valid: 11776, duplicate: 384, blacklist: 256, dnc: 128,
       pushCount: 9632, pushSuccess: 9459, pushFail: 173, pendingConfirm: 482 } },
   { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38,
     creator: 'lily@', createdAt: '2026-07-11 14:05', approver: 'marvin@', approvedAt: '2026-07-11 15:00',
-    audience: '新注册用户', taskType: '手动', timing: '每天 10:00 循环',
+    audience: '新注册用户', taskType: '手动发送', timing: '每天 10:00 循环',
     contentSummary: '尊敬的用户，本周充值满 500 即享 8% 加赠…', template: '充值优惠通知',
     execution: { total: 5600, pushable: 5320, valid: 5152, duplicate: 168, blacklist: 112, dnc: 56,
       pushCount: 2128, pushSuccess: 2051, pushFail: 77, pendingConfirm: 106 } },
   { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52,
     creator: 'ken@', createdAt: '2026-07-08 11:00', approver: 'lily@', approvedAt: '2026-07-08 12:00',
-    audience: 'VIP用户 · 沉默用户', taskType: 'API', timing: '每天 09:00 循环',
+    audience: 'VIP用户 · 沉默用户', taskType: '系统调用', taskCode: 'TC-20260712004', timing: '每天 09:00 循环',
     contentSummary: '您的专属权益即将到期，登录立即领取…', template: '-',
     execution: { total: 21200, pushable: 20140, valid: 19504, duplicate: 636, blacklist: 424, dnc: 212,
       pushCount: 11024, pushSuccess: 10814, pushFail: 210, pendingConfirm: 551 } },
@@ -84,7 +85,7 @@ function newChannelConfig() {
 }
 
 function newViberAudienceConfig() {
-  return { bizExclude: [], bizExcludeBots: [], botExclude: [], viberIdFile: null };
+  return { bizExclude: [], bizExcludeBots: [], botExclude: [] };
 }
 
 function destroyAudiencePanelWidgets() {
@@ -121,6 +122,8 @@ function initDraft(channel) {
     name: '',
     productLine: '',
     taskType: 'manual',
+    taskCode: '',
+    resendFilter: null,
     audienceTags: [],
     audienceFiles: [],
     audienceLabel: '',
@@ -132,6 +135,8 @@ function initDraft(channel) {
   };
   document.getElementById('ntName').value = '';
   document.getElementById('ntProductLine').value = '';
+  const codeEl = document.getElementById('ntTaskCode');
+  if (codeEl) codeEl.value = '';
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
     r.checked = r.value === 'manual';
   });
@@ -144,17 +149,20 @@ function initDraft(channel) {
 
 function setTaskDrawerMode(mode) {
   taskDrawerMode = mode;
-  const locked = mode === 'edit';
+  const locked = mode === 'edit' || mode === 'change';
+  const titles = { create: '新建', edit: '编辑任务', change: '变更任务' };
   const title = document.getElementById('taskDrawerTitle');
   const submit = document.getElementById('createTaskBtn');
   const nameEl = document.getElementById('ntName');
   const plEl = document.getElementById('ntProductLine');
-  if (title) title.textContent = locked ? '编辑任务' : '新建';
+  const codeEl = document.getElementById('ntTaskCode');
+  if (title) title.textContent = titles[mode] || '新建';
   if (submit) submit.textContent = locked ? '保存' : '提交审批';
   if (nameEl) nameEl.disabled = locked;
   if (plEl) plEl.disabled = locked;
+  if (codeEl) codeEl.disabled = locked;
   document.querySelectorAll('input[name="taskType"]').forEach(r => { r.disabled = locked; });
-  document.getElementById('rowAudience')?.classList.toggle('cfg-row-locked', locked);
+  document.getElementById('rowAudience')?.classList.toggle('cfg-row-locked', mode === 'edit');
   document.getElementById('rowTiming')?.classList.toggle('cfg-row-locked', locked);
 }
 
@@ -163,12 +171,20 @@ function isSystemTask() {
 }
 
 function syncTaskTypeUi() {
-  const hideWhoWhen = isSystemTask();
+  const sys = isSystemTask();
+  const isChange = taskDrawerMode === 'change';
   const audField = document.getElementById('ntAudienceField');
   const timingField = document.getElementById('ntTimingField');
-  if (audField) audField.hidden = hideWhoWhen;
-  if (timingField) timingField.hidden = hideWhoWhen;
-  if (hideWhoWhen && (activePanel === 'audience' || activePanel === 'timing')) closePanel();
+  const codeField = document.getElementById('ntTaskCodeField');
+  if (audField) audField.hidden = sys && !isChange;
+  if (timingField) timingField.hidden = sys;
+  if (codeField) codeField.hidden = !sys;
+  if (audField?.hidden && activePanel === 'audience') closePanel();
+  if (timingField?.hidden && activePanel === 'timing') closePanel();
+  if (activePanel === 'content') {
+    const editorHost = document.getElementById('ntContentEditor');
+    if (editorHost) mountContentEditor(editorHost);
+  }
 }
 
 function toDraftChannel(label) {
@@ -207,7 +223,7 @@ function ensureProductLineOption(value) {
   sel.value = value;
 }
 
-function openTaskEdit(task) {
+function openTaskEdit(task, mode = 'edit') {
   if (!task || !document.getElementById('taskDrawer')) return;
   editingTaskId = task.id;
   const channels = [...new Set((task.channels || ['SMS']).map(toDraftChannel))];
@@ -227,6 +243,8 @@ function openTaskEdit(task) {
     name: task.name || '',
     productLine: task.productLine || '',
     taskType: (task.taskType === 'API' || task.taskType === '系统调用' || task.taskType === 'system') ? 'system' : 'manual',
+    taskCode: task.taskCode || '',
+    resendFilter: null,
     audienceTags: audienceTagsFromRecord(task),
     audienceFiles: [],
     audienceLabel: task.audience || '',
@@ -238,12 +256,36 @@ function openTaskEdit(task) {
   };
   document.getElementById('ntName').value = draft.name;
   ensureProductLineOption(draft.productLine);
+  const codeEl = document.getElementById('ntTaskCode');
+  if (codeEl) codeEl.value = draft.taskCode;
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
     r.checked = r.value === draft.taskType;
   });
-  setTaskDrawerMode('edit');
+  setTaskDrawerMode(mode);
   closePanel();
   syncTaskTypeUi();
+  renderRows();
+  renderPreview();
+  openDrawer('taskDrawer');
+  initCharCounters(document.getElementById('taskDrawer'));
+}
+
+/* 已终止的系统调用任务：变更（可重新选择人群过滤方式与内容） */
+function openTaskChange(task) {
+  openTaskEdit(task, 'change');
+}
+
+/* 从模板新建任务：带入通道与模板内容 */
+function openTaskCreateWithContent(channelLabel, content) {
+  if (!document.getElementById('taskDrawer')) return;
+  const ch = toDraftChannel(channelLabel);
+  initDraft(ch);
+  if (content) {
+    const copy = JSON.parse(JSON.stringify(content));
+    draft.perChannel[ch].content = typeof ensureContentValue === 'function'
+      ? ensureContentValue(ch, copy)
+      : copy;
+  }
   renderRows();
   renderPreview();
   openDrawer('taskDrawer');
@@ -387,7 +429,10 @@ function openHomeTaskDetail(id, kind) {
       </div>
     </section>`;
 
+  body.classList.add('drawer-body--split');
   body.innerHTML = `
+    <aside class="detail-preview" id="homeDetailPreview"></aside>
+    <div class="detail-main">
     <section class="card detail-group">
       <h4 class="card-title">基础信息</h4>
       <div class="desc-list">
@@ -408,11 +453,17 @@ function openHomeTaskDetail(id, kind) {
         <div class="desc-item"><span class="desc-label">任务类型</span><span>${item.taskType}</span></div>
         <div class="desc-item"><span class="desc-label">通道配置</span><span><span class="tag tag-primary">${item.channel}</span></span></div>
         <div class="desc-item"><span class="desc-label">发送时机</span><span>${hfmt(item.timing)}</span></div>
-        <div class="desc-item"><span class="desc-label">内容摘要</span><span>${hfmt(item.contentSummary)}</span></div>
         <div class="desc-item"><span class="desc-label">模板名称</span><span>${hfmt(item.template)}</span></div>
       </div>
     </section>
-    ${execSection}`;
+    ${execSection}
+    </div>`;
+
+  mountDetailPreview(document.getElementById('homeDetailPreview'), [{
+    channel: item.channel,
+    content: item.contentSummary === '-' ? '' : item.contentSummary,
+    fallbackTitle: item.name,
+  }]);
 
   if (isApproval) {
     footer.innerHTML = `
@@ -453,9 +504,13 @@ function bindPhoneScreen() {
   if (!screen || !tip) return;
   screen.addEventListener('mousemove', e => {
     const item = e.target.closest('.app-item');
-    tip.textContent = item
-      ? `创建${CHANNELS[item.dataset.channel].tip}`
-      : '点击APP图标创建任务';
+    if (item && CHANNELS[item.dataset.channel]?.disabled) {
+      tip.textContent = '敬请期待';
+    } else {
+      tip.textContent = item
+        ? `创建${CHANNELS[item.dataset.channel].tip}`
+        : '点击APP图标创建任务';
+    }
     tip.style.display = 'block';
     tip.style.left = e.clientX + 'px';
     tip.style.top = e.clientY + 'px';
@@ -464,6 +519,7 @@ function bindPhoneScreen() {
 
   screen.querySelectorAll('.app-item').forEach(item => {
     item.addEventListener('click', () => {
+      if (CHANNELS[item.dataset.channel]?.disabled) return;
       tip.style.display = 'none';
       initDraft(item.dataset.channel);
       openDrawer('taskDrawer');
@@ -483,7 +539,7 @@ function contentTabHandlers(tabsHost, editorHost) {
 
 function renderChannelTabs(host, { allowAdd = false, onSwitch, onAdd, onRemove } = {}) {
   if (!host || !draft) return;
-  const remaining = Object.keys(CHANNELS).filter(c => !draft.channels.includes(c));
+  const remaining = Object.keys(CHANNELS).filter(c => !draft.channels.includes(c) && !CHANNELS[c].disabled);
   const canRemove = draft.channels.length > 1;
   host.innerHTML = `
     ${draft.channels.map(c => `
@@ -550,6 +606,7 @@ function mountContentEditor(container) {
     channel: draft.active,
     value: draft.perChannel[draft.active].content,
     showTemplateTools: true,
+    showSmsConfigMode: !isSystemTask(),
     onChange: () => {
       draft.perChannel[draft.active].content = panelContentEditor.getValue();
       renderPreview();
@@ -611,15 +668,21 @@ function timingLabel(t) {
 function renderRows() {
   const av = document.getElementById('audienceValue');
   if (!av) return;
-  const parts = [];
-  if (draft.audienceTags.length) {
-    parts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
+  if (taskDrawerMode === 'change') {
+    av.innerHTML = draft.resendFilter
+      ? `<span class="cfg-summary">${draft.resendFilter === 'nofilter' ? '不过滤已发送人群' : '过滤已发送人群'}</span>`
+      : '<span class="placeholder">请选择人群</span>';
+  } else {
+    const parts = [];
+    if (draft.audienceTags.length) {
+      parts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
+    }
+    if (draft.audienceFiles.length) parts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
+    if (!parts.length && draft.audienceLabel) parts.push(draft.audienceLabel);
+    av.innerHTML = parts.length
+      ? `<span class="cfg-summary">${parts.join(' ｜ ')}</span>`
+      : '<span class="placeholder">请选择人群</span>';
   }
-  if (draft.audienceFiles.length) parts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
-  if (!parts.length && draft.audienceLabel) parts.push(draft.audienceLabel);
-  av.innerHTML = parts.length
-    ? `<span class="cfg-summary">${parts.join(' ｜ ')}</span>`
-    : '<span class="placeholder">请选择人群</span>';
 
   const cfg = draft.perChannel[draft.active];
   const tv = document.getElementById('timingValue');
@@ -645,77 +708,11 @@ function renderPreview() {
   const host = document.getElementById('ntPreview');
   const ch = draft.active;
   const content = draft.perChannel[ch].content;
-  const text = previewText(content) || '您配置的内容将实时显示在这里…';
-  const emptyCls = hasContent(content) ? '' : ' empty';
-  const now = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  const emailSubject = (typeof content === 'object' && content?.subject)
-    || draft.name || document.getElementById('ntName').value || '触达通知';
-  const emailSender = (typeof content === 'object' && content?.sender) || 'marketing@bingoplus.com';
-  const pushTitle = (typeof content === 'object' && content?.title) || 'BingoPlus';
-
-  let inner = '';
-  if (ch === 'sms') {
-    inner = `
-      <div class="pv-header">
-        <div class="pv-avatar"><i data-lucide="message-square"></i></div>
-        <div class="pv-sender">106 9013 3***</div>
-      </div>
-      <div class="pv-bubble${emptyCls}">${text}</div>
-      <div class="pv-time-hint">刚刚</div>`;
-  } else if (ch === 'email') {
-    inner = `
-      <div class="pv-mail">
-        <div class="pv-mail-row"><span>发件人</span>${emailSender}</div>
-        <div class="pv-mail-row"><span>主题</span>${emailSubject}</div>
-        <div class="pv-mail-body${emptyCls}">${text}</div>
-      </div>`;
-  } else if (ch === 'push') {
-    inner = `
-      <div class="pv-lock-time">
-        <div class="t">${timeStr}</div>
-        <div class="d">${now.getMonth() + 1}月${now.getDate()}日 星期${'日一二三四五六'[now.getDay()]}</div>
-      </div>
-      <div class="pv-notify">
-        <div class="pv-app-icon"><i data-lucide="bell"></i></div>
-        <div>
-          <div class="pv-n-title">${pushTitle}</div>
-          <div class="pv-n-body${emptyCls}">${text}</div>
-        </div>
-      </div>`;
-  } else if (ch === 'viber') {
-    const account = (typeof content === 'object' && (content?.biz?.account || content?.bot?.account)) || 'BingoPlus 官方';
-    inner = `
-      <div class="pv-header">
-        <div class="pv-avatar"><i data-lucide="${CHANNELS[ch].icon}"></i></div>
-        <div class="pv-sender">${account} · ${CHANNELS[ch].label}</div>
-      </div>
-      <div class="pv-bubble${emptyCls}">${text}</div>
-      <div class="pv-time-hint">${timeStr}</div>`;
-  } else if (ch === 'messenger' || ch === 'telegram') {
-    const account = (typeof content === 'object' && content?.account) || `BingoPlus 官方 · ${CHANNELS[ch].label}`;
-    const mediaType = (typeof content === 'object' && content?.type) || 'Text';
-    inner = `
-      <div class="pv-header">
-        <div class="pv-avatar"><i data-lucide="${CHANNELS[ch].icon}"></i></div>
-        <div class="pv-sender">${account}</div>
-      </div>
-      ${mediaType !== 'Text' ? `<div class="pv-media-tag"><i data-lucide="image"></i>${mediaType}</div>` : ''}
-      <div class="pv-bubble${emptyCls}">${text}</div>
-      <div class="pv-time-hint">${timeStr}</div>`;
-  } else if (ch === 'inbox') {
-    const title = (typeof content === 'object' && content?.title) || 'BingoPlus';
-    inner = `
-      <div class="pv-header">
-        <div class="pv-avatar"><i data-lucide="${CHANNELS[ch].icon}"></i></div>
-        <div class="pv-sender">${title}</div>
-      </div>
-      <div class="pv-bubble${emptyCls}">${text}</div>
-      <div class="pv-time-hint">${timeStr}</div>`;
-  }
-
-  host.innerHTML = `<div class="pv-screen">${inner}</div>`;
+  const fallbackTitle = draft.name || document.getElementById('ntName').value || '触达通知';
+  host.innerHTML = channelPreviewHtml(ch, content, {
+    emptyText: '您配置的内容将实时显示在这里…',
+    fallbackTitle,
+  });
   refreshIcons();
 }
 
@@ -730,7 +727,9 @@ function closePanel() {
 }
 
 function openPanel(type) {
-  if (isSystemTask() && (type === 'audience' || type === 'timing')) return;
+  const isChange = taskDrawerMode === 'change';
+  if (isSystemTask() && type === 'timing') return;
+  if (isSystemTask() && type === 'audience' && !isChange) return;
   if (taskDrawerMode === 'edit' && (type === 'audience' || type === 'timing')) return;
   destroyAudiencePanelWidgets();
   panelContentEditor?.destroy();
@@ -740,7 +739,30 @@ function openPanel(type) {
 
   const panel = document.getElementById('ntPanel');
 
-  if (type === 'audience') {
+  if (type === 'audience' && isChange) {
+    /* 变更模式：仅选择是否过滤已发送人群 */
+    document.getElementById('rowAudience').classList.add('active');
+    const cur = draft.resendFilter || 'filter';
+    panel.innerHTML = `
+      <div class="panel-title">选择人群</div>
+      <div class="field">
+        <span class="field-label">是否过滤已发送人群</span>
+        <div class="radio-group">
+          <label><input type="radio" name="ntResendFilter" value="filter" ${cur === 'filter' ? 'checked' : ''}>过滤${tipIcon('已经发过的人群不再发送')}</label>
+          <label><input type="radio" name="ntResendFilter" value="nofilter" ${cur === 'nofilter' ? 'checked' : ''}>不过滤${tipIcon('已经发过的人群重新发送')}</label>
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button type="button" class="btn btn-outline" id="panelCancel">取消</button>
+        <button type="button" class="btn btn-primary" id="panelOk">确认</button>
+      </div>`;
+
+    panel.querySelector('#panelOk').addEventListener('click', () => {
+      draft.resendFilter = panel.querySelector('input[name="ntResendFilter"]:checked')?.value || 'filter';
+      closePanel();
+      renderRows();
+    });
+  } else if (type === 'audience') {
     document.getElementById('rowAudience').classList.add('active');
     panel.innerHTML = `
       <div class="panel-title">选择人群</div>
@@ -748,7 +770,6 @@ function openPanel(type) {
       <div class="tabs" id="audTabs">
         <button type="button" class="tab active" data-aud-tab="tags">星灵标签</button>
         <button type="button" class="tab" data-aud-tab="upload">上传</button>
-        <button type="button" class="tab" data-aud-tab="viber">viber附加信息</button>
       </div>
       <div class="tab-pane" id="audPaneTags">
         <div id="audTagMsel"></div>
@@ -767,30 +788,23 @@ function openPanel(type) {
           <ul class="upload-list" id="uploadList"></ul>
         </div>
       </div>
-      <div class="tab-pane" hidden id="audPaneViber">
-        <p class="panel-hint">仅用于Viber通道</p>
-        <div class="field">
-          <span class="field-label">Biz message Exclude</span>
-          <div id="audViberBizExcludeMsel"></div>
-        </div>
-        <div class="field" id="audViberBizBotsField" hidden>
-          <span class="field-label">选择 Bot</span>
-          <div id="audViberBizBotsMsel"></div>
-        </div>
-        <div class="field">
-          <span class="field-label">Bot message Exclude</span>
-          <div id="audViberBotExcludeMsel"></div>
-        </div>
-        <div class="field">
-          <span class="field-label">Viber ID</span>
-          <div class="upload-area" tabindex="0" id="viberIdUploadArea">
-            <div class="upload-btns">
-              <button type="button" class="btn btn-outline btn-sm" id="uploadViberIdBtn"><i data-lucide="file-up"></i>上传文件</button>
-              <a class="link-btn" id="downloadViberIdTplBtn"><i data-lucide="download"></i>模板下载</a>
-            </div>
-            <p class="upload-drop-hint">支持拖拽或粘贴文件到此处上传</p>
-            <input type="file" id="viberIdFileInput" accept=".csv,.xlsx,.txt" hidden>
-            <ul class="upload-list" id="viberIdFileList"></ul>
+      <div class="collapse-section" id="audViberExtra">
+        <button type="button" class="collapse-toggle" id="viberExtraToggle">
+          <i data-lucide="chevron-right"></i>viber附加信息
+        </button>
+        <div class="collapse-body" hidden id="viberExtraBody">
+          <p class="panel-hint">仅用于Viber通道</p>
+          <div class="field">
+            <span class="field-label">Biz message Exclude</span>
+            <div id="audViberBizExcludeMsel"></div>
+          </div>
+          <div class="field" id="audViberBizBotsField" hidden>
+            <span class="field-label">选择 Bot</span>
+            <div id="audViberBizBotsMsel"></div>
+          </div>
+          <div class="field">
+            <span class="field-label">Bot message Exclude</span>
+            <div id="audViberBotExcludeMsel"></div>
           </div>
         </div>
       </div>
@@ -799,6 +813,14 @@ function openPanel(type) {
         <button type="button" class="btn btn-primary" id="panelOk">确认</button>
       </div>`;
 
+    /* viber附加信息折叠区：随当前 tab 移动，默认收起 */
+    const viberExtra = panel.querySelector('#audViberExtra');
+    panel.querySelector('#viberExtraToggle').addEventListener('click', () => {
+      const body = panel.querySelector('#viberExtraBody');
+      body.hidden = !body.hidden;
+      viberExtra.classList.toggle('open', !body.hidden);
+    });
+
     const defaultAudTab = draft.audienceFiles.length && !draft.audienceTags.length ? 'upload' : 'tags';
     const switchAudTab = tab => {
       panel.querySelectorAll('#audTabs .tab').forEach(t => {
@@ -806,7 +828,7 @@ function openPanel(type) {
       });
       panel.querySelector('#audPaneTags').hidden = tab !== 'tags';
       panel.querySelector('#audPaneUpload').hidden = tab !== 'upload';
-      panel.querySelector('#audPaneViber').hidden = tab !== 'viber';
+      panel.querySelector(tab === 'upload' ? '#audPaneUpload' : '#audPaneTags').appendChild(viberExtra);
     };
     switchAudTab(defaultAudTab);
     panel.querySelectorAll('#audTabs .tab').forEach(tab => {
@@ -841,38 +863,6 @@ function openPanel(type) {
       placeholder: '请选择 Exclude 项',
       searchPlaceholder: '搜索…',
     });
-
-    let pendingViberIdFile = viberCfg.viberIdFile;
-    const renderViberIdFileList = () => {
-      panel.querySelector('#viberIdFileList').innerHTML = pendingViberIdFile
-        ? `<li><i data-lucide="file-check-2"></i>${pendingViberIdFile}<button type="button" class="icon-btn" id="rmViberIdFile"><i data-lucide="x"></i></button></li>`
-        : '';
-      panel.querySelector('#rmViberIdFile')?.addEventListener('click', () => {
-        pendingViberIdFile = null;
-        renderViberIdFileList();
-      });
-      refreshIcons();
-    };
-    renderViberIdFileList();
-    const viberIdFileInput = panel.querySelector('#viberIdFileInput');
-    const viberIdUploadArea = panel.querySelector('#viberIdUploadArea');
-    const viberIdAccept = '.csv,.xlsx,.txt';
-    const setViberIdFile = files => {
-      if (!files.length) return;
-      pendingViberIdFile = files[0].name;
-      renderViberIdFileList();
-    };
-    panel.querySelector('#uploadViberIdBtn').addEventListener('click', () => viberIdFileInput.click());
-    viberIdFileInput.addEventListener('change', () => {
-      setViberIdFile([...viberIdFileInput.files].filter(f => matchFileAccept(f, viberIdAccept)));
-      viberIdFileInput.value = '';
-    });
-    bindDropPasteUpload({
-      zone: viberIdUploadArea,
-      accept: viberIdAccept,
-      onFiles: setViberIdFile,
-    });
-    panel.querySelector('#downloadViberIdTplBtn').addEventListener('click', () => showToast('Viber ID 上传模板已开始下载'));
 
     panelAudienceMsel = createSearchMultiSelect({
       container: panel.querySelector('#audTagMsel'),
@@ -949,7 +939,6 @@ function openPanel(type) {
         bizExclude: panelViberBizExcludeMsel.getValue(),
         bizExcludeBots: panelViberBizBotsMsel.getValue(),
         botExclude: panelViberBotExcludeMsel.getValue(),
-        viberIdFile: pendingViberIdFile,
       };
       closePanel();
       renderRows();
@@ -957,28 +946,17 @@ function openPanel(type) {
   } else if (type === 'timing') {
     document.getElementById('rowTiming').classList.add('active');
     const t = draft.perChannel[draft.active].timing || {};
-    const type0 = t.type || 'now';
+    const type0 = t.type === 'recurring' ? 'now' : (t.type || 'now');
     panel.innerHTML = `
       <div class="panel-title">发送时机 · ${CHANNELS[draft.active].tip}</div>
       <div class="field">
         <div class="radio-group">
           <label><input type="radio" name="ntTiming" value="now" ${type0 === 'now' ? 'checked' : ''}>审批通过后发送</label>
           <label><input type="radio" name="ntTiming" value="scheduled" ${type0 === 'scheduled' ? 'checked' : ''}>定时</label>
-          <label><input type="radio" name="ntTiming" value="recurring" ${type0 === 'recurring' ? 'checked' : ''}>循环</label>
         </div>
       </div>
       <div class="send-config" id="ntScheduled" ${type0 !== 'scheduled' ? 'hidden' : ''}>
         <input type="datetime-local" class="input" id="ntDatetime" value="${t.datetime || '2026-07-15T10:00'}">
-      </div>
-      <div class="send-config" id="ntRecurring" ${type0 !== 'recurring' ? 'hidden' : ''}>
-        <select class="select" id="ntFreq">
-          <option value="daily" ${t.freq !== 'weekly' ? 'selected' : ''}>每天</option>
-          <option value="weekly" ${t.freq === 'weekly' ? 'selected' : ''}>每周</option>
-        </select>
-        <select class="select" id="ntWeekday" ${t.freq !== 'weekly' ? 'hidden' : ''}>
-          ${WEEKDAYS.map(w => `<option ${t.weekday === w ? 'selected' : ''}>${w}</option>`).join('')}
-        </select>
-        <input type="time" class="input" id="ntTime" value="${t.time || '10:00'}">
       </div>
       <div class="panel-actions">
         <button type="button" class="btn btn-outline" id="panelCancel">取消</button>
@@ -988,20 +966,13 @@ function openPanel(type) {
     panel.querySelectorAll('input[name="ntTiming"]').forEach(r => {
       r.addEventListener('change', () => {
         panel.querySelector('#ntScheduled').hidden = r.value !== 'scheduled';
-        panel.querySelector('#ntRecurring').hidden = r.value !== 'recurring';
       });
-    });
-    panel.querySelector('#ntFreq').addEventListener('change', e => {
-      panel.querySelector('#ntWeekday').hidden = e.target.value !== 'weekly';
     });
     panel.querySelector('#panelOk').addEventListener('click', () => {
       const sel = panel.querySelector('input[name="ntTiming"]:checked').value;
       draft.perChannel[draft.active].timing = {
         type: sel,
         datetime: panel.querySelector('#ntDatetime').value,
-        freq: panel.querySelector('#ntFreq').value,
-        weekday: panel.querySelector('#ntWeekday').value,
-        time: panel.querySelector('#ntTime').value,
       };
       closePanel();
       renderRows();
@@ -1043,6 +1014,11 @@ function createTask() {
   if (!name) { showToast('请输入名称'); return; }
   if (!document.getElementById('ntProductLine').value) { showToast('请选择产品线'); return; }
   draft.taskType = document.querySelector('input[name="taskType"]:checked')?.value || 'manual';
+  draft.taskCode = document.getElementById('ntTaskCode')?.value.trim() || '';
+  if (isSystemTask() && !draft.taskCode) {
+    showToast('请输入任务code');
+    return;
+  }
   if (!isSystemTask() && !draft.audienceTags.length && !draft.audienceFiles.length) {
     showToast('请选择人群（星灵标签或上传至少 1 项）');
     return;
@@ -1095,14 +1071,17 @@ function saveEditedTask() {
   t.contentSummary = contentSummary(draft.perChannel[draft.channels[0]].content, 80);
   t.updatedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
   t.updatedBy = 'marvin@';
+  if (taskDrawerMode === 'change') {
+    t.resendFilter = draft.resendFilter || 'filter';
+  }
   closeDrawer('taskDrawer');
-  showToast(`任务「${t.name}」已保存`);
+  showToast(taskDrawerMode === 'change' ? `任务「${t.name}」已变更` : `任务「${t.name}」已保存`);
   if (typeof renderTable === 'function') renderTable();
   if (typeof renderKpis === 'function') renderKpis();
 }
 
 function submitTaskDrawer() {
-  if (taskDrawerMode === 'edit') saveEditedTask();
+  if (taskDrawerMode === 'edit' || taskDrawerMode === 'change') saveEditedTask();
   else createTask();
 }
 
@@ -1118,6 +1097,9 @@ function bindTaskDrawer() {
   document.getElementById('rowContent')?.addEventListener('click', () => openPanel('content'));
   document.getElementById('ntName')?.addEventListener('input', () => {
     if (draft && draft.active === 'email') renderPreview();
+  });
+  document.getElementById('ntTaskCode')?.addEventListener('input', e => {
+    if (draft) draft.taskCode = e.target.value;
   });
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
     r.addEventListener('change', () => {

@@ -27,17 +27,23 @@ const VIBER_GAMES = ['Fortune Tiger', 'Money Coming', 'Crazy 777', 'Golden Empir
 const MC_ACCOUNTS = {
   messenger: ['@BingoPlusBot', 'BingoPlus 官方主页'],
   telegram: ['@BingoPlusTGBot', 'BingoPlus 官方频道'],
+  whatsapp: ['BingoPlus 官方 WhatsApp', '+63 917 *** 1234'],
 };
 const MC_TYPES = ['Text', 'Photo', 'Animation', 'Video', 'Media Group'];
 
-const RTE_CHANNELS = new Set(['email', 'inbox', 'messenger', 'telegram']);
+const RTE_CHANNELS = new Set(['email', 'inbox', 'messenger', 'telegram', 'whatsapp']);
 
 function normalizeChannel(ch) {
   const map = {
     SMS: 'sms', 邮件: 'email', Push: 'push', Viber: 'viber', Messenger: 'messenger',
-    Telegram: 'telegram', Inbox: 'inbox', 站内信: 'inbox',
+    Telegram: 'telegram', WhatsApp: 'whatsapp', Inbox: 'inbox', 站内信: 'inbox',
   };
   return map[ch] || (ch || '').toLowerCase();
+}
+
+/* Messenger / Telegram / WhatsApp 共用同一套媒体消息字段 */
+function isMediaChannel(ch) {
+  return ch === 'messenger' || ch === 'telegram' || ch === 'whatsapp';
 }
 
 function defaultContentValue(channel) {
@@ -58,7 +64,7 @@ function defaultContentValue(channel) {
       },
     };
   }
-  if (ch === 'messenger' || ch === 'telegram') {
+  if (isMediaChannel(ch)) {
     return {
       account: '', type: 'Text', body: '', image: null, thumbnail: null, buttonImage: null, url: '',
       mediaGroup: [{ type: 'Photo', file: null }, { type: 'Photo', file: null }],
@@ -836,7 +842,7 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
     };
   }
 
-  /* ---------------- Messenger / Telegram ---------------- */
+  /* ---------------- Messenger / Telegram / WhatsApp ---------------- */
   function renderMediaChannel() {
     const accounts = MC_ACCOUNTS[ch] || [];
     const type = data.type || 'Text';
@@ -1035,7 +1041,7 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
     else if (ch === 'email') renderEmail();
     else if (ch === 'inbox') renderInbox();
     else if (ch === 'viber') renderViber();
-    else if (ch === 'messenger' || ch === 'telegram') renderMediaChannel();
+    else if (isMediaChannel(ch)) renderMediaChannel();
     else {
       container.innerHTML = `
         <div class="content-editor-wrap">
@@ -1092,4 +1098,156 @@ function contentSummary(value, maxLen = 24) {
   tmp.innerHTML = text;
   const plain = tmp.textContent || text;
   return plain.length > maxLen ? plain.slice(0, maxLen) + '…' : plain;
+}
+
+/* ============================================================
+   共享通道预览（新建任务左栏 / 各详情抽屉左栏 共用）
+   ============================================================ */
+
+const PV_CHANNEL_META = {
+  sms:      { label: 'SMS',      icon: 'message-square' },
+  email:    { label: '邮件',     icon: 'mail' },
+  push:     { label: 'Push',     icon: 'bell' },
+  viber:    { label: 'Viber',    icon: 'phone-call' },
+  messenger:{ label: 'Messenger',icon: 'message-circle' },
+  telegram: { label: 'Telegram', icon: 'send' },
+  whatsapp: { label: 'WhatsApp', icon: 'message-circle-more' },
+  inbox:    { label: '站内信',   icon: 'inbox' },
+};
+
+function pvPlainText(content) {
+  if (!content) return '';
+  if (typeof content === 'string') return content;
+  if (content.text) return content.text;
+  if (content.body) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = content.body;
+    return tmp.textContent || '';
+  }
+  if (content.biz?.body) return content.biz.body;
+  if (content.bot?.singleCustomBody) return content.bot.singleCustomBody;
+  return content.title || content.subject || '';
+}
+
+/* 返回 <div class="pv-screen">…</div>，channel 可为 key 或显示名 */
+function channelPreviewHtml(channel, content, opts = {}) {
+  const ch = normalizeChannel(channel);
+  const meta = PV_CHANNEL_META[ch] || { label: channel || '-', icon: 'message-circle' };
+  const rawText = pvPlainText(content);
+  const text = rawText || opts.emptyText || '您配置的内容将实时显示在这里…';
+  const emptyCls = rawText ? '' : ' empty';
+  const isObj = content && typeof content === 'object';
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  let inner = '';
+  if (ch === 'sms') {
+    inner = `
+      <div class="pv-header">
+        <div class="pv-avatar"><i data-lucide="message-square"></i></div>
+        <div class="pv-sender">106 9013 3***</div>
+      </div>
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">刚刚</div>`;
+  } else if (ch === 'email') {
+    const subject = (isObj && content.subject) || opts.fallbackTitle || '触达通知';
+    const sender = (isObj && content.sender) || 'marketing@bingoplus.com';
+    inner = `
+      <div class="pv-mail">
+        <div class="pv-mail-row"><span>发件人</span>${sender}</div>
+        <div class="pv-mail-row"><span>主题</span>${subject}</div>
+        <div class="pv-mail-body${emptyCls}">${text}</div>
+      </div>`;
+  } else if (ch === 'push') {
+    const title = (isObj && content.title) || 'BingoPlus';
+    inner = `
+      <div class="pv-lock-time">
+        <div class="t">${timeStr}</div>
+        <div class="d">${now.getMonth() + 1}月${now.getDate()}日 星期${'日一二三四五六'[now.getDay()]}</div>
+      </div>
+      <div class="pv-notify">
+        <div class="pv-app-icon"><i data-lucide="bell"></i></div>
+        <div>
+          <div class="pv-n-title">${title}</div>
+          <div class="pv-n-body${emptyCls}">${text}</div>
+        </div>
+      </div>`;
+  } else if (ch === 'viber') {
+    const account = (isObj && (content.biz?.account || content.bot?.account)) || 'BingoPlus 官方';
+    inner = `
+      <div class="pv-header">
+        <div class="pv-avatar"><i data-lucide="${meta.icon}"></i></div>
+        <div class="pv-sender">${account} · ${meta.label}</div>
+      </div>
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">${timeStr}</div>`;
+  } else if (isMediaChannel(ch)) {
+    const account = (isObj && content.account) || `BingoPlus 官方 · ${meta.label}`;
+    const mediaType = (isObj && content.type) || 'Text';
+    inner = `
+      <div class="pv-header">
+        <div class="pv-avatar"><i data-lucide="${meta.icon}"></i></div>
+        <div class="pv-sender">${account}</div>
+      </div>
+      ${mediaType !== 'Text' ? `<div class="pv-media-tag"><i data-lucide="image"></i>${mediaType}</div>` : ''}
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">${timeStr}</div>`;
+  } else if (ch === 'inbox') {
+    const title = (isObj && content.title) || 'BingoPlus';
+    inner = `
+      <div class="pv-header">
+        <div class="pv-avatar"><i data-lucide="${meta.icon}"></i></div>
+        <div class="pv-sender">${title}</div>
+      </div>
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">${timeStr}</div>`;
+  } else {
+    inner = `
+      <div class="pv-header">
+        <div class="pv-avatar"><i data-lucide="${meta.icon}"></i></div>
+        <div class="pv-sender">${meta.label}</div>
+      </div>
+      <div class="pv-bubble${emptyCls}">${text}</div>
+      <div class="pv-time-hint">${timeStr}</div>`;
+  }
+
+  return `<div class="pv-screen">${inner}</div>`;
+}
+
+/* 详情抽屉左栏预览：items = [{ channel, content, fallbackTitle }]，多通道顶部 tab 切换 */
+function mountDetailPreview(host, items, opts = {}) {
+  if (!host) return;
+  const list = (items || []).filter(Boolean);
+  if (!list.length) {
+    host.innerHTML = '';
+    return;
+  }
+  const emptyText = opts.emptyText || '暂无内容';
+  let activeIdx = 0;
+
+  const render = () => {
+    const item = list[activeIdx];
+    const tabs = list.length > 1
+      ? `<div class="chip-group detail-preview-tabs">
+          ${list.map((it, i) => {
+            const meta = PV_CHANNEL_META[normalizeChannel(it.channel)];
+            const label = it.label || meta?.label || it.channel;
+            return `<button type="button" class="chip${i === activeIdx ? ' selected' : ''}" data-pv-idx="${i}">${label}</button>`;
+          }).join('')}
+        </div>`
+      : '';
+    host.innerHTML = `
+      <div class="pane-caption">内容预览</div>
+      ${tabs}
+      ${channelPreviewHtml(item.channel, item.content, { emptyText, fallbackTitle: item.fallbackTitle })}`;
+    host.querySelectorAll('[data-pv-idx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeIdx = Number(btn.dataset.pvIdx);
+        render();
+      });
+    });
+    refreshIcons();
+  };
+  render();
 }

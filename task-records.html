@@ -49,13 +49,17 @@
                 <input class="input" id="fName" placeholder="输入任务名称或 ID 搜索">
               </div>
               <div class="filter-item">
+                <span class="filter-label">任务code</span>
+                <input class="input" id="fTaskCode" placeholder="输入任务code搜索">
+              </div>
+              <div class="filter-item">
                 <span class="filter-label">内容</span>
                 <input class="input" id="fContent" placeholder="输入内容关键词搜索">
               </div>
               <div class="filter-item">
                 <span class="filter-label">任务类型</span>
                 <select class="select" id="fType">
-                  <option value="">全部</option><option>API</option><option>手动</option>
+                  <option value="">全部</option><option>系统调用</option><option>手动发送</option>
                 </select>
               </div>
               <div class="filter-item filter-item-wide">
@@ -67,7 +71,7 @@
                 <select class="select" id="fChannel">
                   <option value="">全部</option><option>SMS</option><option>邮件</option><option>Push</option>
                   <option>Inbox</option><option>IM</option><option>Bot</option>
-                  <option>Viber</option><option>Messenger</option><option>电销</option>
+                  <option>Viber</option><option>Messenger</option><option>WhatsApp</option><option>电销</option>
                 </select>
               </div>
               <div class="filter-item">
@@ -77,7 +81,6 @@
                   <option value="pending">待发送</option>
                   <option value="running">执行中</option>
                   <option value="done">已完成</option>
-                  <option value="paused">已暂停</option>
                   <option value="failed">失败</option>
                   <option value="stopped">已终止</option>
                 </select>
@@ -123,8 +126,6 @@
                 <span class="batch-count">已选 <b id="batchCount">0</b> 项</span>
                 <button class="btn btn-outline btn-sm" data-batch="approve">通过</button>
                 <button class="btn btn-outline btn-sm btn-reject" data-batch="reject">拒绝</button>
-                <button class="btn btn-outline btn-sm" data-batch="pause">暂停</button>
-                <button class="btn btn-outline btn-sm" data-batch="resume">恢复</button>
                 <button class="btn btn-outline btn-sm btn-reject" data-batch="stop">终止</button>
               </div>
             </div>
@@ -133,7 +134,7 @@
                 <thead>
                   <tr>
                     <th class="col-check"><input type="checkbox" id="checkAll" aria-label="全选"></th>
-                    <th>任务 ID</th><th class="col-name">任务名称</th><th>产品线</th><th>发送对象</th><th>通道</th>
+                    <th>任务 ID</th><th class="col-name">任务名称</th><th>任务code</th><th>产品线</th><th>发送对象</th><th>通道</th>
                     <th>发送时机</th><th>任务类型</th><th>当前状态</th><th>创建人</th>
                     <th>创建时间</th><th>最近更新人</th><th>最近更新时间</th>
                     <th class="col-ops">操作</th>
@@ -155,7 +156,7 @@
   <!-- 任务详情抽屉 -->
   <div class="drawer-root" id="taskDetailDrawer">
     <div class="drawer-mask" data-close></div>
-    <aside class="drawer drawer-md">
+    <aside class="drawer drawer-lg">
       <header class="drawer-header">
         <h3>任务详情</h3>
         <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
@@ -164,7 +165,6 @@
       <footer class="drawer-footer" id="taskDetailFooter">
         <button class="btn btn-outline" data-close>关闭</button>
         <button class="btn btn-outline" id="detailToSendRecords">查看发送记录</button>
-        <button class="btn btn-primary" id="detailEditBtn">编辑任务</button>
       </footer>
     </aside>
   </div>
@@ -222,6 +222,11 @@
               <div class="cfg-value" id="timingValue"><span class="placeholder">请选择发送时机</span></div>
               <i data-lucide="chevron-right"></i>
             </div>
+          </div>
+
+          <div class="field" id="ntTaskCodeField" hidden>
+            <span class="field-label">任务code</span>
+            <input class="input" id="ntTaskCode" placeholder="请输入任务code">
           </div>
 
           <div class="field">

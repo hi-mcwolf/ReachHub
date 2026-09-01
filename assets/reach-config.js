@@ -8,20 +8,14 @@ const RC_TEMPLATES = {
 
 const RC_CHANNEL_LABELS = {
   sms: 'SMS', email: '邮件', push: 'Push',
-  viber: 'Viber', messenger: 'Messenger',
+  viber: 'Viber', messenger: 'Messenger', whatsapp: 'WhatsApp',
 };
-
-const RC_WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
 const rcChannelContents = {};
 let rcActiveChannel = null;
 let rcSendTiming = {
   mode: 'now',
   datetime: '2026-07-15T10:00',
-  freq: 'daily',
-  weekday: '周一',
-  monthDay: '1',
-  time: '10:00',
 };
 
 function selectedRcChannels() {
@@ -70,25 +64,12 @@ function renderRcContentTabs() {
   });
 }
 
-function syncRcCycleFreqUI() {
-  const drawer = document.getElementById('reachDrawer');
-  if (!drawer) return;
-  const freq = drawer.querySelector('#rcCycleFreq')?.value || 'daily';
-  const weekday = drawer.querySelector('#rcWeekday');
-  const monthDay = drawer.querySelector('#rcMonthDay');
-  if (weekday) weekday.hidden = freq !== 'weekly';
-  if (monthDay) monthDay.hidden = freq !== 'monthly';
-}
-
 function syncRcSendModeUI() {
   const drawer = document.getElementById('reachDrawer');
   if (!drawer) return;
   const mode = drawer.querySelector('input[name="rcSendMode"]:checked')?.value || 'now';
   const scheduled = drawer.querySelector('#rcScheduled');
-  const recurring = drawer.querySelector('#rcRecurring');
   if (scheduled) scheduled.hidden = mode !== 'scheduled';
-  if (recurring) recurring.hidden = mode !== 'recurring';
-  if (mode === 'recurring') syncRcCycleFreqUI();
 }
 
 function readRcSendTiming() {
@@ -98,10 +79,6 @@ function readRcSendTiming() {
   rcSendTiming = {
     mode,
     datetime: drawer.querySelector('#rcDatetime')?.value || '',
-    freq: drawer.querySelector('#rcCycleFreq')?.value || 'daily',
-    weekday: drawer.querySelector('#rcWeekday')?.value || '周一',
-    monthDay: drawer.querySelector('#rcMonthDay')?.value || '1',
-    time: drawer.querySelector('#rcCycleTime')?.value || '',
   };
   return rcSendTiming;
 }
@@ -112,30 +89,10 @@ function validateRcSendTiming() {
     showToast('请选择定时发送时间');
     return false;
   }
-  if (timing.mode === 'recurring') {
-    if (!timing.time) {
-      showToast('请选择循环发送时刻');
-      return false;
-    }
-    if (timing.freq === 'weekly' && !timing.weekday) {
-      showToast('请选择循环发送的星期');
-      return false;
-    }
-    if (timing.freq === 'monthly' && !timing.monthDay) {
-      showToast('请选择循环发送的日期');
-      return false;
-    }
-  }
   return true;
 }
 
 function reachConfigDrawerHtml() {
-  const weekdayOptions = RC_WEEKDAYS.map(w => `<option value="${w}">${w}</option>`).join('');
-  const monthDayOptions = Array.from({ length: 31 }, (_, i) => {
-    const day = String(i + 1);
-    return `<option value="${day}">${day} 日</option>`;
-  }).join('');
-
   return `
   <div class="drawer-root" id="reachDrawer">
     <div class="drawer-mask" data-close></div>
@@ -155,6 +112,7 @@ function reachConfigDrawerHtml() {
               <button type="button" class="chip" data-channel="push">Push</button>
               <button type="button" class="chip" data-channel="viber">Viber</button>
               <button type="button" class="chip" data-channel="messenger">Messenger</button>
+              <button type="button" class="chip" data-channel="whatsapp">WhatsApp</button>
             </div>
           </div>
           <div class="field">
@@ -184,20 +142,9 @@ function reachConfigDrawerHtml() {
             <div class="radio-group">
               <label><input type="radio" name="rcSendMode" value="now" checked>立即</label>
               <label><input type="radio" name="rcSendMode" value="scheduled">定时</label>
-              <label><input type="radio" name="rcSendMode" value="recurring">循环</label>
             </div>
             <div class="send-config" id="rcScheduled" hidden>
               <input type="datetime-local" class="input" id="rcDatetime" value="2026-07-15T10:00">
-            </div>
-            <div class="send-config" id="rcRecurring" hidden>
-              <select class="select" id="rcCycleFreq">
-                <option value="daily">天</option>
-                <option value="weekly">周</option>
-                <option value="monthly">月</option>
-              </select>
-              <select class="select" id="rcWeekday" hidden>${weekdayOptions}</select>
-              <select class="select" id="rcMonthDay" hidden>${monthDayOptions}</select>
-              <input type="time" class="input" id="rcCycleTime" value="10:00">
             </div>
           </div>
         </section>
@@ -253,7 +200,6 @@ function bindReachConfigEvents() {
   drawer.querySelectorAll('input[name="rcSendMode"]').forEach(radio => {
     radio.addEventListener('change', syncRcSendModeUI);
   });
-  drawer.querySelector('#rcCycleFreq')?.addEventListener('change', syncRcCycleFreqUI);
 
   document.getElementById('confirmReach').addEventListener('click', () => {
     saveRcActiveContent();

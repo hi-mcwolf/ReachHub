@@ -1,6 +1,7 @@
 /* 模板管理页：列表 + 筛选 + 详情/编辑/新建抽屉 */
 
-const CHANNELS = ['SMS', '邮件', 'Push', 'Viber', 'Messenger', 'Telegram', '站内信'];
+/* 命名为 TPL_CHANNELS，避免与 reach.js 的 CHANNELS 冲突（本页同时加载两者） */
+const TPL_CHANNELS = ['SMS', '邮件', 'Push', 'Viber', 'Messenger', 'WhatsApp', '站内信'];
 
 function tplContentText(t) {
   const c = t.content || {};
@@ -88,10 +89,10 @@ let TEMPLATE_RECORDS = [
     ],
   },
   {
-    id: 'tpl-006', name: '竞猜 Bot 自动提醒', code: 'TPL-TELEGRAM-0015', type: '营销', channel: 'Telegram',
+    id: 'tpl-006', name: 'WhatsApp 竞猜提醒', code: 'TPL-WHATSAPP-0001', type: '营销', channel: 'WhatsApp',
     langs: '英文', bizLine: 'BingoPlus', status: 'active', creator: 'ken@',
     createdAt: '2026-07-02 11:20', updatedAt: '2026-07-09 16:40', updatedBy: 'ken@',
-    content: { title: 'Quiz Starting Soon', body: 'The match you follow starts in 30 minutes. Submit your prediction now!', buttonText: 'Submit Prediction' },
+    content: { account: 'BingoPlus 官方 WhatsApp', type: 'Text', body: 'The match you follow starts in 30 minutes. Submit your prediction now!' },
     variables: [
       { name: 'event_name', desc: '赛事名称', example: 'Quarterfinals', required: true },
     ],
@@ -319,6 +320,7 @@ function renderTable() {
           <td class="col-ops">
             <button class="link-btn" data-view="${t.id}">查看详情</button>
             <button class="link-btn" data-edit="${t.id}">编辑</button>
+            <button class="link-btn" data-newtask="${t.id}">新建任务</button>
             <span class="more-wrap">
               <button class="link-btn" data-more="${t.id}">更多<i data-lucide="chevron-down"></i></button>
               <span class="more-menu" hidden>
@@ -357,6 +359,12 @@ function bindRowActions() {
   const tbody = document.getElementById('tplTableBody');
   tbody.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => openTplDrawer('view', b.dataset.view)));
   tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openTplDrawer('edit', b.dataset.edit)));
+  tbody.querySelectorAll('[data-newtask]').forEach(b => b.addEventListener('click', () => {
+    const t = TEMPLATE_RECORDS.find(x => x.id === b.dataset.newtask);
+    if (t && typeof openTaskCreateWithContent === 'function') {
+      openTaskCreateWithContent(t.channel, t.content);
+    }
+  }));
 
   bindMoreMenus(tbody);
 
@@ -402,7 +410,7 @@ function previewPlain(content) {
   return content.title || content.subject || '';
 }
 
-function renderPreview(tpl) {
+function renderTplPreview(tpl) {
   const host = document.getElementById('tplPreview');
   if (!host) return;
   const c = tpl.content || {};
@@ -455,7 +463,7 @@ function renderPreview(tpl) {
 
 const CHANNEL_CODE = {
   SMS: 'SMS', 邮件: 'EMAIL', Push: 'PUSH', Viber: 'VIBER',
-  Messenger: 'MESSENGER', Telegram: 'TELEGRAM', 站内信: 'INBOX',
+  Messenger: 'MESSENGER', WhatsApp: 'WHATSAPP', 站内信: 'INBOX',
 };
 
 function nextTplCode(channel) {
@@ -488,7 +496,7 @@ function mountTplContentEditor(tpl, editable) {
     showSmsConfigMode: false,
     onChange: () => {
       tpl.content = tplContentEditor.getValue();
-      renderPreview(tpl);
+      renderTplPreview(tpl);
     },
   });
   if (!editable) {
@@ -519,7 +527,7 @@ function renderDrawerBody(tpl, mode) {
       <div class="field">
         <span class="field-label">通道</span>
         <div class="radio-group" id="fTplChannel">
-          ${CHANNELS.map(c => `
+          ${TPL_CHANNELS.map(c => `
             <label><input type="radio" name="tplChannel" value="${c}" ${c === tpl.channel ? 'checked' : ''} ${channelDisabled ? 'disabled' : ''}>${c}</label>
           `).join('')}
         </div>
@@ -551,14 +559,14 @@ function renderDrawerBody(tpl, mode) {
         tpl.channel = r.value;
         tpl.content = defaultContentValue(tpl.channel);
         mountTplContentEditor(tpl, true);
-        renderPreview(tpl);
+        renderTplPreview(tpl);
       });
     });
   }
 
   enhanceSelects(document.getElementById('tplDrawerForm'));
   mountTplContentEditor(tpl, editable);
-  renderPreview(tpl);
+  renderTplPreview(tpl);
   refreshIcons();
 }
 
