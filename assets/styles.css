@@ -824,11 +824,28 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
 .collapse-section {
   margin-top: 16px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-m);
   background: var(--card);
 }
 /* 人群面板中的 viber 附加信息与上方内容拉开间距（后方存在 margin-top:0 的通用覆盖） */
 .nt-panel .collapse-section { margin-top: 32px; }
+.nt-panel .collapse-section.aud-viber-collapse {
+  border-radius: var(--radius-m);
+  overflow: visible;
+  margin-bottom: 8px;
+}
+.nt-panel .collapse-section.aud-viber-collapse .msel.open {
+  position: relative;
+  z-index: 5;
+}
+.nt-panel .collapse-section.aud-viber-collapse.open .collapse-body {
+  max-height: none;
+  overflow: visible;
+  padding: 12px 12px 16px;
+}
+.nt-panel .collapse-section.aud-viber-collapse .collapse-body .panel-hint {
+  margin: 0 0 12px;
+}
 .collapse-toggle {
   width: 100%;
   border: none;

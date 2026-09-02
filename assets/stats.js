@@ -71,16 +71,16 @@ const QUOTAS = [
 ];
 
 const TASK_ROWS = [
-  { name: '世界杯竞猜预热短信', type: '营销活动', channel: 'SMS', partner: '自营平台', time: '2026-07-10 10:00', send: 128000, dlv: 97.2, open: 31.4, click: 18.2, status: '执行中', warn: null },
-  { name: '充值加赠限时提醒', type: '促活', channel: 'Push', partner: '自营平台', time: '2026-07-10 09:30', send: 96400, dlv: 95.8, open: 27.6, click: 15.7, status: '执行中', warn: null },
-  { name: '沉默用户召回邮件', type: '召回', channel: '邮件', partner: '渠道 A', time: '2026-07-09 20:00', send: 84000, dlv: 91.3, open: 18.9, click: 9.6, status: '已完成', warn: '回执延迟' },
-  { name: '新用户注册福利 Push', type: '生命周期', channel: 'Push', partner: '自营平台', time: '2026-07-09 18:00', send: 56000, dlv: 96.4, open: 24.8, click: 12.3, status: '已完成', warn: null },
-  { name: 'VIP 专属回归礼包', type: '召回', channel: '电销', partner: '渠道 B', time: '2026-07-09 14:00', send: 23000, dlv: 88.6, open: 42.1, click: 14.9, status: '已完成', warn: null },
-  { name: '活动开赛提醒 Viber', type: '通知', channel: 'Viber', partner: '渠道 A', time: '2026-07-09 12:00', send: 15600, dlv: 76.2, open: 20.3, click: 8.8, status: '失败', warn: '通道中断', danger: true },
-  { name: '周末充值返利 IM', type: '营销活动', channel: 'IM', partner: '自营平台', time: '2026-07-08 19:00', send: 48200, dlv: 94.1, open: 26.2, click: 11.4, status: '已完成', warn: null },
-  { name: '流失预警关怀短信', type: '生命周期', channel: 'SMS', partner: '自营平台', time: '2026-07-08 15:00', send: 36800, dlv: 90.4, open: 22.7, click: 7.9, status: '已暂停', warn: '失败率异常', danger: true },
-  { name: '赛事结果推送 Bot', type: '通知', channel: 'Bot', partner: '渠道 B', time: '2026-07-08 11:00', send: 61000, dlv: 98.3, open: 35.6, click: 16.1, status: '已完成', warn: null },
-  { name: '月度账单通知 Inbox', type: '通知', channel: 'Inbox', partner: '自营平台', time: '2026-07-07 09:00', send: 152000, dlv: 99.1, open: 40.2, click: 6.3, status: '已完成', warn: null },
+  { name: '世界杯竞猜预热短信', type: '营销活动', channel: 'SMS', partner: '自营平台', time: '2026-07-10 10:00', send: 128000, dlv: 97.2, open: 31.4, click: 18.2, status: 'running', taskType: '手动发送', warn: null },
+  { name: '充值加赠限时提醒', type: '促活', channel: 'Push', partner: '自营平台', time: '2026-07-10 09:30', send: 96400, dlv: 95.8, open: 27.6, click: 15.7, status: 'running', taskType: '系统调用', warn: null },
+  { name: '沉默用户召回邮件', type: '召回', channel: '邮件', partner: '渠道 A', time: '2026-07-09 20:00', send: 84000, dlv: 91.3, open: 18.9, click: 9.6, status: 'done', taskType: '手动发送', warn: '回执延迟' },
+  { name: '新用户注册福利 Push', type: '生命周期', channel: 'Push', partner: '自营平台', time: '2026-07-09 18:00', send: 56000, dlv: 96.4, open: 24.8, click: 12.3, status: 'done', taskType: '手动发送', warn: null },
+  { name: 'VIP 专属回归礼包', type: '召回', channel: '电销', partner: '渠道 B', time: '2026-07-09 14:00', send: 23000, dlv: 88.6, open: 42.1, click: 14.9, status: 'done', taskType: '手动发送', warn: null },
+  { name: '活动开赛提醒 Viber', type: '通知', channel: 'Viber', partner: '渠道 A', time: '2026-07-09 12:00', send: 15600, dlv: 76.2, open: 20.3, click: 8.8, status: 'stopped', taskType: '手动发送', warn: '通道中断', danger: true },
+  { name: '周末充值返利 IM', type: '营销活动', channel: 'IM', partner: '自营平台', time: '2026-07-08 19:00', send: 48200, dlv: 94.1, open: 26.2, click: 11.4, status: 'done', taskType: '手动发送', warn: null },
+  { name: '流失预警关怀短信', type: '生命周期', channel: 'SMS', partner: '自营平台', time: '2026-07-08 15:00', send: 36800, dlv: 90.4, open: 22.7, click: 7.9, status: 'stopped', taskType: '系统调用', warn: '失败率异常', danger: true },
+  { name: '赛事结果推送 Bot', type: '通知', channel: 'Bot', partner: '渠道 B', time: '2026-07-08 11:00', send: 61000, dlv: 98.3, open: 35.6, click: 16.1, status: 'done', taskType: '系统调用', warn: null },
+  { name: '月度账单通知 Inbox', type: '通知', channel: 'Inbox', partner: '自营平台', time: '2026-07-07 09:00', send: 152000, dlv: 99.1, open: 40.2, click: 6.3, status: 'done', taskType: '手动发送', warn: null },
 ];
 
 /* ---------------- KPI 卡片 ---------------- */
@@ -222,12 +222,6 @@ function renderQuota() {
   }).join('');
 }
 
-const STATUS_TAG = {
-  '执行中': 'tag-primary',
-  '已完成': 'tag-success',
-  '失败': 'tag-danger',
-  '已暂停': 'tag-warning',
-};
 
 const PAGE_SIZE = 5;
 let currentPage = 1;
@@ -235,7 +229,9 @@ let currentPage = 1;
 function renderTable() {
   const start = (currentPage - 1) * PAGE_SIZE;
   const rows = TASK_ROWS.slice(start, start + PAGE_SIZE);
-  document.getElementById('taskTableBody').innerHTML = rows.map(r => `
+  document.getElementById('taskTableBody').innerHTML = rows.map(r => {
+    const st = taskStatusDisplay(r);
+    return `
     <tr>
       <td>${r.name}</td>
       <td>${r.channel}</td>
@@ -245,14 +241,15 @@ function renderTable() {
       <td>${r.dlv}%</td>
       <td>${r.open}%</td>
       <td>${r.click}%</td>
-      <td><span class="tag ${STATUS_TAG[r.status]}">${r.status}</span></td>
+      <td><span class="tag ${st.cls}">${st.label}</span></td>
       <td>${r.warn
         ? `<span class="warn-cell ${r.danger ? 'danger' : ''}" title="${r.warn}"><i data-lucide="alert-triangle"></i>${r.warn}</span>`
         : '<span class="cell-muted">-</span>'}</td>
       <td>
         <button class="link-btn" data-act="detail">查看详情</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   renderPagination();
   refreshIcons();
 }

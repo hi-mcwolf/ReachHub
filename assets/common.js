@@ -16,6 +16,27 @@ const PRODUCT_LINES = [
   { value: 'BingoPlus', label: 'BingoPlus' },
 ];
 
+/** 触达任务状态（running 按任务类型展示为发送中 / 已启用） */
+const TASK_STATUS = {
+  pending: { label: '待发送', cls: 'tag-info' },
+  running: { label: '发送中', cls: 'tag-orange' },
+  done:    { label: '已完成', cls: 'tag-success' },
+  stopped: { label: '已终止', cls: 'tag-gray' },
+};
+
+function isSystemTaskType(taskType) {
+  return taskType === '系统调用' || taskType === 'system';
+}
+
+function taskStatusDisplay(t) {
+  const st = TASK_STATUS[t?.status];
+  if (!st) return { label: t?.status || '-', cls: 'tag-gray' };
+  if (t.status === 'running' && isSystemTaskType(t.taskType)) {
+    return { label: '已启用', cls: 'tag-primary' };
+  }
+  return st;
+}
+
 const USER_ACCOUNT_SAMPLES = [
   'bingoplusjuan01', 'bingoplusmaria02', 'bingopluskevin03',
   'bingoplusana04', 'bingopluspaolo05', 'bingoplusgrace06',

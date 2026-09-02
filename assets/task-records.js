@@ -1,13 +1,5 @@
 /* 任务记录页：筛选 + KPI + 任务列表 + 详情抽屉 */
 
-const TASK_STATUS = {
-  pending: { label: '待发送', cls: 'tag-info' },
-  running: { label: '执行中', cls: 'tag-orange' },
-  done:    { label: '已完成', cls: 'tag-success' },
-  failed:  { label: '失败',   cls: 'tag-danger' },
-  stopped: { label: '已终止', cls: 'tag-gray' },
-};
-
 const APPROVAL_STATUS = {
   pending:  { label: '待审批', cls: 'tag-orange' },
   approved: { label: '已通过', cls: 'tag-success' },
@@ -40,7 +32,7 @@ function enrichTaskRecords() {
     if (t.taskType === '系统调用' && !t.taskCode) t.taskCode = 'TC-' + t.id.slice(1);
     if (!t.approvalStatus) {
       if (t.status === 'pending') t.approvalStatus = 'pending';
-      else if (t.status === 'failed' && i % 2 === 0) t.approvalStatus = 'rejected';
+      else if (t.status === 'stopped' && i % 2 === 0) t.approvalStatus = 'rejected';
       else t.approvalStatus = 'approved';
     }
     if (t.approvalStatus !== 'pending') {
@@ -130,7 +122,7 @@ const TASK_RECORDS = [
   {
     id: 'T20260711007', name: 'Viber 高充值用户回馈', type: '营销活动', audience: '高充值用户',
     channels: ['Viber'], timing: '2026-07-11 19:00 定时', strategy: 'SMS 通道周频控',
-    status: 'failed', creator: 'marvin@', createdAt: '2026-07-11 10:40', updatedAt: '2026-07-11 19:22',
+    status: 'stopped', creator: 'marvin@', createdAt: '2026-07-11 10:40', updatedAt: '2026-07-11 19:22',
     sent: 120, total: 960, deliverRate: '12.5%', opens: null, clicks: null, fails: 840,
     party: '渠道 B', sender: 'BingoPlus Official', template: '-',
     contentSummary: '尊贵的用户，您的专属回馈礼包已到账，点击查收…',
@@ -257,13 +249,12 @@ function renderKpis() {
   const total = TASK_RECORDS.length;
   const running = TASK_RECORDS.filter(t => t.status === 'running').length;
   const todayNew = TASK_RECORDS.filter(t => t.createdAt.startsWith('2026-07-13')).length;
-  const failed = TASK_RECORDS.filter(t => t.status === 'failed').length;
   const pendingApproval = TASK_RECORDS.filter(t => t.approvalStatus === 'pending').length;
   const kpis = [
     { title: '任务总数', value: total, cls: '' },
-    { title: '执行中任务数', value: running, cls: 'kpi-orange' },
+    { title: '发送中/已启用', value: running, cls: 'kpi-orange' },
+    { title: '今日新增', value: todayNew, cls: 'kpi-blue' },
     { title: '待审批', value: pendingApproval, cls: 'kpi-orange' },
-    { title: '失败任务数', value: failed, cls: 'kpi-red' },
   ];
   document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
     <div class="kpi-card">
@@ -372,19 +363,16 @@ function renderTable() {
     tbody.innerHTML = `<tr><td colspan="15" class="cell-empty">暂无符合条件的任务</td></tr>`;
   } else {
     tbody.innerHTML = rows.map(t => {
-      const st = TASK_STATUS[t.status];
+      const st = taskStatusDisplay(t);
       const audienceText = `${t.audience}（${t.audienceCount.toLocaleString()}人）`;
       const isSystem = t.taskType === '系统调用';
       const approvalOps = t.approvalStatus === 'pending'
         ? `<button class="link-btn" data-act="approve" data-id="${t.id}">通过</button>
            <button class="link-btn link-btn-danger" data-act="reject" data-id="${t.id}">拒绝</button>`
         : '';
-      let moreStop = '';
-      if (isSystem) {
-        moreStop = t.status === 'stopped'
-          ? `<button class="more-item" data-act="change" data-id="${t.id}">变更</button>`
-          : `<button class="more-item more-danger" data-act="stop" data-id="${t.id}">终止任务</button>`;
-      }
+      let moreStop = t.status === 'stopped'
+        ? `<button class="more-item" data-act="change" data-id="${t.id}">变更</button>`
+        : `<button class="more-item more-danger" data-act="stop" data-id="${t.id}">终止任务</button>`;
       return `
         <tr>
           <td class="col-check"><input type="checkbox" class="row-check" data-check="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} aria-label="选择 ${t.id}"></td>
@@ -531,7 +519,7 @@ function bindChannelTabs(t) {
 
 function openTaskDetail(id) {
   const t = TASK_RECORDS.find(x => x.id === id);
-  const st = TASK_STATUS[t.status];
+  const st = taskStatusDisplay(t);
   const ap = APPROVAL_STATUS[t.approvalStatus] || APPROVAL_STATUS.pending;
   const channelBlock = t.channels.length > 1
     ? `

@@ -49,19 +49,19 @@ const APPROVAL_QUEUE = [
 ];
 
 const RUNNING_TASKS = [
-  { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75,
+  { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75, status: 'running',
     creator: 'marvin@', createdAt: '2026-07-12 10:20', approver: 'lily@', approvedAt: '2026-07-12 11:00',
     audience: '活跃用户', taskType: '系统调用', taskCode: 'TC-20260713001', timing: '2026-07-13 18:00 定时',
     contentSummary: 'Only the best teams remain! Warm up for the Quarterfinals…', template: '世界杯竞猜提醒',
     execution: { total: 12800, pushable: 12160, valid: 11776, duplicate: 384, blacklist: 256, dnc: 128,
       pushCount: 9632, pushSuccess: 9459, pushFail: 173, pendingConfirm: 482 } },
-  { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38,
+  { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38, status: 'running',
     creator: 'lily@', createdAt: '2026-07-11 14:05', approver: 'marvin@', approvedAt: '2026-07-11 15:00',
     audience: '新注册用户', taskType: '手动发送', timing: '每天 10:00 循环',
     contentSummary: '尊敬的用户，本周充值满 500 即享 8% 加赠…', template: '充值优惠通知',
     execution: { total: 5600, pushable: 5320, valid: 5152, duplicate: 168, blacklist: 112, dnc: 56,
       pushCount: 2128, pushSuccess: 2051, pushFail: 77, pendingConfirm: 106 } },
-  { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52,
+  { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52, status: 'running',
     creator: 'ken@', createdAt: '2026-07-08 11:00', approver: 'lily@', approvedAt: '2026-07-08 12:00',
     audience: 'VIP用户 · 沉默用户', taskType: '系统调用', taskCode: 'TC-20260712004', timing: '每天 09:00 循环',
     contentSummary: '您的专属权益即将到期，登录立即领取…', template: '-',
@@ -172,11 +172,10 @@ function isSystemTask() {
 
 function syncTaskTypeUi() {
   const sys = isSystemTask();
-  const isChange = taskDrawerMode === 'change';
   const audField = document.getElementById('ntAudienceField');
   const timingField = document.getElementById('ntTimingField');
   const codeField = document.getElementById('ntTaskCodeField');
-  if (audField) audField.hidden = sys && !isChange;
+  if (audField) audField.hidden = sys;
   if (timingField) timingField.hidden = sys;
   if (codeField) codeField.hidden = !sys;
   if (audField?.hidden && activePanel === 'audience') closePanel();
@@ -407,7 +406,10 @@ function openHomeTaskDetail(id, kind) {
 
   const statusTag = isApproval
     ? '<span class="tag tag-orange">审核中</span>'
-    : '<span class="tag tag-orange">执行中</span>';
+    : (() => {
+        const st = taskStatusDisplay(item);
+        return `<span class="tag ${st.cls}">${st.label}</span>`;
+      })();
   const approvalTag = isApproval
     ? '<span class="tag tag-orange">待审批</span>'
     : '<span class="tag tag-success">已通过</span>';
@@ -668,21 +670,15 @@ function timingLabel(t) {
 function renderRows() {
   const av = document.getElementById('audienceValue');
   if (!av) return;
-  if (taskDrawerMode === 'change') {
-    av.innerHTML = draft.resendFilter
-      ? `<span class="cfg-summary">${draft.resendFilter === 'nofilter' ? '不过滤已发送人群' : '过滤已发送人群'}</span>`
-      : '<span class="placeholder">请选择人群</span>';
-  } else {
-    const parts = [];
-    if (draft.audienceTags.length) {
-      parts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
-    }
-    if (draft.audienceFiles.length) parts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
-    if (!parts.length && draft.audienceLabel) parts.push(draft.audienceLabel);
-    av.innerHTML = parts.length
-      ? `<span class="cfg-summary">${parts.join(' ｜ ')}</span>`
-      : '<span class="placeholder">请选择人群</span>';
+  const parts = [];
+  if (draft.audienceTags.length) {
+    parts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
   }
+  if (draft.audienceFiles.length) parts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
+  if (!parts.length && draft.audienceLabel) parts.push(draft.audienceLabel);
+  av.innerHTML = parts.length
+    ? `<span class="cfg-summary">${parts.join(' ｜ ')}</span>`
+    : '<span class="placeholder">请选择人群</span>';
 
   const cfg = draft.perChannel[draft.active];
   const tv = document.getElementById('timingValue');
@@ -727,9 +723,8 @@ function closePanel() {
 }
 
 function openPanel(type) {
-  const isChange = taskDrawerMode === 'change';
   if (isSystemTask() && type === 'timing') return;
-  if (isSystemTask() && type === 'audience' && !isChange) return;
+  if (isSystemTask() && type === 'audience') return;
   if (taskDrawerMode === 'edit' && (type === 'audience' || type === 'timing')) return;
   destroyAudiencePanelWidgets();
   panelContentEditor?.destroy();
@@ -739,30 +734,7 @@ function openPanel(type) {
 
   const panel = document.getElementById('ntPanel');
 
-  if (type === 'audience' && isChange) {
-    /* 变更模式：仅选择是否过滤已发送人群 */
-    document.getElementById('rowAudience').classList.add('active');
-    const cur = draft.resendFilter || 'filter';
-    panel.innerHTML = `
-      <div class="panel-title">选择人群</div>
-      <div class="field">
-        <span class="field-label">是否过滤已发送人群</span>
-        <div class="radio-group">
-          <label><input type="radio" name="ntResendFilter" value="filter" ${cur === 'filter' ? 'checked' : ''}>过滤${tipIcon('已经发过的人群不再发送')}</label>
-          <label><input type="radio" name="ntResendFilter" value="nofilter" ${cur === 'nofilter' ? 'checked' : ''}>不过滤${tipIcon('已经发过的人群重新发送')}</label>
-        </div>
-      </div>
-      <div class="panel-actions">
-        <button type="button" class="btn btn-outline" id="panelCancel">取消</button>
-        <button type="button" class="btn btn-primary" id="panelOk">确认</button>
-      </div>`;
-
-    panel.querySelector('#panelOk').addEventListener('click', () => {
-      draft.resendFilter = panel.querySelector('input[name="ntResendFilter"]:checked')?.value || 'filter';
-      closePanel();
-      renderRows();
-    });
-  } else if (type === 'audience') {
+  if (type === 'audience') {
     document.getElementById('rowAudience').classList.add('active');
     panel.innerHTML = `
       <div class="panel-title">选择人群</div>
@@ -788,7 +760,7 @@ function openPanel(type) {
           <ul class="upload-list" id="uploadList"></ul>
         </div>
       </div>
-      <div class="collapse-section" id="audViberExtra">
+      <div class="collapse-section aud-viber-collapse" id="audViberExtra">
         <button type="button" class="collapse-toggle" id="viberExtraToggle">
           <i data-lucide="chevron-right"></i>viber附加信息
         </button>
@@ -815,10 +787,22 @@ function openPanel(type) {
 
     /* viber附加信息折叠区：随当前 tab 移动，默认收起 */
     const viberExtra = panel.querySelector('#audViberExtra');
+    const viberExtraBody = panel.querySelector('#viberExtraBody');
+    const ntPanelEl = document.getElementById('ntPanel');
+    const ensureViberExtraVisible = () => {
+      if (!viberExtra?.classList.contains('open') || viberExtraBody?.hidden) return;
+      requestAnimationFrame(() => {
+        const panelRect = ntPanelEl?.getBoundingClientRect();
+        const bodyRect = viberExtraBody.getBoundingClientRect();
+        if (panelRect && bodyRect.bottom > panelRect.bottom - 12) {
+          ntPanelEl.scrollTop += bodyRect.bottom - panelRect.bottom + 24;
+        }
+      });
+    };
     panel.querySelector('#viberExtraToggle').addEventListener('click', () => {
-      const body = panel.querySelector('#viberExtraBody');
-      body.hidden = !body.hidden;
-      viberExtra.classList.toggle('open', !body.hidden);
+      viberExtraBody.hidden = !viberExtraBody.hidden;
+      viberExtra.classList.toggle('open', !viberExtraBody.hidden);
+      if (!viberExtraBody.hidden) ensureViberExtraVisible();
     });
 
     const defaultAudTab = draft.audienceFiles.length && !draft.audienceTags.length ? 'upload' : 'tags';
@@ -839,7 +823,9 @@ function openPanel(type) {
     const bizBotsField = panel.querySelector('#audViberBizBotsField');
     const syncBizBotsVisibility = selected => {
       bizBotsField.hidden = !selected.includes('account_lined_bots') && !selected.includes('accounts_subscribed_bots');
+      if (!bizBotsField.hidden) ensureViberExtraVisible();
     };
+    const viberMselOpts = { onOpen: ensureViberExtraVisible };
     panelViberBizExcludeMsel = createSearchMultiSelect({
       container: panel.querySelector('#audViberBizExcludeMsel'),
       options: VIBER_BIZ_EXCLUDE_OPTIONS,
@@ -847,6 +833,7 @@ function openPanel(type) {
       placeholder: '请选择 Exclude 项',
       searchPlaceholder: '搜索…',
       onChange: syncBizBotsVisibility,
+      ...viberMselOpts,
     });
     syncBizBotsVisibility(viberCfg.bizExclude);
     panelViberBizBotsMsel = createSearchMultiSelect({
@@ -855,6 +842,7 @@ function openPanel(type) {
       selected: viberCfg.bizExcludeBots,
       placeholder: '请选择 Bot',
       searchPlaceholder: '搜索 Bot…',
+      ...viberMselOpts,
     });
     panelViberBotExcludeMsel = createSearchMultiSelect({
       container: panel.querySelector('#audViberBotExcludeMsel'),
@@ -862,6 +850,7 @@ function openPanel(type) {
       selected: viberCfg.botExclude,
       placeholder: '请选择 Exclude 项',
       searchPlaceholder: '搜索…',
+      ...viberMselOpts,
     });
 
     panelAudienceMsel = createSearchMultiSelect({
@@ -1041,6 +1030,8 @@ function createTask() {
     name,
     channel: channelLabel,
     progress: 0,
+    status: 'running',
+    taskType: isSystemTask() ? '系统调用' : '手动发送',
   });
 
   renderRunningTasksTable();
@@ -1071,8 +1062,17 @@ function saveEditedTask() {
   t.contentSummary = contentSummary(draft.perChannel[draft.channels[0]].content, 80);
   t.updatedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
   t.updatedBy = 'marvin@';
-  if (taskDrawerMode === 'change') {
-    t.resendFilter = draft.resendFilter || 'filter';
+  if (taskDrawerMode === 'change' && !isSystemTask()) {
+    if (!draft.audienceTags.length && !draft.audienceFiles.length) {
+      showToast('请选择人群（星灵标签或上传至少 1 项）');
+      return;
+    }
+    const audParts = [];
+    if (draft.audienceTags.length) {
+      audParts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
+    }
+    if (draft.audienceFiles.length) audParts.push(`已上传 ${draft.audienceFiles.length} 个文件`);
+    t.audience = audParts.join(' ｜ ') || t.audience;
   }
   closeDrawer('taskDrawer');
   showToast(taskDrawerMode === 'change' ? `任务「${t.name}」已变更` : `任务「${t.name}」已保存`);

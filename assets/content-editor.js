@@ -56,12 +56,7 @@ function defaultContentValue(channel) {
     return {
       channel: 'biz',
       biz: { category: '', account: '', type: 'Text', body: '', buttonImage: null, linkType: 'internal', url: '' },
-      bot: {
-        account: '', content: 'single',
-        gameType: '', gamePlatform: '', game: '',
-        singleExtra: 'top_win', singleCustomBody: '',
-        multiGames: [], customBody: '',
-      },
+      bot: { account: '', type: 'text', body: '', buttonImage: null, linkType: 'internal', url: '' },
     };
   }
   if (isMediaChannel(ch)) {
@@ -81,8 +76,18 @@ function ensureContentValue(channel, value) {
     return { ...base };
   }
   const merged = { ...base, ...value };
-  if (base.biz) merged.biz = { ...base.biz, ...(value.biz || {}) };
-  if (base.bot) merged.bot = { ...base.bot, ...(value.bot || {}) };
+  if (base.biz) {
+    merged.biz = { ...base.biz, ...(value.biz || {}) };
+    if (merged.biz.type === 'Button') merged.biz.type = 'Text';
+  }
+  if (base.bot) {
+    merged.bot = { ...base.bot, ...(value.bot || {}) };
+    const ob = value.bot || {};
+    if (!ob.type && ob.content) {
+      merged.bot.type = 'text';
+      merged.bot.body = ob.customBody || ob.singleCustomBody || merged.bot.body || '';
+    }
+  }
   if (base.mediaGroup) merged.mediaGroup = (value.mediaGroup && value.mediaGroup.length >= 2) ? value.mediaGroup : base.mediaGroup;
   return merged;
 }
@@ -658,9 +663,8 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
           <div class="field">
             <span class="field-label">类型</span>
             <div class="radio-group">
-              <label><input type="radio" name="ceViberBizType" value="Button" ${biz.type === 'Button' ? 'checked' : ''}>Button</label>
+              <label><input type="radio" name="ceViberBizType" value="Text" ${biz.type === 'Text' || biz.type === 'Button' ? 'checked' : ''}>Text</label>
               <label><input type="radio" name="ceViberBizType" value="Image" ${biz.type === 'Image' ? 'checked' : ''}>Image</label>
-              <label><input type="radio" name="ceViberBizType" value="Text" ${biz.type === 'Text' ? 'checked' : ''}>Text</label>
             </div>
           </div>
           <div class="field">
@@ -670,8 +674,8 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
             </div>
             <textarea class="textarea ce-viber-biz-body" rows="4" placeholder="请输入消息内容…">${biz.body || ''}</textarea>
           </div>
-          <div class="field ce-viber-biz-image-field" ${biz.type === 'Text' ? 'hidden' : ''}>
-            <span class="field-label">按钮图片</span>
+          <div class="field ce-viber-biz-image-field">
+            <span class="field-label">${biz.type === 'Image' ? '图片' : '按钮图片'}</span>
             <div class="upload-field">
               <button type="button" class="btn btn-outline btn-sm ce-viber-biz-upload-img"><i data-lucide="upload"></i>上传图片</button>
               <input type="file" class="ce-viber-biz-file-img" accept="image/jpeg,image/jpg" hidden>
@@ -679,7 +683,7 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
               <p class="upload-drop-hint">支持jpg/jpeg，≤100KB，400x400</p>
             </div>
           </div>
-          <div class="field-row-2 ce-viber-biz-url-field" ${biz.type === 'Text' ? 'hidden' : ''}>
+          <div class="field-row-2 ce-viber-biz-url-field">
             <div class="field">
               <span class="field-label">链接类型</span>
               <div class="radio-group">
@@ -699,57 +703,36 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
               ${VIBER_BOT_ACCOUNTS.map(a => `<option ${bot.account === a ? 'selected' : ''}>${a}</option>`).join('')}
             </select>
           </div>
-          <div class="field"><span class="field-label">类型</span><span class="tag tag-primary">Rich media</span></div>
           <div class="field">
-            <span class="field-label">内容</span>
+            <span class="field-label">类型</span>
             <div class="radio-group">
-              <label><input type="radio" name="ceViberBotContent" value="single" ${bot.content === 'single' ? 'checked' : ''}>单游戏</label>
-              <label><input type="radio" name="ceViberBotContent" value="multi" ${bot.content === 'multi' ? 'checked' : ''}>多游戏</label>
-              <label><input type="radio" name="ceViberBotContent" value="custom" ${bot.content === 'custom' ? 'checked' : ''}>自定义</label>
+              <label><input type="radio" name="ceViberBotType" value="text" ${bot.type === 'text' || !bot.type ? 'checked' : ''}>Text</label>
+              <label><input type="radio" name="ceViberBotType" value="picture" ${bot.type === 'picture' ? 'checked' : ''}>Picture</label>
             </div>
           </div>
-          <div class="ce-viber-bot-single" ${bot.content !== 'single' ? 'hidden' : ''}>
-            <div class="field-row-2">
-              <div class="field"><span class="field-label">游戏类型</span>
-                <select class="select ce-viber-bot-gametype">
-                  <option value="">请选择</option>
-                  ${VIBER_GAME_TYPES.map(t => `<option ${bot.gameType === t ? 'selected' : ''}>${t}</option>`).join('')}
-                </select>
-              </div>
-              <div class="field"><span class="field-label">游戏平台</span>
-                <select class="select ce-viber-bot-gameplatform">
-                  <option value="">请选择</option>
-                  ${VIBER_GAME_PLATFORMS.map(t => `<option ${bot.gamePlatform === t ? 'selected' : ''}>${t}</option>`).join('')}
-                </select>
-              </div>
+          <div class="field ce-viber-bot-body-field" ${bot.type === 'picture' ? 'hidden' : ''}>
+            <span class="field-label">内容</span>
+            <textarea class="textarea ce-viber-bot-body" rows="4" placeholder="请输入消息内容…">${bot.body || ''}</textarea>
+          </div>
+          <div class="field ce-viber-bot-image-field">
+            <span class="field-label ce-viber-bot-image-label">${bot.type === 'picture' ? '图片' : '按钮图片'}</span>
+            <div class="upload-field">
+              <button type="button" class="btn btn-outline btn-sm ce-viber-bot-upload-img"><i data-lucide="upload"></i>上传图片</button>
+              <input type="file" class="ce-viber-bot-file-img" accept="image/jpeg,image/jpg" hidden>
+              <div class="upload-preview ce-viber-bot-preview-img">${bot.buttonImage ? `<i data-lucide="image"></i><span>${bot.buttonImage}</span>` : '<i data-lucide="image"></i><span>未上传</span>'}</div>
+              <p class="upload-drop-hint">支持jpg/jpeg，≤100KB，400x400</p>
             </div>
-            <div class="field"><span class="field-label">游戏</span>
-              <select class="select ce-viber-bot-game">
-                <option value="">请选择</option>
-                ${VIBER_GAMES.map(g => `<option ${bot.game === g ? 'selected' : ''}>${g}</option>`).join('')}
-              </select>
-            </div>
+          </div>
+          <div class="field-row-2 ce-viber-bot-url-field">
             <div class="field">
-              <span class="field-label">其他</span>
+              <span class="field-label">链接类型</span>
               <div class="radio-group">
-                <label><input type="radio" name="ceViberBotExtra" value="top_win" ${bot.singleExtra === 'top_win' ? 'checked' : ''}>Top Win</label>
-                <label><input type="radio" name="ceViberBotExtra" value="top_win_rate" ${bot.singleExtra === 'top_win_rate' ? 'checked' : ''}>Top Win Rate</label>
-                <label><input type="radio" name="ceViberBotExtra" value="custom" ${bot.singleExtra === 'custom' ? 'checked' : ''}>自定义内容</label>
+                <label><input type="radio" name="ceViberBotLinkType" value="internal" ${bot.linkType === 'internal' ? 'checked' : ''}>内部链接</label>
+                <label><input type="radio" name="ceViberBotLinkType" value="external" ${bot.linkType === 'external' ? 'checked' : ''}>外部链接</label>
               </div>
             </div>
-            <div class="field ce-viber-bot-single-custom" ${bot.singleExtra !== 'custom' ? 'hidden' : ''}>
-              <textarea class="textarea ce-viber-bot-single-custom-body" rows="4" placeholder="请输入自定义内容…">${bot.singleCustomBody || ''}</textarea>
-            </div>
-          </div>
-          <div class="ce-viber-bot-multi" ${bot.content !== 'multi' ? 'hidden' : ''}>
-            <div class="field"><span class="field-label">游戏（可多选）</span>
-              <select class="select ce-viber-bot-multigames" multiple size="4">
-                ${VIBER_GAMES.map(g => `<option ${(bot.multiGames || []).includes(g) ? 'selected' : ''}>${g}</option>`).join('')}
-              </select>
-            </div>
-          </div>
-          <div class="field ce-viber-bot-custom" ${bot.content !== 'custom' ? 'hidden' : ''}>
-            <textarea class="textarea ce-viber-bot-custom-body" rows="4" placeholder="请输入自定义内容…">${bot.customBody || ''}</textarea>
+            <div class="field"><span class="field-label">URL</span>
+              <input class="input ce-viber-bot-url" value="${bot.url || ''}" placeholder="请输入链接地址"></div>
           </div>
         </div>
       </div>`;
@@ -769,13 +752,13 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
       emit();
     });
 
-    const bizImageField = container.querySelector('.ce-viber-biz-image-field');
-    const bizUrlField = container.querySelector('.ce-viber-biz-url-field');
+    const bizImageLabel = container.querySelector('.ce-viber-biz-image-field .field-label');
     container.querySelectorAll('input[name="ceViberBizType"]').forEach(r => {
       r.addEventListener('change', () => {
-        bizImageField.hidden = r.value === 'Text' ? true : (r.checked ? false : bizImageField.hidden);
-        bizUrlField.hidden = r.value === 'Text' ? true : (r.checked ? false : bizUrlField.hidden);
-        if (r.checked) emit();
+        if (r.checked) {
+          if (bizImageLabel) bizImageLabel.textContent = r.value === 'Image' ? '图片' : '按钮图片';
+          emit();
+        }
       });
     });
     bindUpload(container.querySelector('.ce-viber-biz-upload-img'), container.querySelector('.ce-viber-biz-file-img'),
@@ -785,26 +768,23 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
       .forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', emit));
     container.querySelectorAll('input[name="ceViberBizLinkType"]').forEach(r => r.addEventListener('change', emit));
 
-    const singlePane = container.querySelector('.ce-viber-bot-single');
-    const multiPane = container.querySelector('.ce-viber-bot-multi');
-    const customPane = container.querySelector('.ce-viber-bot-custom');
-    container.querySelectorAll('input[name="ceViberBotContent"]').forEach(r => {
+    const botBodyField = container.querySelector('.ce-viber-bot-body-field');
+    const botImageLabel = container.querySelector('.ce-viber-bot-image-label');
+    container.querySelectorAll('input[name="ceViberBotType"]').forEach(r => {
       r.addEventListener('change', () => {
-        singlePane.hidden = r.value !== 'single';
-        multiPane.hidden = r.value !== 'multi';
-        customPane.hidden = r.value !== 'custom';
-        if (r.checked) emit();
+        if (r.checked) {
+          const isPicture = r.value === 'picture';
+          if (botBodyField) botBodyField.hidden = isPicture;
+          if (botImageLabel) botImageLabel.textContent = isPicture ? '图片' : '按钮图片';
+          emit();
+        }
       });
     });
-    const singleCustomField = container.querySelector('.ce-viber-bot-single-custom');
-    container.querySelectorAll('input[name="ceViberBotExtra"]').forEach(r => {
-      r.addEventListener('change', () => {
-        singleCustomField.hidden = r.value !== 'custom';
-        if (r.checked) emit();
-      });
-    });
-    container.querySelectorAll('.ce-viber-bot-account, .ce-viber-bot-gametype, .ce-viber-bot-gameplatform, .ce-viber-bot-game, .ce-viber-bot-multigames, .ce-viber-bot-single-custom-body, .ce-viber-bot-custom-body')
+    bindUpload(container.querySelector('.ce-viber-bot-upload-img'), container.querySelector('.ce-viber-bot-file-img'),
+      container.querySelector('.ce-viber-bot-preview-img'), name => { bot.buttonImage = name; emit(); }, { accept: 'image/jpeg,image/jpg' });
+    container.querySelectorAll('.ce-viber-bot-account, .ce-viber-bot-body, .ce-viber-bot-url')
       .forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', emit));
+    container.querySelectorAll('input[name="ceViberBotLinkType"]').forEach(r => r.addEventListener('change', emit));
 
     enhanceSelects(container);
     refreshIcons();
@@ -821,23 +801,16 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
       };
       const nextBot = {
         account: container.querySelector('.ce-viber-bot-account')?.value ?? bot.account,
-        content: container.querySelector('input[name="ceViberBotContent"]:checked')?.value || bot.content,
-        gameType: container.querySelector('.ce-viber-bot-gametype')?.value ?? bot.gameType,
-        gamePlatform: container.querySelector('.ce-viber-bot-gameplatform')?.value ?? bot.gamePlatform,
-        game: container.querySelector('.ce-viber-bot-game')?.value ?? bot.game,
-        singleExtra: container.querySelector('input[name="ceViberBotExtra"]:checked')?.value || bot.singleExtra,
-        singleCustomBody: container.querySelector('.ce-viber-bot-single-custom-body')?.value ?? bot.singleCustomBody,
-        multiGames: container.querySelector('.ce-viber-bot-multigames')
-          ? [...container.querySelector('.ce-viber-bot-multigames').selectedOptions].map(o => o.value)
-          : bot.multiGames,
-        customBody: container.querySelector('.ce-viber-bot-custom-body')?.value ?? bot.customBody,
+        type: container.querySelector('input[name="ceViberBotType"]:checked')?.value || bot.type || 'text',
+        body: container.querySelector('.ce-viber-bot-body')?.value ?? bot.body,
+        buttonImage: bot.buttonImage,
+        linkType: container.querySelector('input[name="ceViberBotLinkType"]:checked')?.value || bot.linkType,
+        url: container.querySelector('.ce-viber-bot-url')?.value ?? bot.url,
       };
       const nextChannel = container.querySelector('.ce-viber-channel')?.value || channelSel;
       let text = '';
       if (nextChannel === 'biz') text = nextBiz.body;
-      else if (nextBot.content === 'custom') text = nextBot.customBody;
-      else if (nextBot.content === 'single') text = nextBot.singleExtra === 'custom' ? nextBot.singleCustomBody : `[单游戏] ${nextBot.game || ''}`;
-      else text = `[多游戏] ${nextBot.multiGames.join('、')}`;
+      else text = nextBot.body || (nextBot.buttonImage ? `[图片] ${nextBot.buttonImage}` : '');
       return { channel: nextChannel, biz: nextBiz, bot: nextBot, text };
     };
   }
@@ -1125,6 +1098,7 @@ function pvPlainText(content) {
     return tmp.textContent || '';
   }
   if (content.biz?.body) return content.biz.body;
+  if (content.bot?.body) return content.bot.body;
   if (content.bot?.singleCustomBody) return content.bot.singleCustomBody;
   return content.title || content.subject || '';
 }

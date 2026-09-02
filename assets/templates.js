@@ -406,6 +406,7 @@ function previewPlain(content) {
     return tmp.textContent || '';
   }
   if (content.biz?.body) return content.biz.body;
+  if (content.bot?.body) return content.bot.body;
   if (content.bot?.singleCustomBody) return content.bot.singleCustomBody;
   return content.title || content.subject || '';
 }
