@@ -40,6 +40,13 @@ function enrichTaskRecords() {
       if (!t.approvedAt) t.approvedAt = t.createdAt;
     }
     if (!t.updatedBy) t.updatedBy = APPROVERS[i % APPROVERS.length];
+    if (!t.activityId) {
+      const act = ACTIVITIES[i % ACTIVITIES.length];
+      t.activityId = act.id;
+      t.activityName = act.name;
+    } else if (!t.activityName) {
+      t.activityName = activityById(t.activityId)?.name || t.activityId;
+    }
     if (!t.channelContents) {
       t.channelContents = {};
       t.channels.forEach((c, ci) => {
@@ -268,6 +275,7 @@ function applyFilters() {
   const name = document.getElementById('fName').value.trim().toLowerCase();
   const taskCode = document.getElementById('fTaskCode').value.trim().toLowerCase();
   const content = document.getElementById('fContent').value.trim().toLowerCase();
+  const activity = document.getElementById('fActivity').value.trim().toLowerCase();
   const type = document.getElementById('fType').value;
   const channel = document.getElementById('fChannel').value;
   const status = document.getElementById('fStatus').value;
@@ -282,6 +290,7 @@ function applyFilters() {
     (!name || t.name.toLowerCase().includes(name) || t.id.toLowerCase().includes(name)) &&
     (!taskCode || (t.taskCode || '').toLowerCase().includes(taskCode)) &&
     (!content || (t.contentSummary || '').toLowerCase().includes(content)) &&
+    (!activity || (t.activityId || '').toLowerCase().includes(activity) || (t.activityName || '').toLowerCase().includes(activity)) &&
     (!productLines.length || productLines.includes(t.productLine)) &&
     (!type || t.taskType === type) &&
     (!channel || t.channels.includes(channel)) &&
@@ -297,7 +306,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ['fName', 'fTaskCode', 'fContent', 'fApprover'].forEach(id => document.getElementById(id).value = '');
+  ['fName', 'fTaskCode', 'fContent', 'fActivity', 'fApprover'].forEach(id => document.getElementById(id).value = '');
   ['fType', 'fChannel', 'fStatus', 'fApproval', 'fParty', 'fCreator'].forEach(id =>
     document.getElementById(id).value = '');
   productLineFilter?.setValue([]);
@@ -360,7 +369,7 @@ function renderTable() {
   const rows = filtered.slice(start, start + PAGE_SIZE);
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="15" class="cell-empty">暂无符合条件的任务</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="17" class="cell-empty">暂无符合条件的任务</td></tr>`;
   } else {
     tbody.innerHTML = rows.map(t => {
       const st = taskStatusDisplay(t);
@@ -389,6 +398,8 @@ function renderTable() {
           <td class="cell-muted">${t.createdAt}</td>
           <td>${t.updatedBy}</td>
           <td class="cell-muted">${t.updatedAt}</td>
+          <td class="cell-muted">${fmt(t.activityId)}</td>
+          <td class="col-name"><span class="cell-ellipsis" title="${fmt(t.activityName)}">${fmt(t.activityName)}</span></td>
           <td class="col-ops">
             ${approvalOps}
             <button class="link-btn" data-detail="${t.id}">查看详情</button>
@@ -558,6 +569,8 @@ function openTaskDetail(id) {
         <div class="desc-item"><span class="desc-label">发送对象</span><span>${fmt(t.audience)}</span></div>
         <div class="desc-item"><span class="desc-label">任务类型</span><span>${t.taskType}</span></div>
         ${t.taskType === '系统调用' ? `<div class="desc-item"><span class="desc-label">任务code</span><span>${fmt(t.taskCode)}</span></div>` : ''}
+        <div class="desc-item"><span class="desc-label">活动 ID</span><span>${fmt(t.activityId)}</span></div>
+        <div class="desc-item"><span class="desc-label">活动名称</span><span>${fmt(t.activityName)}</span></div>
         ${channelBlock}
       </div>
     </section>
@@ -648,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('queryBtn').addEventListener('click', applyFilters);
   document.getElementById('resetBtn').addEventListener('click', resetFilters);
-  ['fName', 'fTaskCode', 'fContent', 'fApprover'].forEach(id =>
+  ['fName', 'fTaskCode', 'fContent', 'fActivity', 'fApprover'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
 
   // 全选与批量操作

@@ -16,6 +16,29 @@ const PRODUCT_LINES = [
   { value: 'BingoPlus', label: 'BingoPlus' },
 ];
 
+/** 活动选项（新建任务按名称搜索选择；列表/详情展示活动 ID、活动名称） */
+const ACTIVITIES = [
+  { id: 'ACT202607001', name: '世界杯竞猜预热' },
+  { id: 'ACT202607002', name: '充值满赠限时活动' },
+  { id: 'ACT202607003', name: '新用户注册礼包' },
+  { id: 'ACT202607004', name: 'VIP 专属回归礼' },
+  { id: 'ACT202607005', name: '每日签到挑战' },
+  { id: 'ACT202607006', name: '沉默用户唤醒' },
+  { id: 'ACT202607007', name: '生日专属礼包' },
+  { id: 'ACT202607008', name: '七月大促预热' },
+];
+
+function activityById(id) {
+  return ACTIVITIES.find(a => a.id === id) || null;
+}
+
+function activityOptionsHtml(selectedId = '') {
+  return `<option value="">请选择活动</option>` +
+    ACTIVITIES.map(a =>
+      `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>${a.name}</option>`
+    ).join('');
+}
+
 /** 触达任务状态（running 按任务类型展示为发送中 / 已启用） */
 const TASK_STATUS = {
   pending: { label: '待发送', cls: 'tag-info' },

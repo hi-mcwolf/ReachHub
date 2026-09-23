@@ -20,18 +20,25 @@ const RECEIPT_STATUS = {
 const SEND_RECORDS = (() => {
   const tasks = [
     { name: '世界杯竞猜预热短信', id: 'T20260713001', channel: 'SMS', productLine: 'BingoPlus', vendor: '供应商 A', sender: 'BPLUS', party: '自营平台', strategy: '单用户每日频控', template: '世界杯竞猜提醒', taskType: '系统调用', taskCode: 'TC-20260713001',
+      activityId: 'ACT202607001', activityName: '世界杯竞猜预热',
       content: "Only the best teams remain! Warm up for the Quarterfinals with today's FREE World Cup Quiz. Visit bingoplus.com." },
     { name: '新用户充值召回邮件', id: 'T20260713002', channel: '邮件', productLine: 'BP-VIP', vendor: 'SendCloud', sender: 'marketing@bingoplus.com', party: '自营平台', strategy: '夜间免打扰', template: '充值优惠通知', taskType: '手动发送',
+      activityId: 'ACT202607003', activityName: '新用户注册礼包',
       content: '尊敬的用户，本周充值满 500 即享 8% 加赠，活动今晚 24:00 截止，立即打开 App 参与吧！' },
     { name: '每日签到提醒 Push', id: 'T20260712004', channel: 'Push', productLine: 'BingoPlus', vendor: 'APNs/FCM', sender: 'BingoPlus App', party: '自营平台', strategy: 'AI 最佳发送时间推荐', template: '-', taskType: '系统调用', taskCode: 'TC-20260712004',
+      activityId: 'ACT202607005', activityName: '每日签到挑战',
       content: '今日签到礼包已刷新，连续签到 7 天可领神秘大奖！' },
     { name: 'Viber 高充值用户回馈', id: 'T20260711007', channel: 'Viber', productLine: 'BP-VIP', vendor: '供应商 B', sender: 'BingoPlus Official', party: '渠道 B', strategy: 'SMS 通道周频控', template: '-', taskType: '手动发送',
+      activityId: 'ACT202607002', activityName: '充值满赠限时活动',
       content: '尊贵的用户，您的专属回馈礼包已到账，点击查收！' },
     { name: '沉默用户唤醒短信', id: 'T20260710009', channel: 'SMS', productLine: 'BingoPlus', vendor: '供应商 A', sender: 'BPLUS', party: '自营平台', strategy: '召回消息 7 天去重', template: '流失召回话术', taskType: '系统调用', taskCode: 'TC-20260710009',
+      activityId: 'ACT202607006', activityName: '沉默用户唤醒',
       content: '好久不见！您的老朋友 BingoPlus 为您准备了回归好礼，登录即可领取！' },
     { name: 'Messenger 社群拉新', id: 'T20260711008', channel: 'Messenger', productLine: 'BP-CONTENT OPERATION CENTER', vendor: '供应商 B', sender: '@BingoPlusBot', party: '自营平台', strategy: '单活动触达频控', template: '-', taskType: '手动发送',
+      activityId: 'ACT202607003', activityName: '新用户注册礼包',
       content: '加入官方社群，每日抽奖赢免费竞猜券！' },
     { name: '账户激活提醒', id: 'T20260702019', channel: '邮件', productLine: 'BingoPlus', vendor: 'Mailgun', sender: 'noreply@bingoplus.com', party: '自营平台', strategy: '邮件 CAN-SPAM 合规', template: '账户激活', taskType: '系统调用', taskCode: 'TC-20260702019',
+      activityId: 'ACT202607008', activityName: '七月大促预热',
       content: '请完成账户激活以解锁全部功能。' },
   ];
 
@@ -83,6 +90,7 @@ const SEND_RECORDS = (() => {
       recordId: `S${String(20260713000 + i * 37)}`,
       sendTime, status, receipt, failReason, receiptId, vendorMessageId,
       taskName: task.name, taskId: task.id, productLine: task.productLine, taskType: task.taskType, taskCode: task.taskCode || null,
+      activityId: task.activityId, activityName: task.activityName,
       channel: task.channel, vendor: task.vendor, sender: task.sender, party: task.party,
       strategy: task.strategy, template: task.template, content: task.content,
       userAccount: user.account, userTags: user.tags,
@@ -126,6 +134,7 @@ function applyFilters() {
   const task = document.getElementById('fTask').value.trim().toLowerCase();
   const taskCode = document.getElementById('fTaskCode').value.trim().toLowerCase();
   const content = document.getElementById('fContent').value.trim().toLowerCase();
+  const activity = document.getElementById('fActivity').value.trim().toLowerCase();
   const type = document.getElementById('fType').value;
   const channel = document.getElementById('fChannel').value;
   const status = document.getElementById('fStatus').value;
@@ -140,6 +149,7 @@ function applyFilters() {
     (!task || r.taskName.toLowerCase().includes(task) || r.taskId.toLowerCase().includes(task)) &&
     (!taskCode || (r.taskCode || '').toLowerCase().includes(taskCode)) &&
     (!content || (r.content || '').toLowerCase().includes(content)) &&
+    (!activity || (r.activityId || '').toLowerCase().includes(activity) || (r.activityName || '').toLowerCase().includes(activity)) &&
     (!productLines.length || productLines.includes(r.productLine)) &&
     (!type || r.taskType === type) &&
     (!channel || r.channel === channel) &&
@@ -154,7 +164,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  ['fRecordId', 'fTask', 'fTaskCode', 'fContent', 'fUser'].forEach(id => document.getElementById(id).value = '');
+  ['fRecordId', 'fTask', 'fTaskCode', 'fContent', 'fActivity', 'fUser'].forEach(id => document.getElementById(id).value = '');
   ['fType', 'fChannel', 'fStatus', 'fParty', 'fVendor', 'fSender'].forEach(id =>
     document.getElementById(id).value = '');
   productLineFilter?.setValue([]);
@@ -167,7 +177,7 @@ function renderTable() {
   const rows = filtered.slice(start, start + PAGE_SIZE);
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="16" class="cell-empty">暂无符合条件的发送记录</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="18" class="cell-empty">暂无符合条件的发送记录</td></tr>`;
   } else {
     tbody.innerHTML = rows.map(r => {
       const st = SEND_STATUS[r.status];
@@ -192,6 +202,8 @@ function renderTable() {
           <td><span class="tag ${rc.cls}">${rc.label}</span></td>
           <td>${failCell}</td>
           <td>${r.party}</td>
+          <td class="cell-muted">${fmt(r.activityId)}</td>
+          <td class="col-name"><span class="cell-ellipsis" title="${fmt(r.activityName)}">${fmt(r.activityName)}</span></td>
           <td class="col-ops">
             <button class="link-btn" data-detail="${r.recordId}">查看详情</button>
           </td>
@@ -292,6 +304,8 @@ function openSendDetail(recordId) {
         <div class="desc-item"><span class="desc-label">发送时间</span><span>${r.sendTime}</span></div>
         <div class="desc-item"><span class="desc-label">通道</span><span><span class="tag tag-primary">${r.channel}</span></span></div>
         <div class="desc-item"><span class="desc-label">来源</span><span>${r.party}</span></div>
+        <div class="desc-item"><span class="desc-label">活动 ID</span><span>${fmt(r.activityId)}</span></div>
+        <div class="desc-item"><span class="desc-label">活动名称</span><span>${fmt(r.activityName)}</span></div>
       </div>
     </section>
     <section class="card detail-group">
@@ -352,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('queryBtn').addEventListener('click', applyFilters);
   document.getElementById('resetBtn').addEventListener('click', resetFilters);
-  ['fRecordId', 'fTask', 'fTaskCode', 'fContent', 'fUser'].forEach(id =>
+  ['fRecordId', 'fTask', 'fTaskCode', 'fContent', 'fActivity', 'fUser'].forEach(id =>
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); }));
   document.getElementById('exportBtn').addEventListener('click', () => showToast('发送记录导出中，完成后将通知您'));
   document.getElementById('detailToTask').addEventListener('click', () => location.href = 'task-records.html');

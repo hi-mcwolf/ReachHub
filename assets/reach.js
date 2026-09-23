@@ -52,18 +52,21 @@ const RUNNING_TASKS = [
   { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75, status: 'running',
     creator: 'marvin@', createdAt: '2026-07-12 10:20', approver: 'lily@', approvedAt: '2026-07-12 11:00',
     audience: '活跃用户', taskType: '系统调用', taskCode: 'TC-20260713001', timing: '2026-07-13 18:00 定时',
+    activityId: 'ACT202607001', activityName: '世界杯竞猜预热',
     contentSummary: 'Only the best teams remain! Warm up for the Quarterfinals…', template: '世界杯竞猜提醒',
     execution: { total: 12800, pushable: 12160, valid: 11776, duplicate: 384, blacklist: 256, dnc: 128,
       pushCount: 9632, pushSuccess: 9459, pushFail: 173, pendingConfirm: 482 } },
   { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38, status: 'running',
     creator: 'lily@', createdAt: '2026-07-11 14:05', approver: 'marvin@', approvedAt: '2026-07-11 15:00',
     audience: '新注册用户', taskType: '手动发送', timing: '每天 10:00 循环',
+    activityId: 'ACT202607003', activityName: '新用户注册礼包',
     contentSummary: '尊敬的用户，本周充值满 500 即享 8% 加赠…', template: '充值优惠通知',
     execution: { total: 5600, pushable: 5320, valid: 5152, duplicate: 168, blacklist: 112, dnc: 56,
       pushCount: 2128, pushSuccess: 2051, pushFail: 77, pendingConfirm: 106 } },
   { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52, status: 'running',
     creator: 'ken@', createdAt: '2026-07-08 11:00', approver: 'lily@', approvedAt: '2026-07-08 12:00',
     audience: 'VIP用户 · 沉默用户', taskType: '系统调用', taskCode: 'TC-20260712004', timing: '每天 09:00 循环',
+    activityId: 'ACT202607004', activityName: 'VIP 专属回归礼',
     contentSummary: '您的专属权益即将到期，登录立即领取…', template: '-',
     execution: { total: 21200, pushable: 20140, valid: 19504, duplicate: 636, blacklist: 424, dnc: 212,
       pushCount: 11024, pushSuccess: 10814, pushFail: 210, pendingConfirm: 551 } },
@@ -121,6 +124,8 @@ function initDraft(channel) {
   draft = {
     name: '',
     productLine: '',
+    activityId: '',
+    activityName: '',
     taskType: 'manual',
     taskCode: '',
     resendFilter: null,
@@ -135,6 +140,8 @@ function initDraft(channel) {
   };
   document.getElementById('ntName').value = '';
   document.getElementById('ntProductLine').value = '';
+  const actEl = document.getElementById('ntActivity');
+  if (actEl) actEl.value = '';
   const codeEl = document.getElementById('ntTaskCode');
   if (codeEl) codeEl.value = '';
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
@@ -155,11 +162,13 @@ function setTaskDrawerMode(mode) {
   const submit = document.getElementById('createTaskBtn');
   const nameEl = document.getElementById('ntName');
   const plEl = document.getElementById('ntProductLine');
+  const actEl = document.getElementById('ntActivity');
   const codeEl = document.getElementById('ntTaskCode');
   if (title) title.textContent = titles[mode] || '新建';
   if (submit) submit.textContent = locked ? '保存' : '提交审批';
   if (nameEl) nameEl.disabled = locked;
   if (plEl) plEl.disabled = locked;
+  if (actEl) actEl.disabled = locked;
   if (codeEl) codeEl.disabled = locked;
   document.querySelectorAll('input[name="taskType"]').forEach(r => { r.disabled = locked; });
   document.getElementById('rowAudience')?.classList.toggle('cfg-row-locked', mode === 'edit');
@@ -222,6 +231,31 @@ function ensureProductLineOption(value) {
   sel.value = value;
 }
 
+function ensureActivityOption(id, name) {
+  const sel = document.getElementById('ntActivity');
+  if (!sel) return;
+  if (!id) {
+    sel.value = '';
+    return;
+  }
+  if (![...sel.options].some(o => o.value === id)) {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = name || id;
+    sel.appendChild(opt);
+  }
+  sel.value = id;
+}
+
+function syncDraftActivityFromSelect() {
+  if (!draft) return;
+  const sel = document.getElementById('ntActivity');
+  const id = sel?.value || '';
+  const act = activityById(id);
+  draft.activityId = id;
+  draft.activityName = act?.name || (sel?.selectedOptions?.[0]?.textContent?.trim() || '');
+}
+
 function openTaskEdit(task, mode = 'edit') {
   if (!task || !document.getElementById('taskDrawer')) return;
   editingTaskId = task.id;
@@ -241,6 +275,8 @@ function openTaskEdit(task, mode = 'edit') {
   draft = {
     name: task.name || '',
     productLine: task.productLine || '',
+    activityId: task.activityId || '',
+    activityName: task.activityName || activityById(task.activityId)?.name || '',
     taskType: (task.taskType === 'API' || task.taskType === '系统调用' || task.taskType === 'system') ? 'system' : 'manual',
     taskCode: task.taskCode || '',
     resendFilter: null,
@@ -255,6 +291,7 @@ function openTaskEdit(task, mode = 'edit') {
   };
   document.getElementById('ntName').value = draft.name;
   ensureProductLineOption(draft.productLine);
+  ensureActivityOption(draft.activityId, draft.activityName);
   const codeEl = document.getElementById('ntTaskCode');
   if (codeEl) codeEl.value = draft.taskCode;
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
@@ -456,6 +493,8 @@ function openHomeTaskDetail(id, kind) {
         <div class="desc-item"><span class="desc-label">通道配置</span><span><span class="tag tag-primary">${item.channel}</span></span></div>
         <div class="desc-item"><span class="desc-label">发送时机</span><span>${hfmt(item.timing)}</span></div>
         <div class="desc-item"><span class="desc-label">模板名称</span><span>${hfmt(item.template)}</span></div>
+        <div class="desc-item"><span class="desc-label">活动 ID</span><span>${hfmt(item.activityId)}</span></div>
+        <div class="desc-item"><span class="desc-label">活动名称</span><span>${hfmt(item.activityName)}</span></div>
       </div>
     </section>
     ${execSection}
@@ -1002,6 +1041,7 @@ function createTask() {
   const name = document.getElementById('ntName').value.trim();
   if (!name) { showToast('请输入名称'); return; }
   if (!document.getElementById('ntProductLine').value) { showToast('请选择产品线'); return; }
+  syncDraftActivityFromSelect();
   draft.taskType = document.querySelector('input[name="taskType"]:checked')?.value || 'manual';
   draft.taskCode = document.getElementById('ntTaskCode')?.value.trim() || '';
   if (isSystemTask() && !draft.taskCode) {
@@ -1032,6 +1072,8 @@ function createTask() {
     progress: 0,
     status: 'running',
     taskType: isSystemTask() ? '系统调用' : '手动发送',
+    activityId: draft.activityId || '',
+    activityName: draft.activityName || '',
   });
 
   renderRunningTasksTable();
@@ -1062,6 +1104,9 @@ function saveEditedTask() {
   t.contentSummary = contentSummary(draft.perChannel[draft.channels[0]].content, 80);
   t.updatedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
   t.updatedBy = 'marvin@';
+  syncDraftActivityFromSelect();
+  t.activityId = draft.activityId || '';
+  t.activityName = draft.activityName || '';
   if (taskDrawerMode === 'change' && !isSystemTask()) {
     if (!draft.audienceTags.length && !draft.audienceFiles.length) {
       showToast('请选择人群（星灵标签或上传至少 1 项）');
@@ -1100,6 +1145,9 @@ function bindTaskDrawer() {
   });
   document.getElementById('ntTaskCode')?.addEventListener('input', e => {
     if (draft) draft.taskCode = e.target.value;
+  });
+  document.getElementById('ntActivity')?.addEventListener('change', () => {
+    syncDraftActivityFromSelect();
   });
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
     r.addEventListener('change', () => {
