@@ -12,11 +12,13 @@ const EXECUTION_TIPS = {
   valid: '有效且可触达的用户数',
   duplicate: '因去重策略被排除的重复用户数',
   blacklist: '命中黑名单被排除的用户数',
-  dnc: '命中 DNC（Do Not Contact）名单的用户数',
-  pushCount: '实际发起推送的总条数',
-  pushSuccess: '推送成功的条数',
-  pushFail: '推送失败的条数',
-  pendingConfirm: '已发送但待回执确认的数量',
+  dnc: '命中 DNC（Do Not Call/Contact）名单的用户数，仅短信通道',
+  dnd: '命中 DND（Do Not Disturb）免打扰名单的用户数',
+  pushCount: '成功推送至供应商的条数',
+  pushVendorFail: '推送至供应商失败的条数（未被供应商受理）',
+  pushSuccess: '供应商回执推送成功的条数',
+  pushFail: '供应商回执推送失败的条数',
+  pendingConfirm: '已推送至供应商、待供应商回执确认的条数',
 };
 
 function execMetric(label, key, value) {
@@ -66,8 +68,10 @@ function enrichTaskRecords() {
         valid: Math.round(t.total * 0.92),
         duplicate: Math.round(t.total * 0.03),
         blacklist: Math.round(t.total * 0.02),
-        dnc: Math.round(t.total * 0.01),
+        dnd: Math.round(t.total * 0.01),
+        dnc: Math.round(t.total * 0.005),
         pushCount: sent,
+        pushVendorFail: Math.round(sent * 0.01),
         pushSuccess: sent && t.fails != null ? sent - fails : sent,
         pushFail: fails,
         pendingConfirm: Math.round(sent * 0.05),
@@ -582,11 +586,13 @@ function openTaskDetail(id) {
         ${execMetric('有效用户数', 'valid', t.execution.valid)}
         ${execMetric('重复用户数', 'duplicate', t.execution.duplicate)}
         ${execMetric('黑名单用户数', 'blacklist', t.execution.blacklist)}
-        ${execMetric('DNC用户数', 'dnc', t.execution.dnc)}
-        ${execMetric('推送条数', 'pushCount', t.execution.pushCount)}
-        ${execMetric('推送成功条数', 'pushSuccess', t.execution.pushSuccess)}
-        ${execMetric('推送失败条数', 'pushFail', t.execution.pushFail)}
-        ${execMetric('待确认数', 'pendingConfirm', t.execution.pendingConfirm)}
+        ${execMetric('DND用户数', 'dnd', t.execution.dnd)}
+        ${(t.channels || []).includes('SMS') ? execMetric('DNC用户数', 'dnc', t.execution.dnc) : ''}
+        ${execMetric('推送至供应商成功条数', 'pushCount', t.execution.pushCount)}
+        ${execMetric('推送至供应商失败条数', 'pushVendorFail', t.execution.pushVendorFail)}
+        ${execMetric('供应商推送成功条数', 'pushSuccess', t.execution.pushSuccess)}
+        ${execMetric('供应商推送失败条数', 'pushFail', t.execution.pushFail)}
+        ${execMetric('待供应商确认条数', 'pendingConfirm', t.execution.pendingConfirm)}
       </div>
     </section>
     </div>`;

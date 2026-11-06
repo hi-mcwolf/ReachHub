@@ -54,22 +54,22 @@ const RUNNING_TASKS = [
     audience: '活跃用户', taskType: '系统调用', taskCode: 'TC-20260713001', timing: '2026-07-13 18:00 定时',
     activityId: 'ACT202607001', activityName: '世界杯竞猜预热',
     contentSummary: 'Only the best teams remain! Warm up for the Quarterfinals…', template: '世界杯竞猜提醒',
-    execution: { total: 12800, pushable: 12160, valid: 11776, duplicate: 384, blacklist: 256, dnc: 128,
-      pushCount: 9632, pushSuccess: 9459, pushFail: 173, pendingConfirm: 482 } },
+    execution: { total: 12800, pushable: 12160, valid: 11776, duplicate: 384, blacklist: 256, dnd: 128, dnc: 64,
+      pushCount: 9632, pushVendorFail: 96, pushSuccess: 9459, pushFail: 173, pendingConfirm: 482 } },
   { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38, status: 'running',
     creator: 'lily@', createdAt: '2026-07-11 14:05', approver: 'marvin@', approvedAt: '2026-07-11 15:00',
     audience: '新注册用户', taskType: '手动发送', timing: '每天 10:00 循环',
     activityId: 'ACT202607003', activityName: '新用户注册礼包',
     contentSummary: '尊敬的用户，本周充值满 500 即享 8% 加赠…', template: '充值优惠通知',
-    execution: { total: 5600, pushable: 5320, valid: 5152, duplicate: 168, blacklist: 112, dnc: 56,
-      pushCount: 2128, pushSuccess: 2051, pushFail: 77, pendingConfirm: 106 } },
+    execution: { total: 5600, pushable: 5320, valid: 5152, duplicate: 168, blacklist: 112, dnd: 56,
+      pushCount: 2128, pushVendorFail: 21, pushSuccess: 2051, pushFail: 77, pendingConfirm: 106 } },
   { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52, status: 'running',
     creator: 'ken@', createdAt: '2026-07-08 11:00', approver: 'lily@', approvedAt: '2026-07-08 12:00',
     audience: 'VIP用户 · 沉默用户', taskType: '系统调用', taskCode: 'TC-20260712004', timing: '每天 09:00 循环',
     activityId: 'ACT202607004', activityName: 'VIP 专属回归礼',
     contentSummary: '您的专属权益即将到期，登录立即领取…', template: '-',
-    execution: { total: 21200, pushable: 20140, valid: 19504, duplicate: 636, blacklist: 424, dnc: 212,
-      pushCount: 11024, pushSuccess: 10814, pushFail: 210, pendingConfirm: 551 } },
+    execution: { total: 21200, pushable: 20140, valid: 19504, duplicate: 636, blacklist: 424, dnd: 212,
+      pushCount: 11024, pushVendorFail: 110, pushSuccess: 10814, pushFail: 210, pendingConfirm: 551 } },
 ];
 
 let draft = null;
@@ -411,11 +411,13 @@ const HOME_EXECUTION_TIPS = {
   valid: '有效且可触达的用户数',
   duplicate: '因去重策略被排除的重复用户数',
   blacklist: '命中黑名单被排除的用户数',
-  dnc: '命中 DNC（Do Not Contact）名单的用户数',
-  pushCount: '实际发起推送的总条数',
-  pushSuccess: '推送成功的条数',
-  pushFail: '推送失败的条数',
-  pendingConfirm: '已发送但待回执确认的数量',
+  dnc: '命中 DNC（Do Not Call/Contact）名单的用户数，仅短信通道',
+  dnd: '命中 DND（Do Not Disturb）免打扰名单的用户数',
+  pushCount: '成功推送至供应商的条数',
+  pushVendorFail: '推送至供应商失败的条数（未被供应商受理）',
+  pushSuccess: '供应商回执推送成功的条数',
+  pushFail: '供应商回执推送失败的条数',
+  pendingConfirm: '已推送至供应商、待供应商回执确认的条数',
 };
 
 const hfmt = v => (v === null || v === undefined || v === '' || v === '-') ? '-' : (typeof v === 'number' ? v.toLocaleString() : v);
@@ -460,11 +462,13 @@ function openHomeTaskDetail(id, kind) {
         ${homeExecMetric('有效用户数', 'valid', item.execution.valid)}
         ${homeExecMetric('重复用户数', 'duplicate', item.execution.duplicate)}
         ${homeExecMetric('黑名单用户数', 'blacklist', item.execution.blacklist)}
-        ${homeExecMetric('DNC用户数', 'dnc', item.execution.dnc)}
-        ${homeExecMetric('推送条数', 'pushCount', item.execution.pushCount)}
-        ${homeExecMetric('推送成功条数', 'pushSuccess', item.execution.pushSuccess)}
-        ${homeExecMetric('推送失败条数', 'pushFail', item.execution.pushFail)}
-        ${homeExecMetric('待确认数', 'pendingConfirm', item.execution.pendingConfirm)}
+        ${homeExecMetric('DND用户数', 'dnd', item.execution.dnd)}
+        ${item.channel === 'SMS' ? homeExecMetric('DNC用户数', 'dnc', item.execution.dnc) : ''}
+        ${homeExecMetric('推送至供应商成功条数', 'pushCount', item.execution.pushCount)}
+        ${homeExecMetric('推送至供应商失败条数', 'pushVendorFail', item.execution.pushVendorFail)}
+        ${homeExecMetric('供应商推送成功条数', 'pushSuccess', item.execution.pushSuccess)}
+        ${homeExecMetric('供应商推送失败条数', 'pushFail', item.execution.pushFail)}
+        ${homeExecMetric('待供应商确认条数', 'pendingConfirm', item.execution.pendingConfirm)}
       </div>
     </section>`;
 
