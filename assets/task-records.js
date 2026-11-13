@@ -40,7 +40,8 @@ function trNeedsApproval(t) {
 const TR_CH_ICON = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', 'Viber Biz': 'phone-call', 'Viber Bot': 'bot', 'Messenger Biz': 'message-circle', 'Messenger Bot': 'message-circle', WhatsApp: 'message-circle-more' };
 
 function trChannelCell(t) {
-  return t.routes.map(r => `<span class="tr-ch"><i data-lucide="${TR_CH_ICON[r.channel] || 'send'}"></i>${r.channel}${r.sub ? ' · ' + r.sub : ''}</span>`).join('<br>');
+  const tag = t.fallback ? ' <span class="tag tag-primary" title="已配置失败后短信：未送达时由触达短信通道兜底">含兜底短信</span>' : '';
+  return t.routes.map(r => `<span class="tr-ch"><i data-lucide="${TR_CH_ICON[r.channel] || 'send'}"></i>${r.channel}${r.sub ? ' · ' + r.sub : ''}${tag}</span>`).join('<br>');
 }
 
 function trStatusCell(t) {
@@ -242,6 +243,7 @@ function applyFilters(keepPage) {
   const category = document.getElementById('fCategory').value;
   const approval = document.getElementById('fApproval').value;
   const creator = document.getElementById('fCreator').value;
+  const fallback = document.getElementById('fFallback').value;
   const productLines = productLineFilter?.getValue() || [];
   const statuses = statusFilter?.getValue() || [];
 
@@ -257,6 +259,7 @@ function applyFilters(keepPage) {
     (!channelCascade || channelCascade.matches(t)) &&
     (!statuses.length || statuses.includes(t.status)) &&
     (!approval || t.approval === approval) &&
+    (!fallback || (fallback === 'yes') === !!t.fallback) &&
     (!approver || (t.approver || '').toLowerCase().includes(approver)) &&
     (!creator || t.creator === creator)
   );
@@ -274,7 +277,7 @@ function applyFilters(keepPage) {
 
 function resetFilters() {
   ['fName', 'fTaskCode', 'fContent', 'fActivity', 'fApprover'].forEach(id => document.getElementById(id).value = '');
-  ['fSource', 'fApp', 'fCategory', 'fApproval', 'fCreator'].forEach(id => {
+  ['fSource', 'fApp', 'fCategory', 'fApproval', 'fCreator', 'fFallback'].forEach(id => {
     const el = document.getElementById(id);
     el.value = '';
     el.dispatchEvent(new Event('change'));
@@ -734,6 +737,42 @@ function bindFunnel(t) {
   document.getElementById('trExportDetail')?.addEventListener('click', () => showToast('已导出（原型）：本任务发送记录，含消息状态、失败分类、原始码、首发 / 重试、最终供应商'));
 }
 
+
+/* ---------------- 失败后短信：详情展示（PRD 6.3.2） ---------------- */
+function trFallbackConfigHtml(t) {
+  if (!t.fallback) return '';
+  const fb = t.fallback;
+  return `<section class="card detail-group">
+      <h4 class="card-title">兜底短信 <span class="tag tag-primary">已开启</span></h4>
+      <div class="desc-list">
+        ${trDesc('适用通道', esc(t.routes.map(r => r.channel).join(' / ')))}
+        ${trDesc('等待时长', esc(fb.wait))}
+        ${trDesc('短信正文', esc(fb.text))}
+        ${trDesc('Sender ID', `${esc(fb.sender)} <span class="v2-muted">（账号 ${esc(fb.account)}，按产品线「${esc(t.productLine)}」自动选择）</span>`)}
+      </div>
+    </section>`;
+}
+
+function trFallbackExecHtml(t) {
+  if (!t.fallback || trNotStarted(t)) return '';
+  const n = trFallbackTarget(t);
+  const tf = { ...t, status: 'done', remaining: 0 };
+  const html = trFunnelHtml(tf, 'SMS', n)
+    .replace(new RegExp(`send-records\\.html\\?task=${t.id}`, 'g'), `send-records.html?task=${t.id}&channel=SMS&fb=1`)
+    .replace(/<a class="why"[^>]*>.*?<\/a>/g, '');
+  return `<div class="tr-fb-exec" style="margin-top:20px;padding-top:14px;border-top:1px dashed var(--border,#e5e7eb)">
+      <div style="font-weight:600;margin-bottom:8px">兜底短信 <span class="v2-hint">SMS · 指标与短信通道一致，统计对象为触发兜底的消息</span></div>
+      <div id="trFbFunnelBody">${html}</div>
+    </div>`;
+}
+
+function bindFunnelToggles(host) {
+  if (!host) return;
+  const sync = () => host.querySelectorAll('[data-sub]').forEach(s => { s.hidden = !host.querySelector(`[data-fl="${s.dataset.sub}"]`).classList.contains('open'); });
+  host.querySelectorAll('[data-tg]').forEach(b => b.addEventListener('click', () => { b.closest('.tr-fl').classList.toggle('open'); sync(); }));
+  sync();
+}
+
 /* ---------------- 详情：ETA 行（6.6.2） ---------------- */
 function trEtaRow(t) {
   if (!TR_ACTIVE.includes(t.status)) return '';
@@ -780,7 +819,7 @@ function taskPreviewItems(t) {
     let content = i === 0 ? cur.content : (t.content || cur.content);
     if (r.channel === '邮件') content = { subject: t.email?.subject || t.name, body: t.email?.body || cur.content };
     return { channel: ch, label: r.sub ? `${r.channel} · ${r.sub}` : r.channel, content: content === '-' ? '' : content, fallbackTitle: t.name };
-  });
+  }).concat(t.fallback ? [{ channel: 'sms', label: '兜底短信', content: t.fallback.text, fallbackTitle: t.name }] : []);
 }
 
 function trDesc(label, value) { return `<div class="desc-item"><span class="desc-label">${label}</span><span>${value}</span></div>`; }
@@ -832,15 +871,18 @@ function openTaskDetail(id) {
         ${trDesc('活动名称', esc(fmt(t.activityName)))}
       </div>
     </section>
+    ${trFallbackConfigHtml(t)}
     <section class="card detail-group">
       <h4 class="card-title">执行信息</h4>
       ${trExecSection(t)}
+      ${trFallbackExecHtml(t)}
     </section>
     </div>`;
 
   mountDetailPreview(document.getElementById('taskDetailPreview'), taskPreviewItems(t));
   document.getElementById('taskVersionHost').innerHTML = trVersionsHtml(t);
   bindFunnel(t);
+  bindFunnelToggles(document.getElementById('trFbFunnelBody'));
   renderTaskDetailFooter(t);
   openDrawer('taskDetailDrawer');
   refreshIcons();

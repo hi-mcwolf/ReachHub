@@ -55,7 +55,8 @@ const TR_LOCAL_TASKS = [
   { id: 'T20260709012', name: 'Viber 客服满意度回访', site: 'bp-growth', channel: 'Viber Biz', sub: 'Viber Biz', account: 'BP-im', source: '手动', creator: 'ken@', operator: 'ken@', category: '营销',
     status: 'done', approval: 'none', target: 1860, remaining: 0, sched: '2026-07-09 10:00', activity: null,
     audience: '近 7 天客服会话用户', sender: 'BingoPlus Viber', template: 'TPL-IM-0002', createdAt: '2026-07-02 11:20', updatedAt: '2026-07-09 18:00', updatedBy: 'ken@',
-    content: '感谢您使用在线客服，邀请您对本次服务进行评价。' },
+    content: '感谢您使用在线客服，邀请您对本次服务进行评价。',
+    fallback: { wait: '30 分钟', text: '感谢您使用在线客服，请打开 Viber 对本次服务评价，或回复本短信。', account: 'BP-01', sender: 'BPGROWTH' } },
   { id: 'T20260706016', name: '新功能上线公告', site: 'bp-growth', channel: '站内信', account: null, source: '手动', creator: 'marvin@', operator: 'marvin@', category: '营销',
     status: 'done', approval: 'approved', target: 318000, remaining: 0, sched: '2026-07-06 12:00', activity: null,
     audience: '全量用户', sender: '-', template: '-', createdAt: '2026-07-06 09:20', updatedAt: '2026-07-06 13:00', updatedBy: 'marvin@', approver: 'ken@', approvedAt: '2026-07-06 10:00',
@@ -64,6 +65,16 @@ const TR_LOCAL_TASKS = [
     status: 'done', approval: 'none', target: 52000, remaining: 0, sched: '2026-07-12 00:00', activity: null,
     audience: '按次调用（单发聚合）', sender: 'BPVERIFY', template: 'TPL-OTP-0001', createdAt: '2026-07-12 00:00', updatedAt: '2026-07-12 23:59', updatedBy: '系统',
     content: '[BingoPlus] Your verification code is {{code}}. Valid for 5 minutes.' },
+  { id: 'T20260710014', name: 'Messenger 沉默用户召回', site: 'bp-growth', channel: 'Messenger Bot', sub: 'Messenger Bot', account: 'BP-msgbot', source: '手动', creator: 'marvin@', operator: 'marvin@', category: '营销',
+    status: 'done', approval: 'none', target: 3200, remaining: 0, sched: '2026-07-10 11:00', activity: null,
+    audience: '30 天未登录用户', sender: 'BingoPlus Page Bot', template: '-', createdAt: '2026-07-09 17:30', updatedAt: '2026-07-10 16:00', updatedBy: 'marvin@',
+    content: 'Hi {{user_name}}，好久不见！登录 BingoPlus 领取你的回归礼包。',
+    fallback: { wait: '1 小时', text: 'BingoPlus 回归礼包等你来领，登录即可查看。', account: 'BP-01', sender: 'BPGROWTH' } },
+  { id: 'T20260713024', name: 'Viber Bot 世界杯竞猜提醒', site: 'bp-growth', channel: 'Viber Bot', sub: 'Viber Bot', account: 'BP-vbot', source: '手动', creator: 'ken@', operator: 'ken@', category: '营销',
+    status: 'sending', approval: 'none', target: 5000, remaining: 1500, sched: '2026-07-13 15:00', activity: null,
+    audience: '世界杯竞猜活跃用户', sender: 'BingoPlus Bot', template: '-', createdAt: '2026-07-13 14:20', updatedAt: '2026-07-13 15:00', updatedBy: 'ken@',
+    content: '今晚决赛，{{user_name}}，来 BingoPlus 提交你的竞猜！',
+    fallback: { wait: '10 分钟', text: 'BingoPlus 今晚决赛竞猜开启，登录即可参与。', account: 'BP-01', sender: 'BPGROWTH' } },
 ];
 
 /* ---------------- 构造任务记录 ---------------- */
@@ -118,3 +129,18 @@ function trChannelTarget(t, ch) {
   if (!ch || t.channels.length === 1) return t.target;
   return t.channelSplit?.[ch] ?? Math.round(t.target / t.channels.length);
 }
+
+
+/* ---------------- 失败后短信（兜底短信）：任务展示数据 ----------------
+ * 原通道 → 触发兜底：回执失败（提交失败 + 未送达）、超时未回执（无回执 + 已过期）；
+ * 兜底短信的执行信息 = 短信通道同口径漏斗，统计对象 = 触发兜底的消息（PRD 6.3.2） */
+function trHasFallback(t) { return !!t.fallback; }
+
+function trFallbackStats(t, ch) {
+  const f = v2Funnel({ ...t, channel: ch || t.channel, target: trChannelTarget(t, ch || t.channel) });
+  const byFail = f.submitFail + f.undelivered;
+  const byTimeout = f.noReceipt + f.expired;
+  return { byFail, byTimeout, triggered: byFail + byTimeout, waiting: TR_ACTIVE.includes(t.status) ? f.waiting : 0 };
+}
+
+function trFallbackTarget(t) { return trFallbackStats(t).triggered; }

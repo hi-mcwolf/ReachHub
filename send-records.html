@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>发送记录 · 触达 · Digiplus</title>
-  <link rel="stylesheet" href="assets/styles.css?v=202611131826">
-  <link rel="stylesheet" href="assets/v2.css?v=202611131826">
-  <link rel="stylesheet" href="assets/task-records-v2.css?v=202611131826">
+  <link rel="stylesheet" href="assets/styles.css?v=202611131839">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131839">
+  <link rel="stylesheet" href="assets/task-records-v2.css?v=202611131839">
 </head>
 <body>
   <div class="app-layout">
@@ -92,6 +92,24 @@
                 <select class="select" id="fStatus"></select>
               </div>
               <div class="filter-item">
+                <span class="filter-label">是否兜底</span>
+                <select class="select" id="fFbFlag">
+                  <option value="">全部</option><option value="origin">原消息</option><option value="fallback">兜底短信</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">兜底状态</span>
+                <select class="select" id="fFbStatus">
+                  <option value="">全部</option><option>无需兜底</option><option>等待中</option><option>已触发</option><option>未触发</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">触发原因</span>
+                <select class="select" id="fFbReason">
+                  <option value="">全部</option><option>回执失败</option><option>超时未回执</option>
+                </select>
+              </div>
+              <div class="filter-item">
                 <span class="filter-label">失败分类</span>
                 <select class="select" id="fCat"></select>
               </div>
@@ -134,7 +152,7 @@
                   <tr>
                     <th>记录 ID</th><th>发送时间</th><th>任务 ID</th><th class="col-name">任务名称</th><th>任务code</th><th>发送对象</th>
                     <th>通道</th><th>最终供应商 / 账号 / 发送方标识</th><th class="col-name">发送内容</th>
-                    <th>消息状态</th><th>失败分类</th><th>原始码</th><th>首发 / 重试</th><th class="v2-num">计费条数</th>
+                    <th>消息状态</th><th>兜底状态</th><th>兜底信息</th><th>失败分类</th><th>原始码</th><th>首发 / 重试</th><th class="v2-num">计费条数</th>
                     <th>回执 ID</th><th>任务类型</th><th>接入方 / operator</th>
                     <th>活动 ID</th><th class="col-name">活动名称</th>
                     <th class="col-ops">操作</th>
@@ -170,13 +188,13 @@
   </div>
 
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="assets/common.js?v=202611131826"></script>
-  <script src="assets/v2-data.js?v=202611131826"></script>
-  <script src="assets/content-editor.js?v=202611131826"></script>
-  <script src="assets/reach-config.js?v=202611131826"></script>
-  <script src="assets/search-select.js?v=202611131826"></script>
-  <script src="assets/search-multi-select.js?v=202611131826"></script>
-  <script src="assets/task-records-data.js?v=202611131826"></script>
-  <script src="assets/send-records.js?v=202611131826"></script>
+  <script src="assets/common.js?v=202611131839"></script>
+  <script src="assets/v2-data.js?v=202611131839"></script>
+  <script src="assets/content-editor.js?v=202611131839"></script>
+  <script src="assets/reach-config.js?v=202611131839"></script>
+  <script src="assets/search-select.js?v=202611131839"></script>
+  <script src="assets/search-multi-select.js?v=202611131839"></script>
+  <script src="assets/task-records-data.js?v=202611131839"></script>
+  <script src="assets/send-records.js?v=202611131839"></script>
 </body>
 </html>

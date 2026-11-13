@@ -55,14 +55,15 @@ function defaultContentValue(channel) {
   if (ch === 'viber') {
     return {
       channel: 'biz',
-      biz: { category: '', account: '', type: 'Text', body: '', buttonImage: null, linkType: 'internal', url: '' },
-      bot: { account: '', type: 'text', body: '', buttonImage: null, linkType: 'internal', url: '' },
+      biz: { category: '', account: '', type: 'Text', body: '', buttonImage: null, linkType: 'internal', url: '', fallbackSms: defaultFallbackSms() },
+      bot: { account: '', type: 'text', body: '', buttonImage: null, linkType: 'internal', url: '', fallbackSms: defaultFallbackSms() },
     };
   }
   if (isMediaChannel(ch)) {
     return {
       account: '', type: 'Text', body: '', image: null, thumbnail: null, buttonImage: null, url: '',
       mediaGroup: [{ type: 'Photo', file: null }, { type: 'Photo', file: null }],
+      fallbackSms: defaultFallbackSms(),
     };
   }
   return { text: '' };
@@ -79,15 +80,18 @@ function ensureContentValue(channel, value) {
   if (base.biz) {
     merged.biz = { ...base.biz, ...(value.biz || {}) };
     if (merged.biz.type === 'Button') merged.biz.type = 'Text';
+    merged.biz.fallbackSms = { ...defaultFallbackSms(), ...(value.biz?.fallbackSms || {}) };
   }
   if (base.bot) {
     merged.bot = { ...base.bot, ...(value.bot || {}) };
+    merged.bot.fallbackSms = { ...defaultFallbackSms(), ...(value.bot?.fallbackSms || {}) };
     const ob = value.bot || {};
     if (!ob.type && ob.content) {
       merged.bot.type = 'text';
       merged.bot.body = ob.customBody || ob.singleCustomBody || merged.bot.body || '';
     }
   }
+  if (base.fallbackSms) merged.fallbackSms = { ...defaultFallbackSms(), ...(value.fallbackSms || {}) };
   if (base.mediaGroup) merged.mediaGroup = (value.mediaGroup && value.mediaGroup.length >= 2) ? value.mediaGroup : base.mediaGroup;
   return merged;
 }
@@ -185,6 +189,81 @@ function bindUpload(btn, input, preview, onChange, { accept = 'image/*' } = {}) 
 function mockShortLink() {
   const id = Math.random().toString(36).slice(2, 8);
   return `https://bpl.us/${id}`;
+}
+
+/* ---------------- 失败后短信（Viber BM / Bot、Messenger Bot）：PRD 6.1 ---------------- */
+function defaultFallbackSms() { return { enabled: false, wait: 30, unit: '分钟', text: '' }; }
+
+function fbWaitMinutes(fb) { const n = Number(fb.wait); return fb.unit === '小时' ? n * 60 : n; }
+
+/* 校验：开关开时，等待时长 1 分钟 ~ 72 小时、短信正文必填；返回错误文案，通过返回空串 */
+function fallbackSmsError(fb) {
+  if (!fb || !fb.enabled) return '';
+  const m = fbWaitMinutes(fb);
+  if (!Number(fb.wait) || !Number.isFinite(m) || m < 1 || m > 4320) return '等待时长需在 1 分钟到 72 小时之间';
+  if (!String(fb.text || '').trim()) return '请填写短信正文';
+  return '';
+}
+
+/* 取内容里当前生效通道的失败后短信配置（Viber 取当前子渠道，Messenger 仅 Bot） */
+function contentFallbackSms(channel, content) {
+  const ch = normalizeChannel(channel);
+  if (!content || typeof content !== 'object') return null;
+  if (ch === 'viber') return (content.channel === 'bot' ? content.bot : content.biz)?.fallbackSms || null;
+  if (ch === 'messenger') return content.fallbackSms || null;
+  return null;
+}
+
+function fbSegText(text) {
+  const t = String(text || '');
+  const n = [...t].length;
+  if (!n) return '0 字 / 0 条短信';
+  const uni = /[^\x00-\x7F]/.test(t);
+  const segs = uni ? (n <= 70 ? 1 : Math.ceil(n / 67)) : (n <= 160 ? 1 : Math.ceil(n / 153));
+  return `${n} 字 / ${segs} 条短信（${uni ? 'Unicode' : 'GSM'}）`;
+}
+
+function fallbackSmsHtml(cls, fb) {
+  return `
+    <div class="ce-fb ${cls}" style="margin-top:16px;padding:12px 14px;border:1px solid var(--border,#e5e7eb);border-radius:8px;background:var(--bg-subtle,#fafafa)">
+      <div class="field-label-row" style="margin-bottom:8px">
+        <span class="field-label">失败后短信</span>
+        <label class="v2-switch"><input type="checkbox" class="ce-fb-on" ${fb.enabled ? 'checked' : ''}><span></span></label>
+      </div>
+      <div class="ce-fb-body" ${fb.enabled ? '' : 'hidden'}>
+        <div class="field"><span class="field-label">等待时长</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" min="1" class="input ce-fb-wait" style="width:96px" value="${fb.wait ?? ''}">
+            <select class="select ce-fb-unit" style="width:96px"><option ${fb.unit === '分钟' ? 'selected' : ''}>分钟</option><option ${fb.unit === '小时' ? 'selected' : ''}>小时</option></select>
+            <span class="v2-hint">消息提交后等待送达回执的最长时间，范围 1 分钟 ~ 72 小时</span>
+          </div>
+        </div>
+        <div class="field"><span class="field-label">短信正文</span>
+          <textarea class="textarea ce-fb-text" rows="3" placeholder="请输入短信正文">${esc(fb.text || '')}</textarea>
+          <div style="margin-top:4px"><span class="v2-hint ce-fb-seg"></span></div>
+        </div>
+        <div class="v2-hint">回执失败（非 Viber 用户、未送达等）或等待时长内未收到送达回执时，触达自动发送该短信；短信账号与 Sender ID 按任务产品线自动选择，受 DND / DNC / 黑名单 / 频控约束。</div>
+        <div class="tr-edit-err ce-fb-err" style="color:var(--danger,#d93025);font-size:12px;margin-top:6px" hidden></div>
+      </div>
+    </div>`;
+}
+
+/* 绑定交互；fb 为引用对象（就地更新）；返回 { read(), el } */
+function bindFallbackSms(root, cls, fb, emit) {
+  const box = root.querySelector('.' + cls);
+  const on = box.querySelector('.ce-fb-on'), body = box.querySelector('.ce-fb-body');
+  const wait = box.querySelector('.ce-fb-wait'), unit = box.querySelector('.ce-fb-unit');
+  const text = box.querySelector('.ce-fb-text'), seg = box.querySelector('.ce-fb-seg'), err = box.querySelector('.ce-fb-err');
+  const sync = () => {
+    fb.enabled = on.checked; fb.wait = wait.value === '' ? '' : Number(wait.value); fb.unit = unit.value; fb.text = text.value;
+    body.hidden = !fb.enabled;
+    seg.textContent = fbSegText(text.value);
+    const e = fallbackSmsError(fb);
+    err.textContent = e; err.hidden = !e;
+  };
+  [on, wait, unit, text].forEach(el => el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => { sync(); emit(); }));
+  sync();
+  return { el: box, read: () => ({ ...fb }) };
 }
 
 function createContentEditor({ container, channel, value, onChange, showTemplateTools = true, showSmsConfigMode = true }) {
@@ -751,6 +830,10 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
 
     const bizPane = container.querySelector('.ce-viber-biz');
     const botPane = container.querySelector('.ce-viber-bot');
+    bizPane.insertAdjacentHTML('beforeend', fallbackSmsHtml('ce-fb-biz', biz.fallbackSms));
+    botPane.insertAdjacentHTML('beforeend', fallbackSmsHtml('ce-fb-bot', bot.fallbackSms));
+    const fbBiz = bindFallbackSms(container, 'ce-fb-biz', biz.fallbackSms, emit);
+    const fbBot = bindFallbackSms(container, 'ce-fb-bot', bot.fallbackSms, emit);
     container.querySelector('.ce-viber-channel').addEventListener('change', e => {
       bizPane.hidden = e.target.value !== 'biz';
       botPane.hidden = e.target.value !== 'bot';
@@ -803,6 +886,7 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
         buttonImage: biz.buttonImage,
         linkType: container.querySelector('input[name="ceViberBizLinkType"]:checked')?.value || biz.linkType,
         url: container.querySelector('.ce-viber-biz-url')?.value ?? biz.url,
+        fallbackSms: fbBiz.read(),
       };
       const nextBot = {
         account: container.querySelector('.ce-viber-bot-account')?.value ?? bot.account,
@@ -811,6 +895,7 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
         buttonImage: bot.buttonImage,
         linkType: container.querySelector('input[name="ceViberBotLinkType"]:checked')?.value || bot.linkType,
         url: container.querySelector('.ce-viber-bot-url')?.value ?? bot.url,
+        fallbackSms: fbBot.read(),
       };
       const nextChannel = container.querySelector('.ce-viber-channel')?.value || channelSel;
       let text = '';
@@ -995,10 +1080,21 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
       });
     });
 
+    let fbMc = null;
+    if (ch === 'messenger') {
+      container.querySelector('.content-editor-wrap').insertAdjacentHTML('beforeend', fallbackSmsHtml('ce-fb-mc', data.fallbackSms));
+      fbMc = bindFallbackSms(container, 'ce-fb-mc', data.fallbackSms, emit);
+      /* 仅 Messenger Bot（账号含 Bot 或未选账号）可配置；Biz（官方主页）不显示 */
+      const accSel = container.querySelector('.ce-mc-account');
+      const syncFb = () => { const a = accSel.value; fbMc.el.hidden = !(!a || /Bot/i.test(a)); };
+      accSel.addEventListener('change', syncFb);
+      syncFb();
+    }
     enhanceSelects(container);
     refreshIcons();
 
     currentGetValue = () => ({
+      fallbackSms: fbMc ? (fbMc.el.hidden ? { ...fbMc.read(), enabled: false } : fbMc.read()) : data.fallbackSms,
       account: container.querySelector('.ce-mc-account')?.value ?? data.account,
       type: container.querySelector('input[name="ceMcType"]:checked')?.value || type,
       body: getRteHtml(data.body),

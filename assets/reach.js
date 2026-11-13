@@ -1365,6 +1365,8 @@ function createTask() {
       : `请完成「${CHANNELS[missing].tip}」通道的时机与内容配置`);
     return;
   }
+  const fbBad = draft.channels.map(c => ({ c, e: fallbackSmsError(contentFallbackSms(c, draft.perChannel[c].content)) })).find(x => x.e);
+  if (fbBad) { showToast(`「${CHANNELS[fbBad.c].tip}」失败后短信：${fbBad.e}`); return; }
 
   rhConfirmReserve(() => {
     const channelLabel = CHANNELS[draft.channels[0]]?.label || draft.channels[0];
@@ -1418,6 +1420,8 @@ function saveEditedTask() {
     showToast(`请完成「${CHANNELS[missing].tip}」通道的内容配置`);
     return;
   }
+  const fbBad = draft.channels.map(c => ({ c, e: fallbackSmsError(contentFallbackSms(c, draft.perChannel[c].content)) })).find(x => x.e);
+  if (fbBad) { showToast(`「${CHANNELS[fbBad.c].tip}」失败后短信：${fbBad.e}`); return; }
   const t = typeof TASK_RECORDS !== 'undefined' ? TASK_RECORDS.find(x => x.id === editingTaskId) : null;
   if (!t) { showToast('未找到任务'); return; }
   if (taskDrawerMode === 'change' && !isSystemTask() && !draft.audienceTags.length && !draft.audienceFiles.length) {

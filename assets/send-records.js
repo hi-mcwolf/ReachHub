@@ -94,8 +94,62 @@ const SEND_RECORDS = (() => {
       }
     });
   });
-  return records;
+  return srAttachFallback(records);
 })();
+
+/* 失败后短信：给配置了兜底的 IM 任务补「兜底状态」，并为已触发的原消息生成一条兜底短信记录（PRD 6.4） */
+function srWaitMinutes(w) { const m = String(w || '').match(/(\d+)\s*(分钟|小时)/); return m ? Number(m[1]) * (m[2] === '小时' ? 60 : 1) : 30; }
+function srAddMinutes(ts, min) {
+  const m = String(ts).match(/^(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
+  if (!m) return ts;
+  const tot = Number(m[2]) * 60 + Number(m[3]) + min;
+  const hh = String(Math.floor(tot / 60) % 24).padStart(2, '0'), mm = String(tot % 60).padStart(2, '0');
+  return `${m[1]} ${hh}:${mm}:${m[4]}`;
+}
+function srAttachFallback(records) {
+  const out = [];
+  const taskOf = id => TASK_RECORDS.find(t => t.id === id);
+  const FB_BLOCK = ['DND', '频控', '黑名单'];
+  const FB_PLAN = ['delivered', 'delivered', 'undelivered', 'delivered', 'submitted'];
+  let fk = 0;
+  records.forEach(r => {
+    const t = taskOf(r.taskId);
+    r.isFallback = false; r.fbStatus = null; r.fbReason = null;
+    out.push(r);
+    if (!t || !t.fallback || r.channel === 'SMS') return;
+    const fb = t.fallback;
+    if (r.status === 'delivered') r.fbStatus = '无需兜底';
+    else if (r.status === 'submitted') r.fbStatus = '等待中';
+    else if (r.status === 'cancelled') { r.fbStatus = '未触发'; r.fbReason = '任务已终止'; }
+    else if (['submitFail', 'undelivered', 'noReceipt', 'expired'].includes(r.status)) {
+      const k = fk++;
+      const trigger = ['submitFail', 'undelivered'].includes(r.status) ? '回执失败' : '超时未回执';
+      if (k % 4 === 3) { r.fbStatus = '未触发'; r.fbReason = FB_BLOCK[k % FB_BLOCK.length]; return; }
+      r.fbStatus = '已触发';
+      const status = FB_PLAN[k % FB_PLAN.length];
+      const acc = V2_ACCOUNTS.find(a => a.id === fb.account);
+      const fbTime = srAddMinutes(r.sendTime, trigger === '超时未回执' ? srWaitMinutes(fb.wait) : 1);
+      const text = String(fb.text);
+      const segs = /[^\x00-\x7F]/.test(text) ? (text.length <= 70 ? 1 : Math.ceil(text.length / 67)) : (text.length <= 160 ? 1 : Math.ceil(text.length / 153));
+      let cat = null, raw = { code: '-', msg: '-' };
+      if (status === 'undelivered') { cat = SR_UNDELIVERED_CATS[k % 4]; raw = srCodeFor(cat, acc?.vendor); }
+      const submittedLike = ['submitted', 'delivered', 'undelivered'].includes(status);
+      const rid = 'F' + r.recordId.slice(1);
+      r.fbRecordId = rid;
+      out.push({
+        ...r, recordId: rid, sendTime: fbTime, status, cat, rawCode: raw.code, rawMsg: raw.msg,
+        attempt: '首发', attempts: [{ vendor: acc?.vendor, account: fb.account, time: fbTime, result: '已提交', code: '0' }],
+        channel: 'SMS', sub: null, vendor: acc?.vendor, account: fb.account, sender: fb.sender,
+        content: text, contentVersion: 1, title: null, billable: submittedLike ? segs : null,
+        vendorMessageId: submittedLike ? `MSG-${(acc?.vendor || 'SMS').replace(/\W/g, '')}-${990000 + fk * 31}` : '-',
+        receiptId: ['delivered', 'undelivered'].includes(status) ? `RC${20260713900 + fk * 43}` : '-',
+        recipient: '0917***' + String(2000 + fk * 37).slice(-4),
+        isFallback: true, fbStatus: null, fbReason: null, fbTrigger: trigger, fbTime, originId: r.recordId,
+      });
+    }
+  });
+  return out;
+}
 
 function trActiveVersionOf(t) { return t.versions.find(v => v.state === 'active') || t.versions[t.versions.length - 1]; }
 
@@ -167,7 +221,8 @@ function applyFilters() {
   const recordId = v('fRecordId'), task = v('fTask'), taskCode = v('fTaskCode'), content = v('fContent'), activity = v('fActivity'), user = v('fUser');
   const g = id => document.getElementById(id).value;
   const channel = g('fChannel'), source = g('fSource'), category = g('fCategory'), status = g('fStatus'), cat = g('fCat'),
-    attempt = g('fAttempt'), vendor = g('fVendor'), sender = g('fSender');
+    attempt = g('fAttempt'), vendor = g('fVendor'), sender = g('fSender'),
+    fbFlag = g('fFbFlag'), fbStatus = g('fFbStatus'), fbReason = g('fFbReason');
   const statuses = status ? [status] : srPre.statuses;
   const productLines = productLineFilter?.getValue() || [];
 
@@ -188,6 +243,9 @@ function applyFilters() {
     (!attempt || r.attempt === attempt) &&
     (!vendor || r.vendor === vendor) &&
     (!sender || r.account === sender || r.sender === sender) &&
+    (!fbFlag || (fbFlag === 'fallback') === !!r.isFallback) &&
+    (!fbStatus || r.fbStatus === fbStatus) &&
+    (!fbReason || r.fbTrigger === fbReason) &&
     (!user || r.userAccount.toLowerCase().includes(user) || r.recipient.toLowerCase().includes(user))
   );
   currentPage = 1;
@@ -197,7 +255,7 @@ function applyFilters() {
 
 function resetFilters() {
   ['fRecordId', 'fTask', 'fTaskCode', 'fContent', 'fActivity', 'fUser'].forEach(id => document.getElementById(id).value = '');
-  ['fChannel', 'fSource', 'fCategory', 'fStatus', 'fCat', 'fAttempt', 'fVendor', 'fSender'].forEach(id => document.getElementById(id).value = '');
+  ['fChannel', 'fSource', 'fCategory', 'fStatus', 'fCat', 'fAttempt', 'fVendor', 'fSender', 'fFbFlag', 'fFbStatus', 'fFbReason'].forEach(id => document.getElementById(id).value = '');
   productLineFilter?.setValue([]);
   clearPrefilter(false);
   applyFilters();
@@ -220,6 +278,7 @@ function readPrefilter() {
   if (srPre.cat) document.getElementById('fCat').value = srPre.cat;
   if (srPre.channel) document.getElementById('fChannel').value = srPre.channel;
   if (srPre.vendor) document.getElementById('fVendor').value = srPre.vendor;
+  if (q.get('fb') === '1') document.getElementById('fFbFlag').value = 'fallback';
   renderPrefilter();
 }
 
@@ -245,6 +304,19 @@ function clearPrefilter(render = true) {
   if (render) applyFilters();
 }
 
+
+/* 兜底状态（原消息行）与兜底信息（兜底行） */
+const SR_FB_CLS = { 无需兜底: 'tag-gray', 等待中: 'tag-primary', 已触发: 'tag-info', 未触发: 'tag-warning' };
+function srFbStatusCell(r) {
+  if (!r.fbStatus) return '-';
+  const tip = r.fbStatus === '未触发' ? `未触发原因：${r.fbReason}` : '';
+  return `<span class="tag ${SR_FB_CLS[r.fbStatus]}" title="${esc(tip)}">${r.fbStatus}${r.fbReason ? ' · ' + esc(r.fbReason) : ''}</span>`;
+}
+function srFbInfoCell(r) {
+  if (!r.isFallback) return '-';
+  return `<span class="cell-ellipsis" title="触发时间 ${esc(r.fbTime)}">${esc(r.fbTrigger)} · ${esc(r.fbTime.slice(11))} · 原 ${esc(r.originId)}</span>`;
+}
+
 /* ---------------- 表格 ---------------- */
 function renderTable() {
   const tbody = document.getElementById('recordTableBody');
@@ -252,7 +324,7 @@ function renderTable() {
   const rows = filtered.slice(start, start + PAGE_SIZE);
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="20" class="cell-empty">暂无符合条件的发送记录</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="22" class="cell-empty">暂无符合条件的发送记录</td></tr>`;
   } else {
     tbody.innerHTML = rows.map(r => {
       const cat = srCatLabel(r);
@@ -268,10 +340,12 @@ function renderTable() {
           <td class="col-name"><span class="cell-ellipsis" title="${esc(r.taskName)}">${esc(r.taskName)}</span></td>
           <td class="cell-muted">${fmt(r.taskCode)}</td>
           <td>${esc(r.userAccount)}</td>
-          <td><span class="tag">${r.channel}${r.sub ? ' · ' + r.sub : ''}</span></td>
+          <td><span class="tag">${r.channel}${r.sub ? ' · ' + r.sub : ''}</span>${r.isFallback ? ' <span class="tag tag-orange">兜底</span>' : ''}</td>
           <td><span class="cell-ellipsis" title="${esc(route)}">${esc(route)}</span></td>
           <td class="col-name"><span class="cell-ellipsis" title="${esc(r.content)}">${esc(r.content)}</span></td>
           <td>${v2Tag(SR_MSG_STATUS, r.status)}</td>
+          <td>${srFbStatusCell(r)}</td>
+          <td>${srFbInfoCell(r)}</td>
           <td>${catCell}</td>
           <td class="cell-muted"><span title="${esc(r.rawMsg)}">${esc(r.rawCode)}</span></td>
           <td>${r.attempt === '重试' ? '<span class="tag tag-orange">重试</span>' : '首发'}</td>
@@ -322,10 +396,26 @@ function buildTimeline(r) {
       else if (r.status === 'undelivered') add(`收到回执：未送达（${r.rawCode}）`, 'error');
       else add(`最终状态：${SR_MSG_STATUS[r.status].label}`, 'error');
   }
+  if (r.isFallback) steps.unshift({ title: `触发兜底（${r.fbTrigger}，原消息 ${r.originId}）`, time: r.fbTime, state: 'done' });
+  else if (r.fbStatus === '已触发') add(`触发兜底短信（${r.fbRecordId}）`, 'done', srAddMinutes(r.sendTime, 1));
+  else if (r.fbStatus === '等待中') add('等待兜底判定（超过等待时长仍无回执则发送兜底短信）', 'active');
+  else if (r.fbStatus === '未触发') add(`未触发兜底短信：${r.fbReason}`, 'error');
   return `<ul class="timeline">${steps.map(s => `
     <li class="tl-item tl-${s.state}"><span class="tl-dot"></span>
       <div class="tl-body"><div class="tl-title">${esc(s.title)}</div><div class="tl-time">${s.state === 'wait' ? '-' : s.time}</div></div>
     </li>`).join('')}</ul>`;
+}
+
+
+function srFbDetail(r) {
+  const d = (l, v) => `<div class="desc-item"><span class="desc-label">${l}</span><span>${v}</span></div>`;
+  if (r.isFallback) {
+    return `<section class="card detail-group"><h4 class="card-title">兜底信息 <span class="tag tag-orange">兜底</span></h4><div class="desc-list">
+      ${d('触发原因', esc(r.fbTrigger))}${d('触发时间', r.fbTime)}${d('原消息 ID', `<button type="button" class="link-btn" data-origin="${esc(r.originId)}">${esc(r.originId)}</button>`)}</div></section>`;
+  }
+  if (!r.fbStatus) return '';
+  return `<section class="card detail-group"><h4 class="card-title">兜底短信</h4><div class="desc-list">
+      ${d('兜底状态', srFbStatusCell(r))}${r.fbRecordId ? d('兜底短信记录', esc(r.fbRecordId)) : ''}${r.fbReason ? d('未触发原因', esc(r.fbReason)) : ''}</div></section>`;
 }
 
 function openSendDetail(recordId) {
@@ -384,6 +474,7 @@ function openSendDetail(recordId) {
         ${d('回执 ID', fmt(r.receiptId))}
       </div>
     </section>
+    ${srFbDetail(r)}
     <section class="card detail-group">
       <h4 class="card-title">尝试记录</h4>
       ${attempts}
@@ -399,6 +490,7 @@ function openSendDetail(recordId) {
     content: r.channel === '邮件' ? { subject: r.title || r.taskName, body: r.content } : r.content,
     fallbackTitle: r.taskName,
   }]);
+  body.querySelectorAll('[data-origin]').forEach(b => b.addEventListener('click', () => openSendDetail(b.dataset.origin)));
   document.getElementById('detailToTask').onclick = () => { location.href = `task-records.html?task=${r.taskId}`; };
   openDrawer('sendDetailDrawer');
   refreshIcons();
