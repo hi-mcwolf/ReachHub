@@ -63,9 +63,9 @@ function stBlPls(bl) { return V2_PRODUCT_LINES.filter(p => p.bl === bl && p.stat
 function stPlNames(sites) { return sites.map(plName).join('、'); }
 
 /* ================= 6.1.3 供应商档案 ================= */
-const ST_VENDOR_CHANNELS = { Smart: ['SMS'], Globe: ['SMS'], Mocean: ['SMS', 'IM'], DLink: ['SMS'], NXLink: ['SMS'], OneSignal: ['邮件'], 'Engagement Lab': ['Push'], PTX: ['IM'], Viber: ['IM'], Infobip: ['IM'], Meta: ['IM'] };
-const ST_SENDER_TYPE = { SMS: 'Sender ID', 邮件: '发件人', Push: 'App', IM: '账号', 站内信: '-' };
-const ST_SENDER_HINT = { SMS: '请输入 Sender ID', 邮件: '请输入发件地址', Push: '请输入 App 标识', IM: '请输入 IM 账号标识' };
+const ST_VENDOR_CHANNELS = { Smart: ['SMS'], Globe: ['SMS'], Mocean: ['SMS', 'Viber Biz', 'WhatsApp'], DLink: ['SMS'], NXLink: ['SMS'], OneSignal: ['邮件'], 'Engagement Lab': ['Push'], PTX: ['Viber Biz'], Viber: ['Viber Bot'], Meta: ['Messenger Bot'] };
+const ST_SENDER_TYPE = { SMS: 'Sender ID', 邮件: '发件人', Push: 'App', 'Viber Biz': '账号', 'Viber Bot': '账号', 'Messenger Bot': '账号', WhatsApp: '账号', 站内信: '-' };
+const ST_SENDER_HINT = { SMS: '请输入 Sender ID', 邮件: '请输入发件地址', Push: '请输入 App 标识', 'Viber Biz': '请输入账号标识', 'Viber Bot': '请输入账号标识', 'Messenger Bot': '请输入账号标识', WhatsApp: '请输入账号标识' };
 const ST_BILLING = ['按条', '短信按段（GSM-7 160/153，UCS-2 70/67）'];
 const ST_ALL_BP = ['bp-growth', 'bp-poc', 'bp-coc', 'bp-vip'];
 const ST_SENDER_PL = {
@@ -81,9 +81,9 @@ const ST_ACCOUNT_EXTRA = {
   'BP-push': { key: 'el_bp_app',       remark: '', updated: '2026-11-05 10:40' },
   'BP-im':   { key: 'ptx_bp_viber_bm', remark: 'Viber BM', updated: '2026-11-03 14:00' },
   'BP-vbot': { key: 'viber_bp_bot', remark: 'Viber Bot（官方直连）', updated: '2026-11-03 14:00' },
-  'BP-msg':  { key: 'infobip_bp_messenger', remark: 'Messenger Biz', updated: '2026-11-03 14:00' },
   'BP-msgbot': { key: 'meta_bp_page_bot', remark: 'Messenger Bot（官方直连）', updated: '2026-11-03 14:00' },
-  'OTP-IM':  { key: 'mocean_bp_otp', remark: 'Viber / WhatsApp OTP', updated: '2026-11-03 14:00' },
+  'OTP-IM':  { key: 'mocean_bp_wa_otp', remark: 'WhatsApp OTP', updated: '2026-11-03 14:00' },
+  'OTP-VB':  { key: 'mocean_bp_vb_otp', remark: 'Viber OTP', updated: '2026-11-03 14:00' },
 };
 const ST_ACCOUNTS = V2_ACCOUNTS.map(a => {
   const x = ST_ACCOUNT_EXTRA[a.id] || {};
@@ -157,7 +157,7 @@ function stRenderVendors(pane) {
   pane.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => stToggleAccount(b.dataset.toggle)));
 }
 function stChannelCell(ch) {
-  const icon = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', IM: 'message-circle' }[ch] || 'radio';
+  const icon = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', 'Viber Biz': 'phone-call', 'Viber Bot': 'bot', 'Messenger Bot': 'message-circle', WhatsApp: 'message-circle-more' }[ch] || 'radio';
   return `<span class="v2-flex"><i data-lucide="${icon}" style="width:14px;height:14px;color:var(--text-3)"></i>${ch}</span>`;
 }
 function stToggleAccount(id) {
@@ -228,7 +228,7 @@ function stSaveAccount(a, body) {
     ['name', !name ? '请输入账号名' : dup ? `${vendor} 下已存在账号名「${name}」` : ''],
     ['key', !key ? '请输入账号标识' : ''],
     ['bl', !bl ? '请选择业务线' : ''],
-    ['tps', (['SMS', 'IM'].includes(channel) && !tps) ? '短信 / IM 账号必填 TPS 上限' : (tps && (+tps < 1 || +tps > 10000 || !Number.isInteger(+tps))) ? 'TPS 上限需为 1–10000 的整数' : ''],
+    ['tps', (channel !== '邮件' && channel !== 'Push' && channel !== '站内信' && !tps) ? '短信 / Viber / Messenger / WhatsApp 账号必填 TPS 上限' : (tps && (+tps < 1 || +tps > 10000 || !Number.isInteger(+tps))) ? 'TPS 上限需为 1–10000 的整数' : ''],
     ['receipt', (!receipt || +receipt < 1 || +receipt > 168) ? '回执等待窗口需为 1–168 小时' : ''],
   ]);
   if (!ok) return;
@@ -373,7 +373,7 @@ const ST_CODES = [
   { vendor: 'DLink', channel: 'SMS', code: 'D-1031', msg: 'Message flagged as spam content', stage: '提交失败', cat: 'unknown', action: '待归类', retry: false, n30: 57, first: '2026-11-09 19:30', source: 'AI 建议', status: '待确认', ai: { cat: 'content', why: '受理阶段因内容判定拒绝，属于内容被拦截' }, updater: 'system', updated: '2026-11-09 19:30' },
   { vendor: 'OneSignal', channel: '邮件', code: '554 5.7.1', msg: 'Message rejected due to local policy', stage: '未送达', cat: 'unknown', action: '待归类', retry: false, n30: 39, first: '2026-11-09 10:11', source: 'AI 建议', status: '待确认', ai: { cat: 'carrier', why: '5.7.1 为收件方策略拦截（信誉 / 垃圾判定），归运营商或平台拦截' }, updater: 'system', updated: '2026-11-09 10:11' },
   { vendor: 'Globe', channel: 'SMS', code: 'G-4290', msg: 'Rate limit exceeded for account', stage: '提交失败', cat: 'unknown', action: '待归类', retry: false, n30: 26, first: '2026-11-10 16:45', source: 'AI 建议', status: '待确认', ai: { cat: 'rate', why: '含 rate limit exceeded，与 D-429 Throttled 同类' }, updater: 'system', updated: '2026-11-10 16:45' },
-  { vendor: 'Mocean', channel: 'IM', code: 'MC-1010', msg: 'Insufficient balance', stage: '提交失败', cat: 'unknown', action: '待归类', retry: false, n30: 12, first: '2026-11-11 09:20', source: 'AI 建议', status: '待确认', ai: { cat: 'vendor', why: '余额不足属供应商账号侧问题，需联系供应商 / 充值' }, updater: 'system', updated: '2026-11-11 09:20' },
+  { vendor: 'Mocean', channel: 'WhatsApp', code: 'MC-1010', msg: 'Insufficient balance', stage: '提交失败', cat: 'unknown', action: '待归类', retry: false, n30: 12, first: '2026-11-11 09:20', source: 'AI 建议', status: '待确认', ai: { cat: 'vendor', why: '余额不足属供应商账号侧问题，需联系供应商 / 充值' }, updater: 'system', updated: '2026-11-11 09:20' },
   { vendor: 'Engagement Lab', channel: 'Push', code: 'EL-503', msg: 'Service temporarily unavailable', stage: '提交失败', cat: 'unknown', action: '待归类', retry: false, n30: 9, first: '2026-11-11 11:02', source: 'AI 建议', status: '待确认', ai: { cat: 'vendor', why: '5xx 网关不可用，等待恢复并路由重试' }, updater: 'system', updated: '2026-11-11 11:02' },
 ];
 const stCodeState = { sub: 'mapped', f: {}, applied: {}, sel: new Set() };

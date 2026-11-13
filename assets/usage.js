@@ -28,10 +28,10 @@ function usAcct(id) { return US_ALL_ACCOUNTS.find(a => a.id === id) || { vendor:
 
 const US_ROUTES = { // [通道, 账号, 发送方标识, 10 月基准条数]
   'bp-growth': [['SMS', 'BP-01', 'BPGROWTH', 300000], ['SMS', 'BP-02', 'BPGROWTH', 170000], ['SMS', 'BP-03', 'BPGROWTH', 26000], ['SMS', 'OTP-BP', 'BPVERIFY', 60000],
-    ['邮件', 'BP-mail', 'news@bingoplus.ph', 150000], ['Push', 'BP-push', 'BP App', 260000], ['站内信', 'BP-inbox', 'BP 站内信', 80000], ['IM', 'BP-im', 'BingoPlus Viber', 22000]],
+    ['邮件', 'BP-mail', 'news@bingoplus.ph', 150000], ['Push', 'BP-push', 'BP App', 260000], ['站内信', 'BP-inbox', 'BP 站内信', 80000], ['Viber Biz', 'BP-im', 'BingoPlus Viber', 22000], ['Viber Bot', 'BP-vbot', 'BingoPlus Bot', 9000], ['Messenger Bot', 'BP-msgbot', 'BingoPlus Page Bot', 6000]],
   'bp-poc': [['SMS', 'BP-01', 'BPPLATFORM', 160000], ['邮件', 'BP-mail', 'news@bingoplus.ph', 60000], ['Push', 'BP-push', 'BP App', 90000], ['站内信', 'BP-inbox', 'BP 站内信', 30000]],
   'bp-coc': [['SMS', 'BP-01', 'BPCONTENT', 70000], ['Push', 'BP-push', 'BP App', 30000], ['站内信', 'BP-inbox', 'BP 站内信', 15000]],
-  'bp-vip': [['SMS', 'BP-02', 'BPVIP', 18000], ['Push', 'BP-push', 'BP App', 9000], ['IM', 'BP-im', 'BingoPlus Viber', 4000]],
+  'bp-vip': [['SMS', 'BP-02', 'BPVIP', 18000], ['Push', 'BP-push', 'BP App', 9000], ['Viber Biz', 'BP-im', 'BingoPlus Viber', 4000], ['WhatsApp', 'OTP-IM', 'BPVERIFY', 3000]],
   gamezone: [['SMS', 'GP-01', 'GAMEZONE', 120000], ['邮件', 'GP-mail', 'news@gamezone.ph', 40000], ['Push', 'GP-push', 'GP App', 60000], ['站内信', 'GP-inbox', 'GP 站内信', 25000]],
   arenaplus: [['SMS', 'AP-01', 'ARENAPLUS', 55000], ['Push', 'AP-push', 'AP App', 20000], ['站内信', 'AP-inbox', 'AP 站内信', 9000]],
   'arena-old': [['SMS', 'BP-01', 'BPPLATFORM', 15000]],
@@ -69,7 +69,10 @@ function usSlices(site, ch, acct) { // [类别, 来源, 接入方, 占比]
     邮件: bp ? [['营销', '手动', null, .6], ['营销', 'API', '星灵', .4]] : [['营销', '手动', null, 1]],
     Push: bp ? [['营销', '手动', null, .4], ['营销', 'API', '星灵', .35], ['通知', 'API', '用户中心', .25]] : [['营销', '手动', null, .7], ['通知', 'API', '用户中心', .3]],
     站内信: [['通知', 'API', '用户中心', .7], ['营销', '手动', null, .3]],
-    IM: [['营销', '手动', null, .5], ['营销', 'API', '星灵', .5]],
+    'Viber Biz': [['营销', '手动', null, .5], ['营销', 'API', '星灵', .5]],
+    'Viber Bot': [['营销', '手动', null, .6], ['营销', 'API', '星灵', .4]],
+    'Messenger Bot': [['营销', '手动', null, .7], ['营销', 'API', '星灵', .3]],
+    WhatsApp: [['OTP 事务', 'API', '用户中心', 1]],
   };
   return T[ch];
 }
@@ -80,8 +83,8 @@ function usPersons(site, src, app) { // [人员, 类型, 占比]；接入方未�
   return [['系统', '系统', 1]];
 }
 
-/* 计费方式（6.1.3 供应商档案）：SMS / IM（Viber、Messenger、WhatsApp）按条；邮件 / Push 月包；站内信不计费 */
-const US_BILLING = { SMS: '按条', IM: '按条', 邮件: '月包', Push: '月包', 站内信: '不计费' };
+/* 计费方式（6.1.3）：SMS、Viber Biz、Viber Bot、Messenger Bot、WhatsApp 按条；邮件 / Push 月包；站内信不计费。月包 / 不计费通道照常统计用量，用于按量分摊 */
+const US_BILLING = { SMS: '按条', 'Viber Biz': '按条', 'Viber Bot': '按条', 'Messenger Bot': '按条', WhatsApp: '按条', 邮件: '月包', Push: '月包', 站内信: '不计费' };
 function usPerMsg(ch) { return US_BILLING[ch] === '按条'; }
 
 function usAddFact(out, f, raw) {
@@ -138,7 +141,7 @@ function usFmt(v) { return v == null ? '-' : fmtN(v); }
 function usCell(sub, k, denom) {
   if (!sub.length) return '-';
   if (k === 'share') { const d = usSum(denom, 'cnt'); return d ? (usSum(sub, 'cnt') / d * 100).toFixed(1) + '%' : '-'; }
-  if (k === 'bill' && sub.every(f => !usPerMsg(f.ch))) return `<span class="v2-muted">${US_BILLING[sub[0].ch]}</span>`;
+  if (k === 'bill' && sub.every(f => !usPerMsg(f.ch))) return `${usFmt(usSum(sub, 'cnt'))} <span class="tag tag-gray-outline" title="${US_BILLING[sub[0].ch]}通道不折算计费条数，显示用量条数">${US_BILLING[sub[0].ch]}</span>`;
   return usFmt(usSum(sub, k));
 }
 function usMoM(cur, prev) {
@@ -314,7 +317,7 @@ function uRenderKpis(facts, prev) {
   const card = (title, val, sub, cls = '') => `<div class="kpi-card ${cls}"><div class="kpi-title">${title}</div><div class="kpi-value">${val}</div><div class="us-kpi-sub ${cls}">${sub}</div></div>`;
   document.getElementById('uKpis').innerHTML =
     card('条数', fmtN(cnt), '当月已提交消息数') +
-    card('计费条数 ' + tipIcon('仅按条计费通道：SMS、IM（Viber / Messenger / WhatsApp）；邮件、Push 为月包，按条数占比分摊'), fmtN(bill), `按条计费通道 · 月包通道 ${fmtN(pack)} 条`) +
+    card('计费条数 ' + tipIcon('仅按条计费通道：SMS、Viber Biz、Viber Bot、Messenger Bot、WhatsApp；邮件、Push 月包、站内信不计费，在表中显示用量条数并按条数占比分摊'), fmtN(bill), `按条计费通道 · 月包通道 ${fmtN(pack)} 条`) +
     card(`环比（${US_METRICS[k]}）`, usMoM(cur, pv), pv ? `上月 ${fmtN(pv)}` : '上月无数据') +
     card('归属不一致 ' + tipIcon('任务 site id 与非共用 Sender 关联产品线不一致的消息占比；仍按 site id 计'), cnt ? (mis / cnt * 100).toFixed(1) + '%' : '-', `${fmtN(mis)} 条`);
 }
@@ -370,7 +373,7 @@ function uRender() {
   const foot = `<tfoot><tr><td>合计</td>${cols.map(c => `<td class="v2-num us-cell" data-ref="${ref}" data-col="${esc(c)}">${k === 'share' ? '-' : usCell(facts.filter(f => uKey(f, U.colDim) === c), k)}</td>`).join('')}
     <td class="v2-num us-cell us-total" data-ref="${ref}" data-col="">${k === 'share' ? '-' : usCell(facts, k)}</td><td class="v2-num">${k === 'share' ? '' : usMoM(usSum(facts, k), prev ? usSum(prev, k) : null)}</td></tr></tfoot>`;
   document.getElementById('uTable').innerHTML = head + `<tbody>${body}</tbody>` + foot;
-  document.getElementById('uTableTitle').innerHTML = `月度用量分摊表 · ${U.month} · ${US_METRICS[k]} ${tipIcon('条数 = 当月已提交消息数；计费条数 = 按条计费通道（SMS / IM）按供应商拆分规则折算，邮件 / Push 为月包、站内信不计费，显示计费方式；分摊占比 = 条数 ÷ 同业务线同列条数，用于月包按量分摊')}`;
+  document.getElementById('uTableTitle').innerHTML = `月度用量分摊表 · ${U.month} · ${US_METRICS[k]} ${tipIcon('条数 = 当月已提交消息数；计费条数 = 按条计费通道（SMS / IM）按供应商拆分规则折算，邮件 / Push 月包、站内信不计费，显示用量条数并标计费方式；分摊占比 = 条数 ÷ 同业务线同列条数，用于月包按量分摊')}`;
   document.getElementById('uAsOf').textContent = usAsOfText(U.month);
   refreshIcons();
 }
@@ -500,11 +503,11 @@ function pRender() {
   const th = (k, l) => `<th class="v2-num us-sort${sk === k ? ' on' : ''}" data-sort="${esc(k)}">${l}${sk === k ? (sd < 0 ? ' ↓' : ' ↑') : ''}</th>`;
   const head = `<thead><tr><th>产品线</th><th>人员</th><th>人员类型</th>${th('tasks', '任务数')}${cols.map(c => th(c, c)).join('')}${th('bill', '计费条数合计')}${th('mom', '环比')}</tr></thead>`;
   const body = rows.map((r, i) => `<tr><td>${esc(r.pl)}</td><td><button class="link-btn" data-prow="${i}">${pPersonLabel(r)}</button></td>
-    <td>${r.ptype}</td><td class="v2-num">${r.tasks == null ? '-' : fmtN(r.tasks)}</td>${cols.map(c => `<td class="v2-num">${P.metric === 'bill' && !usPerMsg(c) && r.byCh[c] != null ? `<span class="v2-muted">${US_BILLING[c]}</span>` : usFmt(r.byCh[c])}</td>`).join('')}
+    <td>${r.ptype}</td><td class="v2-num">${r.tasks == null ? '-' : fmtN(r.tasks)}</td>${cols.map(c => `<td class="v2-num">${P.metric === 'bill' && !usPerMsg(c) && r.byCh[c] != null ? `${usFmt(usSum(r.facts.filter(f => f.ch === c), 'cnt'))} <span class="tag tag-gray-outline">${US_BILLING[c]}</span>` : usFmt(r.byCh[c])}</td>`).join('')}
     <td class="v2-num"><b>${fmtN(r.bill)}</b></td><td class="v2-num">${r.momTxt}</td></tr>`).join('') || `<tr><td colspan="${cols.length + 6}" class="v2-muted">暂无数据</td></tr>`;
   const all = rows.flatMap(r => r.facts);
   const foot = `<tfoot><tr><td><b>合计</b></td><td class="v2-muted">${rows.length} 行</td><td></td><td class="v2-num"><b>${fmtN(rows.reduce((a, r) => a + (r.tasks || 0), 0))}</b></td>
-    ${cols.map(c => `<td class="v2-num"><b>${P.metric === 'bill' && !usPerMsg(c) ? `<span class="v2-muted">${US_BILLING[c]}</span>` : usFmt(usSum(all.filter(f => f.ch === c), P.metric))}</b></td>`).join('')}<td class="v2-num"><b>${fmtN(usSum(all, 'bill') || 0)}</b></td><td></td></tr></tfoot>`;
+    ${cols.map(c => `<td class="v2-num"><b>${P.metric === 'bill' && !usPerMsg(c) ? `${usFmt(usSum(all.filter(f => f.ch === c), 'cnt'))} <span class="tag tag-gray-outline">${US_BILLING[c]}</span>` : usFmt(usSum(all.filter(f => f.ch === c), P.metric))}</b></td>`).join('')}<td class="v2-num"><b>${fmtN(usSum(all, 'bill') || 0)}</b></td><td></td></tr></tfoot>`;
   document.getElementById('pTable').innerHTML = head + `<tbody>${body}</tbody>` + foot;
   document.getElementById('pTableTitle').innerHTML = `人员用量表 · ${P.month} · 通道列为${US_P_METRICS[P.metric]} ${tipIcon('人员归属：手动任务 → 创建人；API 任务 → operator；无 operator → 系统（标注接入方）。任务数 = 当月有提交消息的任务数')}`;
   document.getElementById('pAsOf').textContent = usAsOfText(P.month);

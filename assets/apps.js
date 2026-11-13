@@ -149,7 +149,6 @@ function apValidate(req, forPrecheck) {
   if (!req.channels.length) return R('PARAM_MISSING', '缺少通道');
   const badCh = req.channels.filter(c => !app.channels.includes(c));
   if (badCh.length) return R('CHANNEL_NOT_ALLOWED', `通道不在允许范围（${badCh.join('、')}）`);
-  if (req.channels.includes('IM') && !req.imSub) return R('PARAM_INVALID', 'IM 通道需带子渠道（Viber / Messenger / WhatsApp）');
   if (req.mode !== '任务式' && !req.recipients.length) return R('PARAM_MISSING', '缺少收件人');
   if (req.mode === '任务式' && !req.crowd) return R('PARAM_MISSING', '任务式发送需指定人群包 / 人群标签');
   if (req.recipients.some(r => !r.startsWith('user:')) && !['通知', 'OTP 事务'].includes(req.cat)) return R('RECIPIENT_NOT_ALLOWED', '裸地址（手机号 / 邮箱 / 设备 token）只允许通知 / OTP 类消息，请改传用户 ID');
@@ -439,8 +438,7 @@ function apRenderDebugForm() {
     <label class="req">发送方式</label><div class="seg-group" data-seg="mode">${['任务式', '批量', '单发'].map(m => `<button type="button" class="seg-btn ${d.mode === m ? 'active' : ''}" data-v="${m}">${m}</button>`).join('')}</div>
     <label class="req">产品线 Site Id</label><select class="select" data-k="site">${siteOpts.map(([v, l]) => `<option value="${v}" ${d.site === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <label class="req">消息类别</label><select class="select" data-k="cat">${V2_MSG_CATEGORIES.map(c => `<option ${d.cat === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
-    <label class="req">通道</label><div class="ap-chk-row">${V2_CHANNELS.map(c => `<label class="ap-chk"><input type="checkbox" data-ch value="${c}" ${d.channels.includes(c) ? 'checked' : ''}>${c}</label>`).join('')}
-      ${d.channels.includes('IM') ? `<select class="select select-sm" data-k="imSub"><option value="">子渠道</option>${V2_IM_SUB.map(s => `<option ${d.imSub === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : ''}</div>
+    <label class="req">通道</label><div class="ap-chk-row">${V2_CHANNELS.map(c => `<label class="ap-chk"><input type="checkbox" data-ch value="${c}" ${d.channels.includes(c) ? 'checked' : ''}>${c}</label>`).join('')}</div>
     ${d.mode === '任务式'
       ? `<label class="req">人群</label><select class="select" data-k="crowd">${AP_CROWDS.map(c => `<option value="${c.id}" ${d.crowd === c.id ? 'selected' : ''}>${c.id} · ${c.name}（${fmtN(c.n)}）</option>`).join('')}</select>`
       : `<label class="req">收件人</label><textarea class="textarea" data-k="recipients" rows="3" placeholder="每行一个：user:用户ID（优先）或 手机号 / 邮箱 / 设备 token" data-char-count="off">${esc(d.recipients)}</textarea>

@@ -94,19 +94,19 @@ const CFG_ROWS = ['rowAudience', 'rowTiming', 'rowContent'];
 
 /* ================= 二期：新建 / 编辑任务表单改造 =================
  * 6.1.2 产品线取 site id、任务类型（手动发送 / 系统调用）与任务code 保持一期；6.5.5 到点占位；6.6.3 提交前 ETA 预览；6.9.2 邮件检测面板 */
-const RH_CH_V2 = { sms: 'SMS', email: '邮件', push: 'Push', inbox: '站内信', viber: 'IM', messenger: 'IM', whatsapp: 'IM' };
+const RH_CH_V2 = { sms: 'SMS', email: '邮件', push: 'Push', inbox: '站内信', viber: 'Viber Biz', messenger: 'Messenger Bot', whatsapp: 'WhatsApp' }; /* 无 IM 通道；Viber 按内容「渠道」区分 Biz / Bot */
 const RH_CAT_HINT = {
   营销: '营销类：按营销频控、DND 与退订名单过滤；邮件通道执行内容检测（只提醒不阻断）',
   通知: '通知类：不按邮件退订名单过滤，DND 与频控按通知规则；邮件通道同样执行内容检测',
   'OTP 事务': 'OTP 事务仅系统调用，手动任务不可选',
 };
 const RH_SENDABLE_RATIO = 0.92;   /* 近 30 天该产品线该通道可推送比例（mock） */
-const RH_LEGACY_TPS = { 邮件: 300, Push: 800, 站内信: 1000, IM: 20 };  /* 未接入任务级调度通道的估算吞吐（mock） */
+const RH_LEGACY_TPS = { 邮件: 300, Push: 800, 站内信: 1000, 'Viber Biz': 20, 'Viber Bot': 20, 'Messenger Bot': 20, WhatsApp: 20 };  /* 未接入任务级调度通道的估算吞吐（mock） */
 const RH_FILE_EST = 5000;         /* 上传文件的预估人数（mock，按文件行数） */
 let panelEmailCheck = null;
 let rhEtaTimer = null;
 
-function rhChannelLabel(c) { return RH_CH_V2[c] === 'IM' ? `IM · ${CHANNELS[c]?.label || c}` : (RH_CH_V2[c] || c); }
+function rhChannelLabel(c) { if (c === 'viber') return (typeof draft !== 'undefined' && draft?.perChannel?.viber?.content?.channel === 'bot') ? 'Viber Bot' : 'Viber Biz'; return RH_CH_V2[c] || c; }
 function rhSiteOf(value) {
   if (!value) return '';
   const p = V2_PRODUCT_LINES.find(x => x.siteId === value || x.name === value);

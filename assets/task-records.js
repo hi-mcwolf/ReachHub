@@ -37,7 +37,7 @@ function trNeedsApproval(t) {
 }
 
 /* ---------------- 单元格渲染 ---------------- */
-const TR_CH_ICON = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', IM: 'message-circle' };
+const TR_CH_ICON = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', 'Viber Biz': 'phone-call', 'Viber Bot': 'bot', 'Messenger Bot': 'message-circle', WhatsApp: 'message-circle-more' };
 
 function trChannelCell(t) {
   return t.routes.map(r => `<span class="tr-ch"><i data-lucide="${TR_CH_ICON[r.channel] || 'send'}"></i>${r.channel}${r.sub ? ' · ' + r.sub : ''}</span>`).join('<br>');
@@ -166,7 +166,7 @@ function renderKpis() {
     </div>`).join('');
 }
 
-/* ---------------- 通道级联多选（通道 → 子渠道 → 供应商 → 账号 → 发送方标识） ---------------- */
+/* ---------------- 通道级联多选（通道 → 供应商 → 账号 → 发送方标识） ---------------- */
 function trChannelTree() {
   const node = (label, type, key, children = []) => ({ label, type, key, children });
   const accNodes = (accs, prefix) => {
@@ -176,7 +176,6 @@ function trChannelTree() {
   };
   return V2_CHANNELS.map(ch => {
     const accs = V2_ACCOUNTS.filter(a => a.channel === ch);
-    if (ch === 'IM') return node('IM', '通道', 'IM', V2_IM_SUB.map(sub => node(sub, '子渠道', `IM›${sub}`, accNodes(accs.filter(a => !a.sub || a.sub.includes(sub)), `IM›${sub}`))));
     return node(ch, '通道', ch, accNodes(accs, ch));
   });
 }

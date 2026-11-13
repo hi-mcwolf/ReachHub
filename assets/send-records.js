@@ -32,7 +32,7 @@ const SR_PLAN = {
   failed:  ['submitFail', 'submitFail', 'cancelled', 'blocked'],
 };
 
-const SR_RECIPIENTS = { SMS: ['0917***2231', '0918***5520', '0927***0182', '0995***7713'], 邮件: ['jua***@gmail.com', 'mar***@yahoo.com', 'kev***@outlook.com'], Push: ['token:fcm_8f2a…', 'token:apns_1c9e…'], 站内信: ['uid 10023881', 'uid 10077120'], IM: ['viber:+63917***2231', 'viber:+63918***5520'] };
+const SR_RECIPIENTS = { SMS: ['0917***2231', '0918***5520', '0927***0182', '0995***7713'], 邮件: ['jua***@gmail.com', 'mar***@yahoo.com', 'kev***@outlook.com'], Push: ['token:fcm_8f2a…', 'token:apns_1c9e…'], 站内信: ['uid 10023881', 'uid 10077120'], 'Viber Biz': ['viber:+63917***2231', 'viber:+63918***5520'], 'Viber Bot': ['viber:+63927***0182'], 'Messenger Bot': ['psid:58***21'], WhatsApp: ['+63995***7713'] };
 
 function srCodeFor(cat, vendor) {
   const row = V2_FAIL_ROWS.find(r => r.cat === cat && r.vendor === vendor) || V2_FAIL_ROWS.find(r => r.cat === cat);

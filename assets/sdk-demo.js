@@ -66,7 +66,7 @@ function sdLog(name, payload) {
 
 /* ETA（6.6 口径：目标队列 = 业务线在该通道的账号，多账号取深度最小者；未接入调度标「估算」） */
 function sdEtaFor(channel, n, schedAt) {
-  const ch = ['Viber', 'Messenger', 'WhatsApp'].includes(channel) ? 'IM' : channel;
+  const ch = { Viber: 'Viber Biz', Messenger: 'Messenger Bot' }[channel] || channel;
   const accs = V2_ACCOUNTS.filter(a => a.channel === ch && a.bl === 'BP' && a.mode !== 'otp');
   if (!accs.length) return null;
   const depth = a => V2_TASKS.filter(t => t.account === a.id && (t.status === 'queued' || t.status === 'sending')).reduce((s, t) => s + t.remaining, 0);
@@ -635,7 +635,7 @@ window.addEventListener('message', e => {
   if (m.type !== 'submitted') return;
   const d = m.data;
   const approval = SD_DEMO.approval === '逐任务审批' ? 'pending' : 'none';
-  const chMap = { 'IM · Viber': 'Viber', 'IM · Messenger': 'Messenger', 'IM · WhatsApp': 'WhatsApp' };
+  const chMap = {};
   const chs = d.channels.map(c => chMap[c] || c);
   const t = {
     id: `T20261112${++sdSeq}`, name: d.name, site: d.site, channel: chs[0], channels: chs, account: '', source: 'API', app: SD_CTX.appName,

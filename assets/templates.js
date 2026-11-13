@@ -12,9 +12,9 @@ function tplContentText(t) {
   return c.text || c.body || c.subject || c.title || '';
 }
 
-/* 二期（6.1.2）：产品线取 site id；通道按统一枚举展示（IM 下挂子渠道） */
-const TPL_IM_SUB = ['Viber', 'Messenger', 'WhatsApp'];
-function tplChLabel(c) { return TPL_IM_SUB.includes(c) ? `IM · ${c}` : c; }
+/* 二期（6.1.2）：产品线取 site id；通道按统一枚举展示（无 IM 通道） */
+const TPL_IM_SUB = [];
+function tplChLabel(c) { return { Viber: 'Viber Biz', Messenger: 'Messenger Bot' }[c] || c; }
 function tplSiteOf(v) {
   const p = V2_PRODUCT_LINES.find(x => x.siteId === v || x.name === v);
   return p ? p.siteId : (v || '');

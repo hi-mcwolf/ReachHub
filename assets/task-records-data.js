@@ -45,14 +45,14 @@ const TR_EXTRA = {
     content: '[BingoPlus] New login to your account detected at {{time}}. If this was not you, reset your password.' },
 };
 
-/* 本页独有的历史任务（均为终态，不进入队列；用于演示多通道漏斗页签、IM 子渠道、站内信、OTP） */
+/* 本页独有的历史任务（均为终态，不进入队列；用于演示多通道漏斗页签、Viber Biz、站内信、OTP） */
 const TR_LOCAL_TASKS = [
   { id: 'T20260708013', name: '充值满赠活动通知', site: 'bp-growth', channel: 'SMS', channels: ['SMS', 'Push'], channelSplit: { SMS: 8000, Push: 5760 }, account: 'BP-01', source: '手动', creator: 'marvin@', operator: 'marvin@', category: '营销',
     status: 'done', approval: 'approved', target: 13760, remaining: 0, sched: '2026-07-08 18:00', activity: 'ACT202607002',
     audience: '高充值用户 · 活跃用户', sender: 'BPGROWTH', template: 'TPL-SMS-0031', createdAt: '2026-07-08 10:10', updatedAt: '2026-07-08 20:15', updatedBy: 'marvin@', approver: 'lily@', approvedAt: '2026-07-08 11:00',
     routesExtra: [{ channel: 'Push', vendor: 'Engagement Lab', account: 'BP-push', sender: 'BP App' }],
     content: 'Top up 500 this week and get 8% bonus, {{name}}! Ends tonight 24:00.' },
-  { id: 'T20260709012', name: 'IM 客服满意度回访', site: 'bp-growth', channel: 'IM', sub: 'Viber', account: 'BP-im', source: '手动', creator: 'ken@', operator: 'ken@', category: '通知',
+  { id: 'T20260709012', name: 'Viber 客服满意度回访', site: 'bp-growth', channel: 'Viber Biz', sub: 'Viber Biz', account: 'BP-im', source: '手动', creator: 'ken@', operator: 'ken@', category: '通知',
     status: 'done', approval: 'none', target: 1860, remaining: 0, sched: '2026-07-09 10:00', activity: null,
     audience: '近 7 天客服会话用户', sender: 'BingoPlus Viber', template: 'TPL-IM-0002', createdAt: '2026-07-02 11:20', updatedAt: '2026-07-09 18:00', updatedBy: 'ken@',
     content: '感谢您使用在线客服，邀请您对本次服务进行评价。' },
