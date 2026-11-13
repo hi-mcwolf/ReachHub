@@ -140,10 +140,7 @@ function apValidate(req, forPrecheck) {
   if (app.status !== '启用') return R('APP_DISABLED', '接入方已停用，新调用全部拒绝');
   let site = req.site;
   let fallback = false;
-  if (!site) {
-    if (!app.defaultSite) return R('SITE_MISSING', '缺少产品线（site id），接入方未配置默认产品线');
-    site = app.defaultSite; fallback = true;
-  }
+  if (!site) return R('SITE_MISSING', '缺少产品线（site id），不发送'); /* 无兜底归属（Marvin 2026-11-13） */
   const pl = V2_PRODUCT_LINES.find(p => p.siteId === site);
   if (!pl) return R('SITE_NOT_FOUND', `产品线不存在（${site}）`);
   if (pl.status !== '启用') return R('SITE_OFFLINE', `产品线已下线（${site}）`);
@@ -294,8 +291,7 @@ function apOpenForm(app) {
       <span class="v2-hint">接收配额与拒绝告警</span>
       <label class="req">允许业务线 / 产品线</label><div class="ap-cascade" id="fmSites">${siteTree}</div>
       <span class="v2-hint">勾选「业务线下全部」时，该业务线未来新增的产品线自动纳入</span>
-      <label>默认产品线</label><select class="select" id="fmDefault"></select>
-      <span class="v2-hint">用于兜底归属；留空则 site id 缺失时直接拒绝</span>
+      <select id="fmDefault" hidden></select>
       <label class="req">允许通道</label><div class="ap-chk-row">${V2_CHANNELS.map(c => chk('ch', c, a.channels.includes(c))).join('')}</div>
       <label class="req">允许消息类别</label><div class="ap-chk-row">${V2_MSG_CATEGORIES.map(c => chk('cat', c, a.cats.includes(c))).join('')}</div>
       <span class="v2-hint">OTP 事务需管理员单独勾选</span>
@@ -626,7 +622,7 @@ function apRenderDocs() {
         ['预检', '重复内容 / 长度 / 敏感词 → 以提示返回，不阻断（敏感词命中的消息按一期规则发送时失败）'],
         ['受理结果', '返回任务 ID（及消息 ID 列表）、审批状态、预计开始 / 完成（如可算）、预检提示'], ['拒绝', '返回明确原因码与说明（鉴权 / 产品线不合法 / 范围 / 配额 / 参数）']])}
       <h4 class="ap-h4">拒绝原因码（示意，协议由开发定）</h4>
-      ${t(['原因码', '说明'], [['AUTH_FAILED', '鉴权失败'], ['APP_DISABLED', '接入方已停用'], ['SITE_MISSING', '缺少产品线且无默认产品线'], ['SITE_NOT_FOUND', '产品线不存在'], ['SITE_OFFLINE', '产品线已下线'], ['SITE_NOT_ALLOWED', '产品线不在允许范围'],
+      ${t(['原因码', '说明'], [['AUTH_FAILED', '鉴权失败'], ['APP_DISABLED', '接入方已停用'], ['SITE_MISSING', '缺少产品线（site id），不发送'], ['SITE_NOT_FOUND', '产品线不存在'], ['SITE_OFFLINE', '产品线已下线'], ['SITE_NOT_ALLOWED', '产品线不在允许范围'],
         ['CHANNEL_NOT_ALLOWED / CATEGORY_NOT_ALLOWED', '通道 / 消息类别不在允许范围'], ['TEMPLATE_REQUIRED', '模板免审方式下必须使用模板'], ['TEMPLATE_MISMATCH', '模板与产品线 / 通道不匹配'], ['APPROVAL_NOT_SUPPORTED', '逐任务审批不适用事件单发'],
         ['QUOTA_EXCEEDED / RATE_LIMITED', '超出日配额 / 速率上限'], ['PARAM_MISSING / PARAM_INVALID / BATCH_LIMIT / RECIPIENT_NOT_ALLOWED', '参数缺失或不合法']])}
     </div>

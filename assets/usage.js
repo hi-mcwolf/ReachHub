@@ -108,8 +108,7 @@ const US_FACTS = (() => {
         usPersons(site, src, app).forEach(([person, ptype, pw]) =>
           usAddFact(out, { m, site, bl, ch, acct, sender, cat, src, app, person, ptype }, base * mf * w * pw))));
     });
-    US_FB_ROUTES.forEach(([app, ch, acct, sender, cat, person, ptype, base]) =>
-      usAddFact(out, { m, site: US_FB, bl: 'BP', ch, acct, sender, cat, src: 'API', app, person, ptype }, base * US_FB_MF[m]));
+    /* 无兜底归属：未传 site id 的请求直接拒绝，不产生消息（Marvin 2026-11-13） */
     if (US_UNK[m]) usAddFact(out, { m, site: US_UNKNOWN, bl: '-', ch: 'SMS', acct: 'BP-01', sender: 'BPGROWTH', cat: '营销', src: '手动', app: null, person: '系统', ptype: '系统', legacy: true }, US_UNK[m]);
   });
   return out;
@@ -317,8 +316,6 @@ function uRenderKpis(facts, prev) {
     card('条数', fmtN(cnt), '当月已提交消息数') +
     card('计费条数 ' + tipIcon('仅按条计费通道：SMS、IM（Viber / Messenger / WhatsApp）；邮件、Push 为月包，按条数占比分摊'), fmtN(bill), `按条计费通道 · 月包通道 ${fmtN(pack)} 条`) +
     card(`环比（${US_METRICS[k]}）`, usMoM(cur, pv), pv ? `上月 ${fmtN(pv)}` : '上月无数据') +
-    card('兜底归属 ' + tipIcon('= 兜底归属条数 ÷ 总条数；API 未带 / 带错 site id 的消息'), cnt ? fbR.toFixed(1) + '%' : '-',
-      warn ? '建议推动接入方补传 site id' : `${fmtN(fb)} 条`, warn ? 'warn' : '') +
     card('归属不一致 ' + tipIcon('任务 site id 与非共用 Sender 关联产品线不一致的消息占比；仍按 site id 计'), cnt ? (mis / cnt * 100).toFixed(1) + '%' : '-', `${fmtN(mis)} 条`);
 }
 
@@ -344,7 +341,7 @@ function uRows(facts, prev, path, dim, level, cols) {
   const groups = new Map();
   facts.forEach(f => { const v = uKey(f, dim); if (!groups.has(v)) groups.set(v, []); groups.get(v).push(f); });
   if (level === 0 && (dim === 'site' || dim === 'bl')) {
-    if (!groups.has(US_FB)) groups.set(US_FB, []); // 兜底归属始终展示
+    /* 无兜底归属行 */
   }
   const k = U.metric === 'share' ? 'cnt' : U.metric;
   const keys = [...groups.keys()].sort((a, b) => (usIsSpecial(a) - usIsSpecial(b)) || (a === US_FB ? -1 : b === US_FB ? 1 : 0) || (usSum(groups.get(b), k) || 0) - (usSum(groups.get(a), k) || 0));
