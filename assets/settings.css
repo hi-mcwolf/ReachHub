@@ -1,0 +1,62 @@
+/* 系统管理（settings.html）页面专属样式 */
+.st-tabs-card { margin-bottom: 16px; }
+.st-tabs-card .tab .st-count { margin-left: 4px; }
+.st-sub-tabs { margin-bottom: 12px; }
+.st-sub-tabs .tab { padding: 6px 14px; }
+
+.st-ctl { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.st-ctl .v2-hint { margin: 0; }
+.st-err { font-size: 12px; color: var(--danger); }
+.st-err:empty { display: none; }
+.st-invalid { border-color: var(--danger) !important; }
+.st-readonly { height: 32px; display: flex; align-items: center; gap: 6px; color: var(--text-1); font-size: 14px; }
+.st-inline { display: flex; align-items: center; gap: 8px; }
+.st-inline .input { flex: 1; }
+.st-unit { font-size: 13px; color: var(--text-3); flex: none; }
+
+/* 多选（勾选式 chip） */
+.st-multi { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-multi label { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: var(--radius-m); padding: 3px 10px; font-size: 13px; color: var(--text-2); cursor: pointer; background: var(--card); }
+.st-multi label:has(input:checked) { border-color: var(--primary); background: var(--primary-weak); color: var(--primary); }
+.st-multi label.disabled { opacity: .45; cursor: not-allowed; }
+.st-multi input { width: 13px; height: 13px; }
+
+.st-trunc { display: inline-block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+.st-mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.st-ops { white-space: nowrap; }
+.st-ops .link-btn { margin-right: 10px; }
+.st-empty { text-align: center; color: var(--text-3); }
+.st-table-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 12px; color: var(--text-3); }
+.st-ai { display: flex; flex-direction: column; gap: 2px; white-space: normal; min-width: 170px; max-width: 200px; }
+.st-ai .why { font-size: 12px; color: var(--text-3); line-height: 1.4; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.st-section-gap { margin-top: 16px; }
+.st-callout-row { margin-bottom: 16px; }
+
+/* 详情抽屉 */
+.st-detail-block { background: #fff; border: 1px solid var(--line); border-radius: var(--radius-l); padding: 16px 20px; }
+.st-detail-block + .st-detail-block { margin-top: 16px; }
+
+/* Footer 表单 + 预览 */
+.st-split { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; }
+.st-preview-wrap { position: sticky; top: 0; align-self: start; }
+.st-preview-cap { font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
+.st-mail { border: 1px solid var(--line); border-radius: 8px; background: #F7F8FA; padding: 12px; }
+.st-mail-body { background: #fff; border-radius: 6px; padding: 14px 16px; font-size: 13px; color: var(--text-2); line-height: 1.6; }
+.st-mail-body .ph { height: 10px; background: #EEF0F3; border-radius: 3px; margin-bottom: 8px; }
+.st-mail-footer { margin-top: 12px; border-top: 1px solid #E5E7EB; padding-top: 10px; font-size: 11px; color: #6B7280; line-height: 1.6; text-align: center; white-space: pre-wrap; word-break: break-word; }
+.st-mail-footer a { color: #2E6BE6; text-decoration: underline; }
+.st-mail-footer .rg { font-weight: 600; color: #4B5563; }
+
+/* 规则参数 */
+.st-param-form { max-width: 640px; }
+.st-version { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
+
+/* 本页表单：label 顶对齐控件首行；表格收紧内边距避免操作列被挤出 */
+.v2-form > label { align-self: start; padding-top: 6px; line-height: 20px; }
+.st-ctl > .v2-flex:first-child, .st-ctl > .radio-group:first-child, .st-ctl > .v2-switch:first-child { min-height: 32px; align-items: center; display: flex; }
+.st-ctl > .st-multi:first-child { min-height: 32px; align-items: center; }
+#stPane .stats-table th, #stPane .stats-table td, #stDetailBody .stats-table th, #stDetailBody .stats-table td { padding: 0 10px; }
+#stPane .stats-table tbody tr > td:last-child:not([colspan]), #stPane .stats-table thead tr > th:last-child { position: sticky; right: 0; background: var(--card); box-shadow: -6px 0 6px -6px rgba(0, 0, 0, .15); }
+#stPane .stats-table thead tr > th:last-child { z-index: 2; }
+.st-2l { line-height: 1.35; white-space: nowrap; }
+.st-2l small { display: block; color: var(--text-3); font-size: 12px; }

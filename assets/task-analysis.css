@@ -1,0 +1,52 @@
+/* 任务分析页 */
+.ta-scope { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
+.ta-radio { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+.ta-radio input { accent-color: var(--primary); }
+.ta-scope-pane { padding: 4px 0 4px 44px; }
+.ta-picker { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.ta-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.ta-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--primary-weak); border: 1px solid var(--primary-border); color: var(--text-1); border-radius: 4px; padding: 2px 4px 2px 8px; font-size: 12px; }
+.ta-tag button { border: none; background: none; cursor: pointer; color: var(--text-3); display: inline-flex; padding: 1px; }
+.ta-tag button:hover { color: var(--danger); }
+.ta-tag button { font-size: 14px; line-height: 1; }
+.ta-search { position: relative; width: 260px; }
+.ta-dd { display: none; position: absolute; top: 36px; left: 0; z-index: 60; width: 460px; max-height: 300px; overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.1); padding: 4px; }
+.ta-dd.open { display: block; }
+.ta-dd-item { padding: 7px 10px; font-size: 13px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ta-dd-item:hover { background: var(--bg); }
+.ta-dd-item .tag { margin-left: auto; }
+.ta-dd-empty { padding: 10px; color: var(--text-3); font-size: 13px; }
+.ta-act-tasks { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; background: #F7F8FA; border-radius: 6px; padding: 10px 12px; max-width: 900px; }
+.ta-act-task { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.ta-actions { display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+
+.ta-rates { display: flex; gap: 20px; font-size: 13px; color: var(--text-2); }
+.ta-rate b { font-size: 16px; color: var(--text-1); margin-left: 4px; }
+#taFunnel .v2-fl a.val { color: var(--text-1); text-decoration: none; }
+#taFunnel .v2-fl a.val:hover { color: var(--primary); text-decoration: underline; }
+#taFunnel .v2-fl.ta-lv3 { padding-left: 44px; }
+#taFunnel .v2-fl-sub.ta-sub3 { padding-left: 52px; }
+#taFunnel .v2-fl-sub a { color: var(--text-2); text-decoration: none; }
+#taFunnel .v2-fl-sub a:hover { color: var(--primary); }
+.ta-fail-head { margin-bottom: 4px; }
+.ta-sub-title { font-size: 14px; }
+.ta-cmp { display: flex; flex-direction: column; gap: 20px; }
+#taCmpMain { max-width: 980px; }
+#taCmpMain .cx-bar { grid-template-columns: 280px minmax(0,1fr) 80px; }
+.ta-spark { display: flex; align-items: flex-end; gap: 8px; height: 150px; margin-top: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.ta-spark-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
+.ta-spark-col i { display: block; width: 70%; background: #8DB2F8; border-radius: 3px 3px 0 0; }
+.ta-spark-col span { font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
+.ta-spark-col em { position: absolute; bottom: -18px; font-style: normal; font-size: 11px; color: var(--text-3); }
+.ta-spark-col.cur i { background: var(--primary); }
+.ta-spark-col.cur.bad i { background: var(--danger); }
+.ta-spark-col.cur span, .ta-spark-col.cur em { color: var(--text-1); font-weight: 600; }
+.ta-cmp-line { margin-top: 14px; font-size: 13px; color: var(--text-2); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ta-cmp-line b { font-size: 15px; }
+.ta-ai { margin-top: 16px; border: 1px solid var(--primary-border); background: linear-gradient(180deg, #F5F8FF, #fff); border-radius: 8px; padding: 12px 14px; }
+.ta-ai:empty { display: none; }
+.ta-ai-head { display: flex; align-items: center; gap: 8px; }
+.ta-ai-body { margin-top: 8px; }
+.ta-ai-text { font-size: 14px; color: var(--text-1); line-height: 1.6; }
+.ta-ai-basis { margin-top: 8px; max-width: 720px; }
+.ta-ai-basis td { font-size: 12px; padding: 6px 10px; }

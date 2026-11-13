@@ -48,7 +48,7 @@ function isMediaChannel(ch) {
 
 function defaultContentValue(channel) {
   const ch = normalizeChannel(channel);
-  if (ch === 'email') return { contentType: 'custom', subject: '', sender: 'marketing@bingoplus.com', body: '', htmlFile: null };
+  if (ch === 'email') return { contentType: 'custom', subject: '', preheader: '', sender: 'marketing@bingoplus.com', body: '', htmlFile: null };
   if (ch === 'push') return { title: '', body: '', appIcon: null, image: null, androidUrl: '', iosUrl: '' };
   if (ch === 'sms') return { configMode: 'unified', text: '', shortLinkUrl: '', shortLinkResult: '', files: [] };
   if (ch === 'inbox') return { msgType: '', title: '', body: '', buttonText: '', jumpType: '', url: '', jumpParams: '' };
@@ -502,6 +502,8 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
         </div>
         <div class="field"><span class="field-label">标题</span>
           <input class="input ce-subject" value="${data.subject || ''}" placeholder="邮件标题"></div>
+        <div class="field"><span class="field-label">预览文本</span>
+          <input class="input ce-preheader" value="${(data.preheader ?? data.subtitle ?? '').replace(/"/g, '&quot;')}" placeholder="收件箱列表中显示在主题后的摘要"></div>
         <div class="field"><span class="field-label">发件人</span>
           <input class="input ce-sender" value="${data.sender || ''}" placeholder="发件人"></div>
         <div class="field">
@@ -535,6 +537,7 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
 
     initCharCounters(container);
     container.querySelector('.ce-subject').addEventListener('input', emit);
+    container.querySelector('.ce-preheader').addEventListener('input', emit);
     container.querySelector('.ce-sender').addEventListener('input', emit);
 
     const customPane = container.querySelector('.ce-email-custom');
@@ -564,6 +567,8 @@ function createContentEditor({ container, channel, value, onChange, showTemplate
     currentGetValue = () => ({
       contentType: container.querySelector('input[name="ceEmailType"]:checked')?.value || contentType,
       subject: container.querySelector('.ce-subject')?.value ?? data.subject,
+      preheader: container.querySelector('.ce-preheader')?.value ?? data.preheader,
+      footerVersion: data.footerVersion,
       sender: container.querySelector('.ce-sender')?.value ?? data.sender,
       body: getRteHtml(data.body),
       htmlFile: data.htmlFile,

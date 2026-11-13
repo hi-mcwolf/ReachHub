@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>接入方管理 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/apps.css?v=202611131703">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main" id="appsMain" data-tabscope="apps" hidden>
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">接入方管理</h1>
+              <p class="page-desc">上游系统统一接入身份、允许范围、审批方式、配额与调用审计</p>
+            </div>
+            <div class="stats-header-actions">
+              <button class="btn btn-primary" id="createAppBtn"><i data-lucide="plus"></i>新建接入方</button>
+            </div>
+          </div>
+
+          <section class="card v2-tabs-card">
+            <div class="tabs" id="appsTabs" data-hash>
+              <button class="tab active" data-tab="list">接入方列表</button>
+              <button class="tab" data-tab="api">API 能力与调试台</button>
+              <button class="tab" data-tab="audit">调用审计与配额</button>
+            </div>
+          </section>
+
+          <div>
+            <!-- ========== 接入方列表 ========== -->
+            <div data-pane="list">
+              <section class="card filter-card">
+                <div class="filter-row">
+                  <div class="filter-item">
+                    <span class="filter-label">名称</span>
+                    <input class="input" id="fName" placeholder="输入接入方名称" style="width:180px">
+                  </div>
+                  <div class="filter-item">
+                    <span class="filter-label">业务线</span>
+                    <div class="ap-msel" id="fBl"></div>
+                  </div>
+                  <div class="filter-item">
+                    <span class="filter-label">状态</span>
+                    <select class="select" id="fStatus"><option value="">全部</option><option>启用</option><option>停用</option></select>
+                  </div>
+                  <div class="filter-actions">
+                    <button class="btn btn-primary" id="fQuery">查询</button>
+                    <button class="btn btn-outline" id="fReset">重置</button>
+                  </div>
+                </div>
+              </section>
+              <section class="card table-card">
+                <div class="table-scroll" style="max-height:none">
+                  <table class="table stats-table ap-apps-table">
+                    <thead><tr>
+                      <th>接入方</th><th>AppId</th><th>业务线</th><th>允许产品线</th><th>允许通道</th><th>消息类别</th>
+                      <th>审批方式</th><th class="v2-num">今日用量 / 配额</th><th>状态</th><th>操作</th>
+                    </tr></thead>
+                    <tbody id="appRows"></tbody>
+                  </table>
+                </div>
+                <p class="v2-hint" style="margin-top:12px">超出允许范围或配额的调用被拒绝并计入调用审计；停用后新调用全部拒绝，已创建任务不受影响。</p>
+              </section>
+            </div>
+
+            <!-- ========== API 能力与调试台 ========== -->
+            <div data-pane="api" hidden>
+              <div class="ap-api-grid">
+                <section class="card">
+                  <h3 class="v2-section-title"><i data-lucide="terminal-square"></i>调试台</h3>
+                  <div class="ap-presets" id="dbgPresets"></div>
+                  <div id="dbgForm"></div>
+                  <div class="ap-dbg-actions">
+                    <button class="btn btn-outline" id="dbgPrecheck"><i data-lucide="scan-search"></i>预检</button>
+                    <button class="btn btn-primary" id="dbgSend"><i data-lucide="send"></i>发送</button>
+                    <button class="btn btn-outline" id="dbgQuery"><i data-lucide="search"></i>按 Out Id 查询</button>
+                  </div>
+                </section>
+                <div class="v2-gap">
+                  <section class="card">
+                    <h3 class="v2-section-title"><i data-lucide="file-check-2"></i>返回结果</h3>
+                    <div id="dbgResult"><p class="v2-hint">填写入参后点「预检」或「发送」查看模拟受理结果 / 拒绝原因码。</p></div>
+                  </section>
+                  <section class="card">
+                    <div class="v2-flex-between"><h3 class="v2-section-title" style="margin:0"><i data-lucide="webhook"></i>回调事件</h3>
+                      <span class="v2-hint" id="cbTarget"></span></div>
+                    <div id="cbEvents" style="margin-top:12px"></div>
+                  </section>
+                </div>
+              </div>
+              <div id="apiDocs"></div>
+            </div>
+
+            <!-- ========== 调用审计与配额 ========== -->
+            <div data-pane="audit" hidden>
+              <div class="ap-quota-grid" id="quotaCards"></div>
+              <div id="quotaAlerts"></div>
+              <section class="card filter-card">
+                <div class="filter-row">
+                  <div class="filter-item"><span class="filter-label">接入方</span><select class="select" id="aApp"></select></div>
+                  <div class="filter-item"><span class="filter-label">调用类型</span>
+                    <select class="select" id="aType"><option value="">全部</option><option>发送</option><option>查询</option><option>预检</option><option>回调投递</option></select></div>
+                  <div class="filter-item"><span class="filter-label">结果</span>
+                    <select class="select" id="aResult"><option value="">全部</option><option>受理</option><option>拒绝</option><option>限流</option><option>回调失败</option></select></div>
+                  <div class="filter-item"><span class="filter-label">任务 / Out Id</span><input class="input" id="aKey" placeholder="输入任务 ID 或 Out Id" style="width:200px"></div>
+                  <div class="filter-actions">
+                    <button class="btn btn-primary" id="aQuery">查询</button>
+                    <button class="btn btn-outline" id="aReset">重置</button>
+                    <button class="btn btn-outline" id="aExport"><i data-lucide="download"></i>导出</button>
+                  </div>
+                </div>
+              </section>
+              <section class="card table-card">
+                <div class="table-scroll" style="max-height:none">
+                  <table class="table stats-table">
+                    <thead><tr><th>时间</th><th>接入方</th><th>调用类型</th><th>结果</th><th>原因</th><th>任务 / Out Id</th><th>产品线 / 通道 / 消息类别</th><th>操作</th></tr></thead>
+                    <tbody id="auditRows"></tbody>
+                  </table>
+                </div>
+                <div class="table-footer v2-flex-between">
+                  <span class="v2-hint">调用日志保留 90 天；回调投递日志含每次重试结果。</span>
+                  <div class="pagination" id="auditPager"></div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新建 / 编辑接入方 -->
+  <div class="drawer-root" id="appDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-lg">
+      <header class="drawer-header">
+        <h3 id="appDrawerTitle">新建接入方</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body" id="appFormBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>取消</button>
+        <button class="btn btn-primary" id="appSaveBtn">保存</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/apps.js?v=202611131703"></script>
+</body>
+</html>

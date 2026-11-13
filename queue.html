@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>队列管理 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/queue.css?v=202611131703">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main" id="queueMain" hidden>
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">队列管理</h1>
+              <p class="page-desc">按「通道 × 供应商账号」查看队列态势，调度排队任务</p>
+            </div>
+            <div class="stats-header-actions">
+              <span class="update-time" id="qClock"></span>
+            </div>
+          </div>
+
+          <section class="card v2-tabs-card">
+            <div class="tabs" id="qTabs">
+              <button class="tab" data-qtab="board">通道态势</button>
+              <button class="tab" data-qtab="audit">调度审计日志</button>
+            </div>
+          </section>
+
+          <div id="paneBoard" class="q-pane" hidden></div>
+          <div id="paneDetail" class="q-pane" hidden></div>
+          <div id="paneAudit" class="q-pane" hidden></div>
+          <div id="paneParams" class="q-pane" hidden></div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任务详情抽屉（只读） -->
+  <div class="drawer-root" id="qTaskDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-md">
+      <header class="drawer-header">
+        <h3>任务详情</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body drawer-body--gray" id="qDrawerBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>关闭</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/queue.js?v=202611131703"></script>
+  <script src="assets/queue-switch.js?v=202611131703"></script>
+  <script src="assets/queue-plan.js?v=202611131703"></script>
+</body>
+</html>

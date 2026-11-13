@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统管理 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/settings.css?v=202611131703">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main" id="stMain" hidden>
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title" id="stTitle">系统管理</h1>
+              <p class="page-desc" id="stDesc"></p>
+            </div>
+            <div class="stats-header-actions" id="stHeadActions"></div>
+          </div>
+          <section class="card v2-tabs-card st-tabs-card">
+            <div class="tabs" id="stTabs"></div>
+          </section>
+          <div id="stPane"></div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- 账号表单抽屉（新建 / 编辑） -->
+  <div class="drawer-root" id="stAccountDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-md">
+      <header class="drawer-header">
+        <h3 id="stAccountDrawerTitle">新建账号</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body" id="stAccountFormBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>取消</button>
+        <button class="btn btn-primary" id="stAccountSave">保存</button>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- 账号详情抽屉 -->
+  <div class="drawer-root" id="stAccountDetail">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-lg">
+      <header class="drawer-header">
+        <h3 id="stDetailTitle">账号详情</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body" id="stDetailBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>关闭</button>
+        <button class="btn btn-outline" id="stDetailEdit">编辑</button>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- Footer 版本表单抽屉（左表单 + 右预览） -->
+  <div class="drawer-root" id="stFooterDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-lg">
+      <header class="drawer-header">
+        <h3 id="stFooterDrawerTitle">新建 Footer 版本</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body st-split" id="stFooterFormBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>取消</button>
+        <button class="btn btn-primary" id="stFooterSave">保存</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/settings.js?v=202611131703"></script>
+</body>
+</html>

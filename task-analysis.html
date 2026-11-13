@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>任务分析 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/fail-analysis.css?v=202611131703">
+  <link rel="stylesheet" href="assets/task-analysis.css?v=202611131703">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main">
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">任务分析</h1>
+              <p class="page-desc">多任务 / 按活动聚合查看漏斗、失败原因与对比</p>
+            </div>
+            <div class="stats-header-actions">
+              <select class="select" id="taSaved" style="width:180px"></select>
+              <button class="btn btn-primary" id="taExport"><i data-lucide="download"></i>导出失败明细</button>
+            </div>
+          </div>
+
+          <!-- 范围 -->
+          <section class="card filter-card">
+            <div class="ta-scope">
+              <span class="filter-label">范围</span>
+              <label class="ta-radio"><input type="radio" name="taScope" value="tasks" checked>选择任务</label>
+              <label class="ta-radio"><input type="radio" name="taScope" value="activity">按活动</label>
+              <label class="ta-radio"><input type="radio" name="taScope" value="cond">按条件</label>
+            </div>
+
+            <div class="ta-scope-pane" data-scope="tasks">
+              <div class="ta-picker" id="taTaskPicker">
+                <div class="ta-tags" id="taTaskTags"></div>
+                <div class="ta-search">
+                  <input class="input" id="taTaskInput" placeholder="输入任务 ID 或名称" autocomplete="off">
+                  <div class="ta-dd" id="taTaskDd"></div>
+                </div>
+                <span class="v2-hint" id="taTaskCount"></span>
+              </div>
+            </div>
+
+            <div class="ta-scope-pane" data-scope="activity" hidden>
+              <div class="ta-picker">
+                <div class="ta-search" style="width:360px">
+                  <input class="input" id="taActInput" placeholder="输入活动 ID 或名称" autocomplete="off">
+                  <div class="ta-dd" id="taActDd"></div>
+                </div>
+                <span class="v2-hint" id="taActInfo"></span>
+              </div>
+              <div class="ta-act-tasks" id="taActTasks" hidden></div>
+            </div>
+
+            <div class="ta-scope-pane" data-scope="cond" hidden>
+              <div class="filter-row">
+                <div class="filter-item">
+                  <span class="filter-label">时间</span>
+                  <select class="select" id="taRange">
+                    <option value="today">今天</option><option value="7d" selected>最近 7 天</option>
+                    <option value="30d">最近 30 天</option><option value="custom">自定义</option>
+                  </select>
+                  <div class="date-range" id="taDates" hidden>
+                    <input type="date" class="input" id="taFrom" value="2026-07-01"><span class="date-sep">至</span><input type="date" class="input" id="taTo" value="2026-07-13">
+                  </div>
+                </div>
+                <div class="filter-item"><span class="filter-label">产品线</span><div id="taPl"></div></div>
+                <div class="filter-item"><span class="filter-label">通道</span><div id="taCh"></div></div>
+                <div class="filter-item"><span class="filter-label">模板</span><div id="taTpl"></div></div>
+              </div>
+            </div>
+
+            <div class="ta-actions">
+              <button class="btn btn-primary" id="taRun"><i data-lucide="search"></i>分析</button>
+              <button class="btn btn-outline" id="taReset">重置</button>
+              <button class="btn btn-outline" id="taSave"><i data-lucide="bookmark-plus"></i>保存为常用分析</button>
+            </div>
+          </section>
+
+          <div id="taResult" class="v2-gap" hidden>
+            <!-- 汇总漏斗 -->
+            <section class="card">
+              <div class="v2-flex-between">
+                <h4 class="v2-section-title">汇总漏斗 <span class="v2-hint" id="taScopeLine"></span></h4>
+                <div class="ta-rates" id="taRates"></div>
+              </div>
+              <div id="taFunnel"></div>
+            </section>
+
+            <!-- 失败原因分析 -->
+            <section class="card">
+              <div class="v2-flex-between ta-fail-head">
+                <h4 class="v2-section-title">失败原因分析 <span class="v2-hint" id="taFailTotal"></span></h4>
+                <div class="v2-flex">
+                  <span id="taStageChip"></span>
+                  <span class="filter-label">维度</span>
+                  <select class="select select-sm" id="taRowDim"></select>
+                  <span class="v2-muted">×</span>
+                  <select class="select select-sm" id="taColDim"></select>
+                  <button class="btn btn-outline btn-sm" id="taExport2"><i data-lucide="download"></i>导出失败明细</button>
+                </div>
+              </div>
+              <div id="taFailTable"></div>
+            </section>
+
+            <!-- 对比 -->
+            <section class="card">
+              <h4 class="v2-section-title" id="taCmpTitle">对比</h4>
+              <div class="ta-cmp">
+                <div id="taCmpMain"></div>
+                <div>
+                  <div class="v2-flex-between" style="margin-bottom:8px">
+                    <b class="ta-sub-title" id="taVendorTitle">供应商对比</b>
+                    <select class="select select-sm" id="taVendorTask"></select>
+                  </div>
+                  <div id="taVendorCmp"></div>
+                </div>
+              </div>
+              <!-- AI 诊断（6.3.4） -->
+              <div class="ta-ai" id="taAi"></div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/fail-analysis.js?v=202611131703"></script>
+  <script src="assets/task-analysis.js?v=202611131703"></script>
+</body>
+</html>

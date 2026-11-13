@@ -1,0 +1,49 @@
+/* 队列管理（PRD 6.5）页面专属样式 */
+.q-pane { margin-top: 16px; }
+.q-pane > .card + .card, .q-pane > .card + .v2-stat-strip, .q-pane > .v2-stat-strip + .card { margin-top: 16px; }
+.q-toolbar { display: flex; align-items: center; gap: 12px; }
+
+/* 多选下拉 */
+.q-ms { position: relative; }
+.q-ms-btn { min-width: 130px; max-width: 220px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-ms-panel { position: absolute; top: 36px; left: 0; z-index: 50; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-m); box-shadow: 0 6px 20px rgba(0,0,0,.1); padding: 6px 0; min-width: 160px; }
+.q-ms-panel label { display: flex; align-items: center; gap: 8px; padding: 5px 12px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.q-ms-panel label:hover { background: var(--bg); }
+
+/* 队列详情头部 */
+.q-crumb { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; }
+.q-crumb a { color: var(--text-3); font-weight: 400; }
+.q-crumb .sep { color: var(--text-3); font-weight: 400; }
+.q-head { display: flex; flex-direction: column; gap: 12px; }
+.q-sub { font-size: 12px; color: var(--text-3); font-weight: 400; margin-left: 8px; }
+
+/* 排队任务表 */
+.q-table td { vertical-align: middle; }
+.q-table .q-task-name { display: flex; flex-direction: column; gap: 2px; }
+.q-table .q-task-name small { color: var(--text-3); font-size: 12px; }
+.q-ops { display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+tr.q-drop-after td { border-bottom: 2px solid var(--primary); }
+tr[draggable="true"] { cursor: grab; }
+.q-expire { display: block; font-size: 12px; color: var(--warning); margin-top: 2px; }
+.q-expire.ok { color: var(--text-3); }
+.q-arrow { color: var(--text-3); margin: 0 4px; }
+.q-later { color: var(--danger); font-weight: 600; }
+.q-earlier { color: var(--success); font-weight: 600; }
+.q-resv-conflict td { background: #FFF7E8; }
+.q-empty { text-align: center; color: var(--text-3); padding: 24px 0 !important; }
+.q-readonly-depth { display: flex; align-items: baseline; gap: 12px; }
+.q-readonly-depth b { font-size: 28px; }
+
+/* 参数 */
+.q-param-num { width: 72px; }
+.q-weights { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 24px; }
+.q-weights label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.q-weights label span { min-width: 90px; color: var(--text-2); }
+.q-modal-table th, .q-modal-table td { font-size: 13px; }
+.q-counter { font-size: 12px; color: var(--text-3); text-align: right; }
+.q-table th, .q-table td { padding: 0 8px; }
+.q-table td.q-wrap { white-space: normal; min-width: 130px; max-width: 170px; line-height: 1.4; padding-top: 6px; padding-bottom: 6px; }
+.q-pos { display: inline-flex; align-items: center; gap: 6px; }
+.q-pos .v2-drag, .q-pos .q-nodrag { display: inline-block; width: 12px; letter-spacing: -3px; font-weight: 700; }
+.q-table td.q-src { min-width: 90px; max-width: 120px; }
+.q-table td.q-name { min-width: 100px; max-width: 130px; }

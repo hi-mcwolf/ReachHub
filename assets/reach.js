@@ -7,7 +7,6 @@ const CHANNELS = {
   viber:    { label: 'Viber',    tip: 'Viber',    icon: 'phone-call' },
   messenger:{ label: 'Messenger',tip: 'Messenger',icon: 'message-circle' },
   whatsapp: { label: 'WhatsApp', tip: 'WhatsApp', icon: 'message-circle-more' },
-  telegram: { label: 'Telegram', tip: 'Telegram', icon: 'send', disabled: true },
   inbox:    { label: '站内信',   tip: '站内信',   icon: 'inbox' },
 };
 
@@ -36,34 +35,44 @@ const VIBER_BOT_OPTIONS = [
 
 const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
+/* 审批单的邮件内容与检测存档（6.9.2 场景：运营决定照发，审批人只读查看） */
+const HOME_DEMO_EMAIL = {
+  subject: 'Exclusive $50 Offer: Bet & Win!',
+  preheader: "Don't miss the biggest jackpot of the week",
+  body: '<p><img src="data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'1200\' height=\'600\'><rect width=\'100%\' height=\'100%\' fill=\'%23dbe4f5\'/><text x=\'50%\' y=\'50%\' font-size=\'64\' text-anchor=\'middle\' fill=\'%236b7a99\'>WORLD CUP FINAL · BET &amp; WIN</text></svg>" alt="" width="1200" height="600"></p><p>World Cup final night is here. Lock in your champion prediction before kick-off.</p>',
+};
+const HOME_DEMO_EMAIL_RECORDS = [
+  { action: '已忽略', desc: '忽略全部提醒（强提醒 3 · 提醒 2 · 建议 2）', by: 'ken@', time: '2026-07-13 15:38' },
+];
 const APPROVAL_QUEUE = [
   { id: 'AP20260714003', name: 'Messenger 社群拉新', channel: 'Messenger', appliedAt: '2026-07-14 09:20',
-    creator: 'lily@', audience: '新注册用户', taskType: '手动发送', timing: '定时 · 2026-07-15 10:00',
+    creator: 'lily@', audience: '新注册用户', taskType: '手动发送', timing: '定时 · 2026-07-15 10:00', category: '营销', site: 'bingoplus',
     contentSummary: '加入官方社群，每日抽奖赢免费竞猜券！', template: '-' },
   { id: 'AP20260713002', name: '世界杯决赛邮件预告', channel: '邮件', appliedAt: '2026-07-13 15:40',
-    creator: 'ken@', audience: '活跃用户', taskType: '手动发送', timing: '立即发送',
-    contentSummary: '决赛之夜即将来临，提前锁定您的冠军竞猜…', template: '世界杯竞猜提醒' },
+    creator: 'ken@', audience: '活跃用户', taskType: '手动发送', timing: '立即发送', category: '营销', site: 'bingoplus',
+    contentSummary: '决赛之夜即将来临，提前锁定您的冠军竞猜…', template: '世界杯竞猜提醒',
+    emailContent: HOME_DEMO_EMAIL, emailRecords: HOME_DEMO_EMAIL_RECORDS },
   { id: 'AP20260712001', name: '沉默用户唤醒短信', channel: 'SMS', appliedAt: '2026-07-12 11:05',
-    creator: 'marvin@', audience: '沉默用户', taskType: '系统调用', taskCode: 'TC-20260712001', timing: '循环 · 每周一 09:00',
+    creator: 'marvin@', audience: '沉默用户', taskType: '系统调用', taskCode: 'TC-20260712001', timing: '循环 · 每周一 09:00', category: '营销', site: 'bp-vip',
     contentSummary: '好久不见！您的老朋友 BingoPlus 为您准备了回归好礼…', template: '流失召回话术' },
 ];
 
 const RUNNING_TASKS = [
-  { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75, status: 'running',
+  { id: 'T20260713001', name: '世界杯竞猜预热短信', channel: 'SMS', progress: 75, status: 'running', estFinish: '18:02', estRange: 5,
     creator: 'marvin@', createdAt: '2026-07-12 10:20', approver: 'lily@', approvedAt: '2026-07-12 11:00',
     audience: '活跃用户', taskType: '系统调用', taskCode: 'TC-20260713001', timing: '2026-07-13 18:00 定时',
     activityId: 'ACT202607001', activityName: '世界杯竞猜预热',
     contentSummary: 'Only the best teams remain! Warm up for the Quarterfinals…', template: '世界杯竞猜提醒',
     execution: { total: 12800, pushable: 12160, valid: 11776, duplicate: 384, blacklist: 256, dnd: 128, dnc: 64,
       pushCount: 9632, pushVendorFail: 96, pushSuccess: 9459, pushFail: 173, pendingConfirm: 482 } },
-  { id: 'T20260713002', name: '新用户充值召回邮件', channel: '邮件', progress: 38, status: 'running',
+  { id: 'T20260713013', name: '新用户充值召回邮件', channel: '邮件', progress: 38, status: 'running', estFinish: '16:58', estRange: 2, estimated: '邮件通道未接入任务级调度，按当前队列深度估算',
     creator: 'lily@', createdAt: '2026-07-11 14:05', approver: 'marvin@', approvedAt: '2026-07-11 15:00',
     audience: '新注册用户', taskType: '手动发送', timing: '每天 10:00 循环',
     activityId: 'ACT202607003', activityName: '新用户注册礼包',
     contentSummary: '尊敬的用户，本周充值满 500 即享 8% 加赠…', template: '充值优惠通知',
     execution: { total: 5600, pushable: 5320, valid: 5152, duplicate: 168, blacklist: 112, dnd: 56,
       pushCount: 2128, pushVendorFail: 21, pushSuccess: 2051, pushFail: 77, pendingConfirm: 106 } },
-  { id: 'T20260712004', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52, status: 'running',
+  { id: 'T20260712014', name: 'VIP 沉默用户 Push 召回', channel: 'Push', progress: 52, status: 'running', estFinish: '17:20', estRange: 3, estimated: 'Push 通道未接入任务级调度，按当前队列深度估算',
     creator: 'ken@', createdAt: '2026-07-08 11:00', approver: 'lily@', approvedAt: '2026-07-08 12:00',
     audience: 'VIP用户 · 沉默用户', taskType: '系统调用', taskCode: 'TC-20260712004', timing: '每天 09:00 循环',
     activityId: 'ACT202607004', activityName: 'VIP 专属回归礼',
@@ -82,6 +91,267 @@ let activePanel = null;
 let taskDrawerMode = 'create';
 let editingTaskId = null;
 const CFG_ROWS = ['rowAudience', 'rowTiming', 'rowContent'];
+
+/* ================= 二期：新建 / 编辑任务表单改造 =================
+ * 6.1.2 产品线取 site id、任务类型（手动发送 / 系统调用）与任务code 保持一期；6.5.5 到点占位；6.6.3 提交前 ETA 预览；6.9.2 邮件检测面板 */
+const RH_CH_V2 = { sms: 'SMS', email: '邮件', push: 'Push', inbox: '站内信', viber: 'IM', messenger: 'IM', whatsapp: 'IM' };
+const RH_CAT_HINT = {
+  营销: '营销类：按营销频控、DND 与退订名单过滤；邮件通道执行内容检测（只提醒不阻断）',
+  通知: '通知类：不按邮件退订名单过滤，DND 与频控按通知规则；邮件通道同样执行内容检测',
+  'OTP 事务': 'OTP 事务仅系统调用，手动任务不可选',
+};
+const RH_SENDABLE_RATIO = 0.92;   /* 近 30 天该产品线该通道可推送比例（mock） */
+const RH_LEGACY_TPS = { 邮件: 300, Push: 800, 站内信: 1000, IM: 20 };  /* 未接入任务级调度通道的估算吞吐（mock） */
+const RH_FILE_EST = 5000;         /* 上传文件的预估人数（mock，按文件行数） */
+let panelEmailCheck = null;
+let rhEtaTimer = null;
+
+function rhChannelLabel(c) { return RH_CH_V2[c] === 'IM' ? `IM · ${CHANNELS[c]?.label || c}` : (RH_CH_V2[c] || c); }
+function rhSiteOf(value) {
+  if (!value) return '';
+  const p = V2_PRODUCT_LINES.find(x => x.siteId === value || x.name === value);
+  return p ? p.siteId : value;
+}
+function rhCurrentSite() { return rhSiteOf(document.getElementById('ntProductLine')?.value || draft?.productLine || ''); }
+function rhSenderOf(site) { return String(site || '').toUpperCase().replace(/[^A-Z]/g, ''); }
+function rhPad(n) { return String(n).padStart(2, '0'); }
+function rhFmtTime(d) {
+  const now = new Date();
+  const hm = `${rhPad(d.getHours())}:${rhPad(d.getMinutes())}`;
+  return d.toDateString() === now.toDateString() ? hm : `${rhPad(d.getMonth() + 1)}-${rhPad(d.getDate())} ${hm}`;
+}
+function rhMinuteOfDay(str) {
+  const m = String(str || '').match(/(\d{1,2}):(\d{2})/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+function rhDefaultDatetime() { const d = new Date(Date.now() + 86400000); return `${d.getFullYear()}-${rhPad(d.getMonth() + 1)}-${rhPad(d.getDate())}T10:00`; }
+function rhHm(min) { const m = ((min % 1440) + 1440) % 1440; return `${rhPad(Math.floor(m / 60))}:${rhPad(m % 60)}`; }
+
+function rhAudienceCount() {
+  if (!draft) return 0;
+  const tags = draft.audienceTags.reduce((s, id) => s + (AUDIENCES.find(a => a.id === id)?.count || 0), 0);
+  return tags + draft.audienceFiles.length * RH_FILE_EST;
+}
+
+/* 目标队列 = 该产品线所在业务线在该通道的账号（发送方标识覆盖该产品线） */
+function rhCandidateAccounts(site, ch) {
+  const pl = V2_PRODUCT_LINES.find(p => p.siteId === site);
+  const v2ch = RH_CH_V2[ch];
+  if (!pl || !v2ch) return [];
+  const accs = V2_ACCOUNTS.filter(a => a.channel === v2ch && a.bl === pl.bl && a.mode !== 'otp');
+  if (v2ch !== 'SMS') return accs;
+  const sender = rhSenderOf(site);
+  const own = accs.filter(a => a.mode === 'tasklevel' && a.senders.includes(sender));
+  return own.length ? own : accs.filter(a => a.mode === 'tasklevel');
+}
+function rhAccountDepth(acc) {
+  return V2_TASKS.filter(t => t.account === acc.id && (t.status === 'queued' || t.status === 'sending') && t.id !== editingTaskId)
+    .reduce((s, t) => s + (t.remaining || 0), 0);
+}
+function rhQueueFor(site, ch) {
+  const accs = rhCandidateAccounts(site, ch);
+  if (!accs.length) return null;
+  const rows = accs.map(a => {
+    const tps = a.mode === 'tasklevel' ? a.tps : (a.tps || RH_LEGACY_TPS[a.channel]);
+    return { acc: a, tps, waitSec: tps ? rhAccountDepth(a) / tps : 0, estimated: a.mode !== 'tasklevel' };
+  }).filter(r => r.tps);
+  if (!rows.length) return null;
+  return rows.sort((x, y) => x.waitSec - y.waitSec)[0]; /* 多账号取深度最小者 */
+}
+
+/* 6.6.3 提交前 ETA 预览：选定产品线、通道、人群后显示；只给时间，不出现位置 / 前方条数 / 让行信息 */
+function rhEtaLines() {
+  if (!draft || isSystemTask()) return [];
+  const site = rhCurrentSite();
+  const people = rhAudienceCount();
+  if (!site || !people) return [];
+  const bl = V2_PRODUCT_LINES.find(p => p.siteId === site)?.bl || '';
+  const now = new Date();
+  return draft.channels.map(c => {
+    const q = rhQueueFor(site, c);
+    if (!q) return null; /* 调度器无数据时不显示 */
+    const timing = draft.perChannel[c]?.timing;
+    const self = Math.round(people * RH_SENDABLE_RATIO);
+    const est = q.estimated ? '（估算）' : '';
+    const waitMin = Math.max(1, Math.round(q.waitSec / 60));
+    const durMs = Math.max(60, self / q.tps) * 1000;
+    if (timing?.type === 'scheduled' && timing.datetime) {
+      const plan = new Date(timing.datetime);
+      const clear = new Date(now.getTime() + q.waitSec * 1000);
+      const start = isNaN(plan) ? clear : new Date(Math.max(plan.getTime(), clear.getTime()));
+      return { scheduled: true, text: `${rhChannelLabel(c)} · ${bl}：预计 ${rhFmtTime(start)} 开始${est}（计划时间与队列清空取较晚者），按预估人数 ${fmtN(people)} 推算 ${rhFmtTime(new Date(start.getTime() + durMs))} 完成${est}。` };
+    }
+    const start = new Date(now.getTime() + q.waitSec * 1000);
+    return { scheduled: false, text: `当前 ${rhChannelLabel(c)} · ${bl} 队列排队约 ${waitMin} 分钟；按预估人数 ${fmtN(people)} 推算：预计 ${rhFmtTime(start)} 开始、${rhFmtTime(new Date(start.getTime() + durMs))} 完成${est}。` };
+  }).filter(Boolean);
+}
+function renderEtaPreview() {
+  const host = document.getElementById('ntEtaPreview');
+  if (!host) return;
+  const lines = rhEtaLines();
+  host.hidden = !lines.length;
+  if (!lines.length) { host.innerHTML = ''; return; }
+  const tail = lines.some(l => !l.scheduled) ? '如需更早送达可联系管理员或改为定时。' : '';
+  host.innerHTML = `<div class="v2-callout"><i data-lucide="info"></i><div class="nt-eta-lines">
+    ${lines.map(l => `<span>${esc(l.text)}</span>`).join('')}${tail ? `<span>${tail}</span>` : ''}</div></div>`;
+  refreshIcons();
+}
+function scheduleEtaPreview() {
+  clearTimeout(rhEtaTimer);
+  rhEtaTimer = setTimeout(renderEtaPreview, 500); /* 防抖 500 ms */
+}
+
+/* 6.5.5 到点占位：仅发送时机 = 定时 且具备「队列管理」权限时可见；短信以外未接入调度的通道置灰 */
+function rhReserveInfo(c) {
+  const site = rhCurrentSite();
+  const timing = draft.perChannel[c]?.timing;
+  const accs = rhCandidateAccounts(site, c);
+  const acc = accs.find(a => a.mode === 'tasklevel') || null;
+  const self = Math.round(rhAudienceCount() * RH_SENDABLE_RATIO);
+  const minutes = acc && self ? Math.max(1, Math.ceil(self / acc.tps / 60)) : null;
+  let conflict = null;
+  const start = rhMinuteOfDay(timing?.datetime);
+  if (acc && start !== null) {
+    const end = start + (minutes || 1);
+    V2_TASKS.filter(t => t.reserve && t.account === acc.id && t.id !== editingTaskId).some(t => {
+      const s = rhMinuteOfDay(t.sched);
+      if (s === null) return false;
+      const from = s - 15, to = s + 15;
+      if (start < to && end > from) { conflict = { task: t, from: rhHm(from), to: rhHm(to) }; return true; }
+      return false;
+    });
+  }
+  return { acc, minutes, conflict, enabled: !!acc };
+}
+function rhConflictText(info) {
+  const c = info.conflict;
+  return `该队列（${info.acc.channel} · ${info.acc.vendor} · ${info.acc.id}）${c.from}–${c.to} 已有占位任务 ${c.task.id} ${c.task.name}，将按计划时间先后生效`;
+}
+function renderReserveField() {
+  const field = document.getElementById('ntReserveField');
+  if (!field || !draft) return;
+  const chs = draft.channels.filter(c => draft.perChannel[c]?.timing?.type === 'scheduled');
+  const visible = typeof hasPerm === 'function' && hasPerm('queue') && !isSystemTask() && chs.length > 0;
+  field.hidden = !visible;
+  if (!visible) { field.innerHTML = ''; return; }
+  draft.reserve = draft.reserve || {};
+  const tips = [];
+  const rows = chs.map(c => {
+    const info = rhReserveInfo(c);
+    const on = !!draft.reserve[c] && info.enabled;
+    if (on) {
+      tips.push(`<div class="v2-callout"><i data-lucide="zap"></i><span>${rhChannelLabel(c)}：将优先于同队列其他任务；${info.minutes ? `按当前吞吐预计占用 ${info.minutes} 分钟` : '选择人群后显示预计占用时长'}</span></div>`);
+      if (info.conflict) tips.push(`<div class="v2-callout warn"><i data-lucide="alert-triangle"></i><span>${esc(rhConflictText(info))}</span></div>`);
+    }
+    return `<div class="nt-reserve-row${info.enabled ? '' : ' is-disabled'}">
+      <label class="v2-switch"><input type="checkbox" data-reserve="${c}" ${on ? 'checked' : ''} ${info.enabled ? '' : 'disabled'}><span></span></label>
+      <span>${rhChannelLabel(c)}</span>
+      ${info.enabled ? '<span class="v2-hint">到达发送时间时自动插队</span>' : '<span class="v2-hint">该通道未接入任务级调度，暂不支持到点占位</span>'}
+    </div>`;
+  });
+  field.innerHTML = `<span class="field-label">到点占位</span>${rows.join('')}${tips.length ? `<div class="nt-reserve-tips">${tips.join('')}</div>` : ''}`;
+  field.querySelectorAll('[data-reserve]').forEach(cb => cb.addEventListener('change', () => {
+    draft.reserve[cb.dataset.reserve] = cb.checked;
+    renderReserveField();
+  }));
+  refreshIcons();
+}
+function rhActiveReserves() {
+  if (!draft?.reserve || !hasPerm('queue')) return [];
+  return draft.channels.filter(c => draft.reserve[c] && draft.perChannel[c]?.timing?.type === 'scheduled')
+    .map(c => ({ c, info: rhReserveInfo(c) })).filter(r => r.info.enabled);
+}
+
+/* 6.9.2 邮件检测：提交按钮旁「强提醒 N」 */
+function rhEmailCheckInput() {
+  const c = draft?.perChannel?.email?.content;
+  if (!c) return null;
+  return { ...ecInputFromContent(c, rhCurrentSite()), footerVersion: draft.emailFooter || '' };
+}
+function renderSubmitBadge() {
+  const host = document.getElementById('ntCheckBadge');
+  if (!host) return;
+  const input = draft?.channels.includes('email') && typeof ecAnalyze === 'function' ? rhEmailCheckInput() : null;
+  host.innerHTML = input && (input.subject || input.bodyHtml) ? ecBadgeHtml(ecAnalyze(input).counts) : '';
+}
+function mountEmailCheckFor(editorHost) {
+  panelEmailCheck?.destroy();
+  panelEmailCheck = null;
+  document.getElementById('ntEmailCheck')?.remove();
+  if (!editorHost || draft.active !== 'email' || typeof renderEmailCheck !== 'function') return;
+  const host = document.createElement('div');
+  host.id = 'ntEmailCheck';
+  editorHost.after(host);
+  panelEmailCheck = renderEmailCheck(host, {
+    ...rhEmailCheckInput(),
+    records: draft.emailCheck?.records || [],
+    onApply: (field, value) => {
+      const v = panelContentEditor.getValue();
+      if (field === 'subject') v.subject = value; else v.body = value;
+      panelContentEditor.setValue(v);
+      draft.perChannel.email.content = panelContentEditor.getValue();
+      draft.emailCheck = panelEmailCheck.getResult();
+      renderPreview();
+      renderRows();
+    },
+    onIgnore: res => { draft.emailCheck = res; },
+    onFooterChange: ver => { draft.emailFooter = ver; draft.emailCheck = panelEmailCheck.getResult(); renderSubmitBadge(); },
+  });
+}
+function rhArchiveEmailCheck() {
+  if (!draft.channels.includes('email') || typeof ecAnalyze !== 'function') return null;
+  const res = ecAnalyze(rhEmailCheckInput(), { full: true }); /* 提交时全量检测（含 AI 语义与评分） */
+  const records = draft.emailCheck?.records || [];
+  return { ...res, records, ignored: records.some(r => r.action === '已忽略') };
+}
+
+function syncPlMeta() {
+  const host = document.getElementById('ntPlMeta');
+  if (!host) return;
+  const site = rhCurrentSite();
+  const pl = V2_PRODUCT_LINES.find(p => p.siteId === site);
+  host.innerHTML = pl ? `site id：${esc(pl.siteId)}<span class="tag tag-info">业务线 ${esc(pl.bl)}</span>${pl.status !== '启用' ? '<span class="tag tag-gray">已下线</span>' : ''}`
+    : (site ? `<span class="tag tag-gray">未知产品线</span>` : '');
+}
+function syncCategoryUi() {
+  if (!draft) return;
+  const locked = taskDrawerMode === 'edit' || taskDrawerMode === 'change';
+  document.querySelectorAll('input[name="taskType"]').forEach(r => {
+    r.checked = r.value === draft.taskType;
+    r.disabled = locked;
+  });
+  /* 统计口径派生：任务来源 = 任务类型（手动发送 → 手动，系统调用 → API）；消息类别不由表单录入 */
+  draft.source = draft.taskType === 'system' ? 'API' : '手动';
+}
+function rhAfterRender() {
+  syncPlMeta();
+  renderReserveField();
+  renderSubmitBadge();
+  scheduleEtaPreview();
+}
+
+/* 三个页面（首页 / 任务记录 / 模板管理）共用同一份抽屉 DOM：运行时改造为二期字段 */
+function upgradeTaskDrawerV2() {
+  const drawer = document.getElementById('taskDrawer');
+  if (!drawer || drawer.dataset.v2) return;
+  drawer.dataset.v2 = '1';
+  const pl = document.getElementById('ntProductLine');
+  if (pl) {
+    pl.innerHTML = '<option value="">请选择产品线</option>' + V2_PRODUCT_LINES.filter(p => p.status === '启用')
+      .map(p => `<option value="${p.siteId}">${esc(p.name)}</option>`).join('');
+    const meta = document.createElement('div');
+    meta.className = 'v2-hint nt-pl-meta';
+    meta.id = 'ntPlMeta';
+    pl.closest('.field').appendChild(meta);
+  }
+  /* 任务类型（手动发送 / 系统调用）与任务 code 保持一期表单（Marvin 2026-11-12）；任务来源 / 消息类别不在表单录入 */
+  const timingField = document.getElementById('ntTimingField');
+  if (timingField && !document.getElementById('ntReserveField')) {
+    timingField.insertAdjacentHTML('afterend', '<div class="field" id="ntReserveField" hidden></div><div class="nt-eta" id="ntEtaPreview" hidden></div>');
+  }
+  const submit = document.getElementById('createTaskBtn');
+  if (submit && !document.getElementById('ntCheckBadge')) submit.insertAdjacentHTML('beforebegin', '<span id="ntCheckBadge"></span>');
+}
 
 function newChannelConfig() {
   return { timing: null, content: null };
@@ -127,6 +397,10 @@ function initDraft(channel) {
     activityId: '',
     activityName: '',
     taskType: 'manual',
+    source: '手动',      /* 派生自任务类型，不在表单录入 */
+    reserve: {},         /* 到点占位：按通道 */
+    emailCheck: null,
+    emailFooter: '',
     taskCode: '',
     resendFilter: null,
     audienceTags: [],
@@ -144,9 +418,6 @@ function initDraft(channel) {
   if (actEl) actEl.value = '';
   const codeEl = document.getElementById('ntTaskCode');
   if (codeEl) codeEl.value = '';
-  document.querySelectorAll('input[name="taskType"]').forEach(r => {
-    r.checked = r.value === 'manual';
-  });
   setTaskDrawerMode('create');
   closePanel();
   syncTaskTypeUi();
@@ -170,7 +441,7 @@ function setTaskDrawerMode(mode) {
   if (plEl) plEl.disabled = locked;
   if (actEl) actEl.disabled = locked;
   if (codeEl) codeEl.disabled = locked;
-  document.querySelectorAll('input[name="taskType"]').forEach(r => { r.disabled = locked; });
+  syncCategoryUi();
   document.getElementById('rowAudience')?.classList.toggle('cfg-row-locked', mode === 'edit');
   document.getElementById('rowTiming')?.classList.toggle('cfg-row-locked', locked);
 }
@@ -198,7 +469,7 @@ function syncTaskTypeUi() {
 function toDraftChannel(label) {
   const key = typeof normalizeChannel === 'function' ? normalizeChannel(label) : String(label || '').toLowerCase();
   if (CHANNELS[key]) return key;
-  const fallback = { 电销: 'sms', im: 'inbox', bot: 'telegram', call: 'sms' };
+  const fallback = { im: 'viber' };
   return fallback[key] || 'sms';
 }
 
@@ -221,14 +492,17 @@ function audienceTagsFromRecord(t) {
 
 function ensureProductLineOption(value) {
   const sel = document.getElementById('ntProductLine');
-  if (!sel || !value) return;
-  if (![...sel.options].some(o => o.value === value)) {
+  if (!sel) return;
+  const site = rhSiteOf(value);
+  if (!site) { sel.value = ''; return; }
+  if (![...sel.options].some(o => o.value === site)) {
+    const pl = V2_PRODUCT_LINES.find(p => p.siteId === site);
     const opt = document.createElement('option');
-    opt.value = value;
-    opt.textContent = value;
+    opt.value = site;
+    opt.textContent = pl ? `${pl.name}${pl.status !== '启用' ? '（已下线）' : ''}` : `未知产品线（${value}）`;
     sel.appendChild(opt);
   }
-  sel.value = value;
+  sel.value = site;
 }
 
 function ensureActivityOption(id, name) {
@@ -274,10 +548,15 @@ function openTaskEdit(task, mode = 'edit') {
   });
   draft = {
     name: task.name || '',
-    productLine: task.productLine || '',
+    productLine: rhSiteOf(task.site || task.productLine || ''),
     activityId: task.activityId || '',
     activityName: task.activityName || activityById(task.activityId)?.name || '',
-    taskType: (task.taskType === 'API' || task.taskType === '系统调用' || task.taskType === 'system') ? 'system' : 'manual',
+    taskType: (task.source === 'API' || task.taskType === 'API' || task.taskType === '系统调用' || task.taskType === 'system') ? 'system' : 'manual',
+    source: (task.source === 'API' || task.taskType === 'API' || task.taskType === '系统调用' || task.taskType === 'system') ? 'API' : '手动',
+    category: task.category || '营销',
+    reserve: task.reserve ? Object.fromEntries(channels.filter(c => c === 'sms').map(c => [c, true])) : {},
+    emailCheck: task.emailCheck || null,
+    emailFooter: task.emailCheck?.footerVersion || '',
     taskCode: task.taskCode || '',
     resendFilter: null,
     audienceTags: audienceTagsFromRecord(task),
@@ -294,9 +573,6 @@ function openTaskEdit(task, mode = 'edit') {
   ensureActivityOption(draft.activityId, draft.activityName);
   const codeEl = document.getElementById('ntTaskCode');
   if (codeEl) codeEl.value = draft.taskCode;
-  document.querySelectorAll('input[name="taskType"]').forEach(r => {
-    r.checked = r.value === draft.taskType;
-  });
   setTaskDrawerMode(mode);
   closePanel();
   syncTaskTypeUi();
@@ -373,6 +649,12 @@ function bindApprovalQueueActions() {
   });
 }
 
+/* 预计完成（PRD 6.6.2）：HH:mm ± 区间；估算标记 hover 说明原因。运营可见，不展示排队位置 */
+function homeEtaHtml(t) {
+  if (!t.estFinish) return '-';
+  return `${t.estFinish}<span class="v2-pm">±${t.estRange || 1} 分</span>${t.estimated ? `<span class="v2-est" title="${esc(t.estimated)}">估算</span>` : ''}`;
+}
+
 function renderRunningTasksTable() {
   const body = document.getElementById('runningTaskBody');
   const hint = document.querySelector('.home-sections .card:last-of-type .home-section-hint b');
@@ -386,6 +668,7 @@ function renderRunningTasksTable() {
         <span class="progress"><span class="progress-inner" style="width:${t.progress}%"></span></span>
         <span class="pct">${t.progress}%</span>
       </td>
+      <td>${homeEtaHtml(t)}</td>
     </tr>
   `).join('');
   if (hint) hint.textContent = String(RUNNING_TASKS.length);
@@ -443,12 +726,12 @@ function openHomeTaskDetail(id, kind) {
 
   title.textContent = isApproval ? '审批单详情' : '任务详情';
 
+  /* 两维状态（4.4.4）：待审批的任务 = 待发送 + 「待审批」辅助文案；「发送中 / 已启用」合并为发送中 */
   const statusTag = isApproval
-    ? '<span class="tag tag-orange">审核中</span>'
-    : (() => {
-        const st = taskStatusDisplay(item);
-        return `<span class="tag ${st.cls}">${st.label}</span>`;
-      })();
+    ? `${v2Tag(V2_TASK_STATUS, 'pending')} <span class="v2-hint">待审批</span>`
+    : v2Tag(V2_TASK_STATUS, item.status === 'running' ? 'sending' : item.status);
+  const source = item.source || (isSystemTaskType(item.taskType) ? 'API' : '手动');
+  const site = rhSiteOf(item.site || item.productLine || '');
   const approvalTag = isApproval
     ? '<span class="tag tag-orange">待审批</span>'
     : '<span class="tag tag-success">已通过</span>';
@@ -484,6 +767,7 @@ function openHomeTaskDetail(id, kind) {
         <div class="desc-item"><span class="desc-label">创建人</span><span>${item.creator}</span></div>
         <div class="desc-item"><span class="desc-label">创建时间</span><span>${isApproval ? item.appliedAt : item.createdAt}</span></div>
         <div class="desc-item"><span class="desc-label">任务状态</span><span>${statusTag}</span></div>
+        ${isApproval ? '' : `<div class="desc-item"><span class="desc-label desc-label-with-tip">预计完成${tipIcon('按当前通道吞吐推算，供参考；通道繁忙或供应商波动时会变化')}</span><span>${homeEtaHtml(item)}</span></div>`}
         <div class="desc-item"><span class="desc-label">审批状态</span><span>${approvalTag}</span></div>
         <div class="desc-item"><span class="desc-label">审批人</span><span>${isApproval ? '-' : hfmt(item.approver)}</span></div>
         <div class="desc-item"><span class="desc-label">审批时间</span><span>${isApproval ? '-' : hfmt(item.approvedAt)}</span></div>
@@ -493,7 +777,9 @@ function openHomeTaskDetail(id, kind) {
       <h4 class="card-title">配置信息</h4>
       <div class="desc-list">
         <div class="desc-item"><span class="desc-label">发送对象</span><span>${hfmt(item.audience)}</span></div>
-        <div class="desc-item"><span class="desc-label">任务类型</span><span>${item.taskType}</span></div>
+        <div class="desc-item"><span class="desc-label">任务类型</span><span>${source === 'API' ? '系统调用' : '手动发送'}${source === 'API' && item.app ? ` · ${esc(item.app)}` : ''}</span></div>
+        ${source === 'API' ? `<div class="desc-item"><span class="desc-label">任务code</span><span>${hfmt(item.taskCode)}</span></div>` : ''}
+        <div class="desc-item"><span class="desc-label">产品线</span><span>${site ? esc(plName(site)) : '-'}</span></div>
         <div class="desc-item"><span class="desc-label">通道配置</span><span><span class="tag tag-primary">${item.channel}</span></span></div>
         <div class="desc-item"><span class="desc-label">发送时机</span><span>${hfmt(item.timing)}</span></div>
         <div class="desc-item"><span class="desc-label">模板名称</span><span>${hfmt(item.template)}</span></div>
@@ -502,11 +788,17 @@ function openHomeTaskDetail(id, kind) {
       </div>
     </section>
     ${execSection}
+    ${item.emailContent ? '<section class="card detail-group"><h4 class="card-title">内容检测结果</h4><div id="homeDetailEmailCheck"></div></section>' : ''}
     </div>`;
+  if (item.emailContent && typeof renderEmailCheck === 'function') {
+    renderEmailCheck(document.getElementById('homeDetailEmailCheck'), {
+      ...ecInputFromContent(item.emailContent, site), readOnly: true, full: true, records: item.emailRecords || [],
+    });
+  }
 
   mountDetailPreview(document.getElementById('homeDetailPreview'), [{
     channel: item.channel,
-    content: item.contentSummary === '-' ? '' : item.contentSummary,
+    content: item.emailContent || (item.contentSummary === '-' ? '' : item.contentSummary),
     fallbackTitle: item.name,
   }]);
 
@@ -654,10 +946,12 @@ function mountContentEditor(container) {
     showSmsConfigMode: !isSystemTask(),
     onChange: () => {
       draft.perChannel[draft.active].content = panelContentEditor.getValue();
+      if (panelEmailCheck && draft.active === 'email') panelEmailCheck.update(rhEmailCheckInput());
       renderPreview();
       renderRows();
     },
   });
+  mountEmailCheckFor(container);
 }
 
 function switchContentChannel(nextChannel, tabsHost, editorHost) {
@@ -741,6 +1035,7 @@ function renderRows() {
   } else {
     cv.innerHTML = `<span class="cfg-summary">${configured.length}/${draft.channels.length} 通道已配置内容</span>`;
   }
+  rhAfterRender();
 }
 
 function renderPreview() {
@@ -756,6 +1051,8 @@ function renderPreview() {
 }
 
 function closePanel() {
+  panelEmailCheck?.destroy();
+  panelEmailCheck = null;
   destroyAudiencePanelWidgets();
   panelContentEditor?.destroy();
   panelContentEditor = null;
@@ -772,6 +1069,7 @@ function openPanel(type) {
   destroyAudiencePanelWidgets();
   panelContentEditor?.destroy();
   panelContentEditor = null;
+  panelEmailCheck = null;
   activePanel = type;
   CFG_ROWS.forEach(id => document.getElementById(id).classList.remove('active'));
 
@@ -988,7 +1286,7 @@ function openPanel(type) {
         </div>
       </div>
       <div class="send-config" id="ntScheduled" ${type0 !== 'scheduled' ? 'hidden' : ''}>
-        <input type="datetime-local" class="input" id="ntDatetime" value="${t.datetime || '2026-07-15T10:00'}">
+        <input type="datetime-local" class="input" id="ntDatetime" value="${t.datetime || rhDefaultDatetime()}">
       </div>
       <div class="panel-actions">
         <button type="button" class="btn btn-outline" id="panelCancel">取消</button>
@@ -1046,7 +1344,7 @@ function createTask() {
   if (!name) { showToast('请输入名称'); return; }
   if (!document.getElementById('ntProductLine').value) { showToast('请选择产品线'); return; }
   syncDraftActivityFromSelect();
-  draft.taskType = document.querySelector('input[name="taskType"]:checked')?.value || 'manual';
+  draft.productLine = rhCurrentSite();
   draft.taskCode = document.getElementById('ntTaskCode')?.value.trim() || '';
   if (isSystemTask() && !draft.taskCode) {
     showToast('请输入任务code');
@@ -1068,21 +1366,49 @@ function createTask() {
     return;
   }
 
-  const channelLabel = CHANNELS[draft.channels[0]]?.label || draft.channels[0];
-  RUNNING_TASKS.unshift({
-    id: `T${Date.now()}`,
-    name,
-    channel: channelLabel,
-    progress: 0,
-    status: 'running',
-    taskType: isSystemTask() ? '系统调用' : '手动发送',
-    activityId: draft.activityId || '',
-    activityName: draft.activityName || '',
+  rhConfirmReserve(() => {
+    const channelLabel = CHANNELS[draft.channels[0]]?.label || draft.channels[0];
+    const emailCheck = rhArchiveEmailCheck();
+    const reserves = rhActiveReserves();
+    RUNNING_TASKS.unshift({
+      id: `T${Date.now()}`,
+      name,
+      channel: channelLabel,
+      progress: 0,
+      status: 'running',
+      taskType: isSystemTask() ? '系统调用' : '手动发送',
+      source: isSystemTask() ? 'API' : '手动',
+      taskCode: isSystemTask() ? draft.taskCode : '',
+      site: draft.productLine,
+      reserve: reserves.length > 0,
+      emailCheck,
+      activityId: draft.activityId || '',
+      activityName: draft.activityName || '',
+    });
+    renderRunningTasksTable();
+    closeDrawer('taskDrawer');
+    showToast(rhSubmitToast('已提交审批', emailCheck, reserves));
   });
+}
 
-  renderRunningTasksTable();
-  closeDrawer('taskDrawer');
-  showToast('已提交审批');
+/* 到点占位：保存时检查目标队列同时段占位，冲突仅提示，可继续保存（6.5.5） */
+function rhConfirmReserve(proceed) {
+  const reserves = rhActiveReserves();
+  const conflicts = reserves.filter(r => r.info.conflict);
+  if (!conflicts.length) { proceed(); return; }
+  v2Modal({
+    title: '到点占位冲突提示',
+    body: conflicts.map(r => `<div class="v2-callout warn"><i data-lucide="alert-triangle"></i><span>${esc(rhConflictText(r.info))}</span></div>`).join('')
+      + reserves.map(r => `<div class="v2-hint">${rhChannelLabel(r.c)}：按当前吞吐预计占用 ${r.info.minutes || '-'} 分钟</div>`).join(''),
+    okText: '继续保存',
+    onOk: () => { setTimeout(proceed); },
+  });
+}
+function rhSubmitToast(prefix, emailCheck, reserves) {
+  const parts = [prefix];
+  if (emailCheck) parts.push(`邮件检测 强提醒 ${emailCheck.counts.strong} · 提醒 ${emailCheck.counts.mid} · 建议 ${emailCheck.counts.tip}，已随任务存档`);
+  if (reserves?.length) parts.push(`到点占位已开启，按当前吞吐预计占用 ${reserves.map(r => r.info.minutes || '-').join(' / ')} 分钟`);
+  return parts.join('；');
 }
 
 function saveEditedTask() {
@@ -1094,6 +1420,14 @@ function saveEditedTask() {
   }
   const t = typeof TASK_RECORDS !== 'undefined' ? TASK_RECORDS.find(x => x.id === editingTaskId) : null;
   if (!t) { showToast('未找到任务'); return; }
+  if (taskDrawerMode === 'change' && !isSystemTask() && !draft.audienceTags.length && !draft.audienceFiles.length) {
+    showToast('请选择人群（星灵标签或上传至少 1 项）');
+    return;
+  }
+  rhConfirmReserve(() => applyEditedTask(t));
+}
+
+function applyEditedTask(t) {
   t.channels = draft.channels.map(c => CHANNELS[c].label);
   t.channelContents = {};
   draft.channels.forEach(c => {
@@ -1111,11 +1445,11 @@ function saveEditedTask() {
   syncDraftActivityFromSelect();
   t.activityId = draft.activityId || '';
   t.activityName = draft.activityName || '';
+  const emailCheck = rhArchiveEmailCheck();
+  const reserves = rhActiveReserves();
+  if (emailCheck) t.emailCheck = emailCheck;
+  if (hasPerm('queue') && draft.channels.some(c => draft.perChannel[c]?.timing?.type === 'scheduled')) t.reserve = reserves.length > 0;
   if (taskDrawerMode === 'change' && !isSystemTask()) {
-    if (!draft.audienceTags.length && !draft.audienceFiles.length) {
-      showToast('请选择人群（星灵标签或上传至少 1 项）');
-      return;
-    }
     const audParts = [];
     if (draft.audienceTags.length) {
       audParts.push(draft.audienceTags.map(id => AUDIENCES.find(a => a.id === id)?.name || id).join(' · '));
@@ -1124,7 +1458,7 @@ function saveEditedTask() {
     t.audience = audParts.join(' ｜ ') || t.audience;
   }
   closeDrawer('taskDrawer');
-  showToast(taskDrawerMode === 'change' ? `任务「${t.name}」已变更` : `任务「${t.name}」已保存`);
+  showToast(rhSubmitToast(taskDrawerMode === 'change' ? `任务「${t.name}」已变更` : `任务「${t.name}」已保存`, emailCheck, reserves));
   if (typeof renderTable === 'function') renderTable();
   if (typeof renderKpis === 'function') renderKpis();
 }
@@ -1155,14 +1489,25 @@ function bindTaskDrawer() {
   });
   document.querySelectorAll('input[name="taskType"]').forEach(r => {
     r.addEventListener('change', () => {
-      if (!draft) return;
+      if (!draft || !r.checked) return;
       draft.taskType = r.value;
+      syncCategoryUi();
       syncTaskTypeUi();
       renderRows();
+      rhAfterRender();
     });
+  });
+  document.getElementById('ntProductLine')?.addEventListener('change', () => {
+    if (!draft) return;
+    draft.productLine = rhCurrentSite();
+    if (panelEmailCheck) panelEmailCheck.update(rhEmailCheckInput());
+    rhAfterRender();
   });
   document.getElementById('createTaskBtn')?.addEventListener('click', submitTaskDrawer);
 }
+
+/* 在 search-select 增强下拉之前完成抽屉 DOM 改造 */
+upgradeTaskDrawerV2();
 
 document.addEventListener('DOMContentLoaded', () => {
   const isReachPage = !!document.getElementById('phoneScreen');

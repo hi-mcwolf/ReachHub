@@ -12,6 +12,20 @@ function tplContentText(t) {
   return c.text || c.body || c.subject || c.title || '';
 }
 
+/* 二期（6.1.2）：产品线取 site id；通道按统一枚举展示（IM 下挂子渠道） */
+const TPL_IM_SUB = ['Viber', 'Messenger', 'WhatsApp'];
+function tplChLabel(c) { return TPL_IM_SUB.includes(c) ? `IM · ${c}` : c; }
+function tplSiteOf(v) {
+  const p = V2_PRODUCT_LINES.find(x => x.siteId === v || x.name === v);
+  return p ? p.siteId : (v || '');
+}
+function tplPlCell(site) {
+  const p = V2_PRODUCT_LINES.find(x => x.siteId === site);
+  if (!p) return `<span title="无法映射的产品线">未知产品线</span>`;
+  return `<span title="site id：${p.siteId} · 业务线 ${p.bl}">${p.name}${p.status !== '启用' ? '（已下线）' : ''}</span>`;
+}
+let tplEmailCheck = null;
+
 function fmtTpl(v) {
   return (v === null || v === undefined || v === '') ? '-' : v;
 }
@@ -258,6 +272,13 @@ let TEMPLATE_RECORDS = [
   },
 ];
 
+TEMPLATE_RECORDS.forEach(t => { t.site = t.site || tplSiteOf(t.bizLine); });
+/* 邮件模板检测存档示例（6.9.2：结果随模板版本存档） */
+(() => {
+  const t = TEMPLATE_RECORDS.find(x => x.id === 'tpl-008');
+  if (t) t.check = { records: [{ action: '已采纳', desc: 'E1-2 主题改写：Happy Birthday, {{user_name}}', by: 'lily@', time: '2026-07-07 11:18' }] };
+})();
+
 /* ---------------- 状态 ---------------- */
 const PAGE_SIZE = 8;
 let currentPage = 1;
@@ -280,7 +301,7 @@ function applyFilters() {
     (!name || t.name.toLowerCase().includes(name)) &&
     (!code || t.code.toLowerCase().includes(code)) &&
     (!channel || t.channel === channel) &&
-    (!biz || t.bizLine === biz) &&
+    (!biz || t.site === biz) &&
     (!creator || t.creator === creator) &&
     (!content || tplContentText(t).toLowerCase().includes(content))
   );
@@ -310,8 +331,8 @@ function renderTable() {
         <tr>
           <td class="cell-muted">${t.code}</td>
           <td class="col-name"><span class="cell-ellipsis" title="${t.name}">${t.name}</span></td>
-          <td>${t.bizLine}</td>
-          <td><span class="tag tag-primary">${t.channel}</span></td>
+          <td>${tplPlCell(t.site)}</td>
+          <td><span class="tag tag-primary">${tplChLabel(t.channel)}</span></td>
           <td class="col-name"><span class="cell-ellipsis" title="${contentText}">${contentText || '-'}</span></td>
           <td>${t.creator}</td>
           <td class="cell-muted">${t.createdAt}</td>
@@ -497,9 +518,12 @@ function mountTplContentEditor(tpl, editable) {
     showSmsConfigMode: false,
     onChange: () => {
       tpl.content = tplContentEditor.getValue();
+      if (tplEmailCheck) tplEmailCheck.update(tplCheckInput(tpl));
       renderTplPreview(tpl);
+      renderTplCheckBadge(tpl);
     },
   });
+  mountTplEmailCheck(tpl, editable);
   if (!editable) {
     host.classList.add('is-readonly');
     const lock = () => {
@@ -509,6 +533,44 @@ function mountTplContentEditor(tpl, editable) {
     lock();
     setTimeout(lock, 400);
   }
+}
+
+/* 6.9.2 邮件模板：编辑时实时检测，保存时全量检测；查看时只读 */
+function tplCheckInput(tpl) {
+  return { ...ecInputFromContent(tpl.content, tpl.site), footerVersion: tpl.check?.footerVersion || '' };
+}
+function mountTplEmailCheck(tpl, editable) {
+  tplEmailCheck?.destroy();
+  tplEmailCheck = null;
+  const section = document.getElementById('sectionCheck');
+  const host = document.getElementById('tplEmailCheck');
+  const isEmail = normalizeChannel(tpl.channel) === 'email';
+  if (section) section.hidden = !isEmail;
+  if (!host || !isEmail || typeof renderEmailCheck !== 'function') { renderTplCheckBadge(tpl); return; }
+  tplEmailCheck = renderEmailCheck(host, {
+    ...tplCheckInput(tpl),
+    readOnly: !editable,
+    full: !editable,
+    records: tpl.check?.records || [],
+    onApply: (field, value) => {
+      const v = tplContentEditor.getValue();
+      if (field === 'subject') v.subject = value; else v.body = value;
+      tplContentEditor.setValue(v);
+      tpl.content = tplContentEditor.getValue();
+      tpl.check = tplEmailCheck.getResult();
+      renderTplPreview(tpl);
+      renderTplCheckBadge(tpl);
+    },
+    onIgnore: res => { tpl.check = res; },
+    onFooterChange: () => { tpl.check = tplEmailCheck.getResult(); },
+  });
+  renderTplCheckBadge(tpl);
+}
+function renderTplCheckBadge(tpl) {
+  const host = document.getElementById('tplCheckBadge');
+  if (!host) return;
+  const isEmail = normalizeChannel(tpl.channel) === 'email';
+  host.innerHTML = isEmail && drawerMode !== 'view' && typeof ecAnalyze === 'function' ? ecBadgeHtml(ecAnalyze(tplCheckInput(tpl)).counts) : '';
 }
 
 function renderDrawerBody(tpl, mode) {
@@ -521,15 +583,16 @@ function renderDrawerBody(tpl, mode) {
       <div class="field"><span class="field-label">模板名称</span><input class="input" id="fTplName" value="${tpl.name}"></div>
       <div class="field"><span class="field-label">产品线</span>
         <select class="select" id="fTplBiz">
-          ${['BingoPlus','ArenaPlus','BP-VIP'].map(b =>
-            `<option${b === tpl.bizLine ? ' selected' : ''}>${b}</option>`).join('')}
+          ${V2_PRODUCT_LINES.filter(p => p.status === '启用' || p.siteId === tpl.site).map(p =>
+            `<option value="${p.siteId}"${p.siteId === tpl.site ? ' selected' : ''}>${p.name}</option>`).join('')}
         </select>
+        <div class="v2-hint nt-pl-meta" id="fTplBizMeta"></div>
       </div>
       <div class="field">
         <span class="field-label">通道</span>
         <div class="radio-group" id="fTplChannel">
           ${TPL_CHANNELS.map(c => `
-            <label><input type="radio" name="tplChannel" value="${c}" ${c === tpl.channel ? 'checked' : ''} ${channelDisabled ? 'disabled' : ''}>${c}</label>
+            <label><input type="radio" name="tplChannel" value="${c}" ${c === tpl.channel ? 'checked' : ''} ${channelDisabled ? 'disabled' : ''}>${tplChLabel(c)}</label>
           `).join('')}
         </div>
       </div>`;
@@ -538,8 +601,8 @@ function renderDrawerBody(tpl, mode) {
       <div class="desc-list">
         <div class="desc-item"><span class="desc-label">模板名称</span><span>${tpl.name}</span></div>
         <div class="desc-item"><span class="desc-label">模板ID</span><span>${tpl.code}</span></div>
-        <div class="desc-item"><span class="desc-label">通道</span><span><span class="tag tag-primary">${tpl.channel}</span></span></div>
-        <div class="desc-item"><span class="desc-label">产品线</span><span>${tpl.bizLine}</span></div>
+        <div class="desc-item"><span class="desc-label">通道</span><span><span class="tag tag-primary">${tplChLabel(tpl.channel)}</span></span></div>
+        <div class="desc-item"><span class="desc-label">产品线</span><span>${tplPlCell(tpl.site)}</span></div>
         <div class="desc-item"><span class="desc-label">创建人 / 更新时间</span><span>${tpl.creator} · ${tpl.updatedAt}</span></div>
       </div>`;
   }
@@ -552,7 +615,25 @@ function renderDrawerBody(tpl, mode) {
       <h4 class="card-title">模板内容</h4>
       <div id="tplContentEditor"></div>
     </section>
+    <section class="card detail-group" id="sectionCheck" hidden>
+      <h4 class="card-title">内容检测</h4>
+      <div id="tplEmailCheck"></div>
+    </section>
   `;
+  const bizSel = document.getElementById('fTplBiz');
+  const syncBizMeta = () => {
+    const p = V2_PRODUCT_LINES.find(x => x.siteId === bizSel?.value);
+    const meta = document.getElementById('fTplBizMeta');
+    if (meta) meta.innerHTML = p ? `site id：${p.siteId}<span class="tag tag-info">业务线 ${p.bl}</span>` : '';
+  };
+  if (bizSel) {
+    syncBizMeta();
+    bizSel.addEventListener('change', () => {
+      tpl.site = bizSel.value;
+      syncBizMeta();
+      if (tplEmailCheck) tplEmailCheck.update(tplCheckInput(tpl));
+    });
+  }
 
   if (editable && mode === 'create') {
     document.querySelectorAll('input[name="tplChannel"]').forEach(r => {
@@ -574,7 +655,7 @@ function renderDrawerBody(tpl, mode) {
 function newTemplateDraft() {
   return {
     id: null, name: '', code: '', channel: 'SMS', langs: '中文',
-    bizLine: 'BingoPlus', creator: 'marvin@',
+    bizLine: 'BingoPlus', site: 'bingoplus', creator: 'marvin@',
     createdAt: '', updatedAt: '', updatedBy: 'marvin@',
     content: defaultContentValue('SMS'),
   };
@@ -587,6 +668,7 @@ function renderDrawerFooter(mode) {
   } else {
     footer.innerHTML = `
       <button class="btn btn-outline" data-close>取消</button>
+      <span id="tplCheckBadge"></span>
       <button class="btn btn-primary" id="footerSaveBtn">提交</button>`;
     footer.querySelector('#footerSaveBtn').addEventListener('click', saveTemplate);
   }
@@ -597,7 +679,8 @@ function saveTemplate() {
   const tpl = editDraft;
   const form = document.getElementById('tplDrawerForm');
   tpl.name = form.querySelector('#fTplName')?.value.trim() || tpl.name;
-  tpl.bizLine = form.querySelector('#fTplBiz')?.value || tpl.bizLine;
+  tpl.site = form.querySelector('#fTplBiz')?.value || tpl.site;
+  tpl.bizLine = plName(tpl.site);
   if (drawerMode === 'create') {
     const ch = form.querySelector('input[name="tplChannel"]:checked')?.value;
     if (ch) tpl.channel = ch;
@@ -605,6 +688,14 @@ function saveTemplate() {
   if (tplContentEditor) tpl.content = tplContentEditor.getValue();
   if (!tpl.name) { showToast('请输入模板名称'); return; }
   if (!tpl.code) tpl.code = nextTplCode(tpl.channel);
+  /* 模板保存触发全量检测（6.9.2）：结果与采纳 / 忽略记录随模板版本存档，不阻断保存 */
+  let checkMsg = '';
+  if (normalizeChannel(tpl.channel) === 'email' && typeof ecAnalyze === 'function') {
+    const prev = tplEmailCheck ? tplEmailCheck.getResult() : (tpl.check || {});
+    const res = ecAnalyze(tplCheckInput(tpl), { full: true });
+    tpl.check = { ...res, records: prev.records || [], ignored: !!prev.ignored, footerVersion: res.footer.ver };
+    checkMsg = `；邮件检测 强提醒 ${res.counts.strong} · 提醒 ${res.counts.mid} · 建议 ${res.counts.tip}，已随模板版本存档`;
+  }
 
   const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
   tpl.updatedAt = now;
@@ -615,11 +706,11 @@ function saveTemplate() {
     tpl.createdAt = now;
     tpl.creator = 'marvin@';
     TEMPLATE_RECORDS.unshift(tpl);
-    showToast(`模板「${tpl.name}」已创建`);
+    showToast(`模板「${tpl.name}」已创建${checkMsg}`);
   } else {
     const idx = TEMPLATE_RECORDS.findIndex(x => x.id === tpl.id);
     if (idx >= 0) TEMPLATE_RECORDS[idx] = tpl;
-    showToast(`模板「${tpl.name}」已保存`);
+    showToast(`模板「${tpl.name}」已保存${checkMsg}`);
   }
 
   closeDrawer('tplDrawer');
@@ -640,8 +731,18 @@ function openTplDrawer(mode, id) {
 
   renderDrawerBody(editDraft, mode);
   renderDrawerFooter(mode);
+  renderTplCheckBadge(editDraft);
   openDrawer('tplDrawer');
 }
+
+/* 筛选项改为 site id 产品线（含已下线，用于查历史）与统一通道枚举 */
+(function tplUpgradeFilters() {
+  const biz = document.getElementById('fBiz');
+  if (biz) biz.innerHTML = '<option value="">全部产品线</option>' + V2_PRODUCT_LINES
+    .map(p => `<option value="${p.siteId}">${p.name}${p.status !== '启用' ? '（已下线）' : ''}</option>`).join('');
+  const ch = document.getElementById('fChannel');
+  if (ch) ch.innerHTML = '<option value="">全部</option>' + TPL_CHANNELS.map(c => `<option value="${c}">${tplChLabel(c)}</option>`).join('');
+})();
 
 /* ---------------- 初始化 ---------------- */
 document.addEventListener('DOMContentLoaded', () => {

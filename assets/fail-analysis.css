@@ -1,0 +1,58 @@
+/* 失败原因分析组件 + 数据统计二期页面共用小样式 */
+.fa-table th, .fa-table td { padding: 9px 10px; }
+.fa-table .fa-exp { border: none; background: none; cursor: pointer; color: var(--text-3); display: inline-flex; padding: 2px; border-radius: 4px; }
+.fa-table .fa-exp:hover { background: var(--bg); color: var(--primary); }
+.fa-table .fa-chev { display: inline-block; width: 14px; height: 14px; line-height: 14px; text-align: center; font-size: 12px; transition: transform .15s; }
+.fa-table tr.open .fa-chev { transform: rotate(90deg); }
+.fa-table .fa-rowlab { font-weight: 500; }
+.fa-table tr.fa-uncls td { color: var(--text-3); background: #FAFAFA; }
+.fa-table tr.fa-uncls .fa-rowlab { font-weight: 400; }
+.fa-table tr.fa-sub > td { background: #F7F8FA; padding: 8px 10px 12px; }
+.fa-table tr.fa-sub:hover { background: transparent; }
+.fa-table tr.fa-total td { font-weight: 600; background: #FAFBFC; }
+.fa-cell { color: var(--primary); text-decoration: none; }
+.fa-cell:hover { text-decoration: underline; }
+.fa-strong { font-weight: 600; }
+.fa-subtable { background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+.fa-subtable th, .fa-subtable td { font-size: 12px; padding: 6px 10px; white-space: nowrap; }
+.fa-subtable code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: #F2F3F5; padding: 1px 5px; border-radius: 3px; }
+.fa-scroll { max-height: 560px; }
+.fa-empty { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 40px 0; color: var(--success); font-size: 14px; }
+.fa-empty .lucide { width: 18px; height: 18px; }
+.fa-filter-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; background: var(--primary-weak); color: var(--primary); border: 1px solid var(--primary-border); border-radius: 12px; padding: 1px 4px 1px 10px; }
+.fa-filter-chip button { border: none; background: none; color: inherit; cursor: pointer; display: inline-flex; padding: 0 2px; }
+.fa-filter-chip button { font-size: 14px; line-height: 1; }
+
+/* 多选下拉（页面内简易组件） */
+.ms { position: relative; display: inline-block; }
+.ms-btn { min-width: 130px; max-width: 220px; height: 32px; border: 1px solid var(--line); border-radius: var(--radius-m); background: #fff; padding: 0 28px 0 10px; text-align: left; font-size: 13px; color: var(--text-1); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; }
+.ms-btn::after { content: ''; position: absolute; right: 10px; top: 12px; border: 4px solid transparent; border-top-color: var(--text-3); }
+.ms-btn:hover, .ms.open .ms-btn { border-color: var(--primary); }
+.ms-btn:disabled { background: #F7F8FA; color: var(--text-3); cursor: not-allowed; }
+.ms-panel { display: none; position: absolute; top: 36px; left: 0; z-index: 50; min-width: 100%; max-height: 280px; overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.1); padding: 6px; }
+.ms.open .ms-panel { display: block; }
+.ms-panel label { display: flex; align-items: center; gap: 8px; padding: 6px 8px; font-size: 13px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.ms-panel label:hover { background: var(--bg); }
+.ms-panel .ms-grp { font-size: 12px; color: var(--text-3); padding: 6px 8px 2px; }
+.ms-panel .ms-sub { padding-left: 22px; }
+
+/* 简易 SVG 图表 */
+.cx-chart { width: 100%; display: block; }
+.cx-chart text { font-size: 11px; fill: var(--text-3); }
+.cx-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--text-2); margin-top: 6px; }
+.cx-legend i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+.cx-bars { display: flex; flex-direction: column; gap: 8px; }
+.cx-bar { display: grid; grid-template-columns: 150px minmax(0,1fr) 120px; gap: 10px; align-items: center; font-size: 13px; padding: 2px 6px; border-radius: 6px; }
+.cx-bar.click { cursor: pointer; }
+.cx-bar.click:hover { background: var(--bg); }
+.cx-bar.active { background: var(--primary-weak); }
+.cx-bar .lab { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cx-bar .trk { height: 12px; border-radius: 6px; background: #F2F3F5; overflow: hidden; }
+.cx-bar .trk i { display: block; height: 100%; border-radius: 6px; background: var(--primary); }
+.cx-bar .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-1); }
+.cx-bar.bad .trk i { background: var(--danger); }
+.cx-bar.gray .trk i { background: #C9CDD4; }
+.text-danger { color: var(--danger); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.table td.v2-num { text-align: right; }

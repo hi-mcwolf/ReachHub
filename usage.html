@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>月度 / 人员用量 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/usage.css?v=202611131703">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main">
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title" id="usTitle">月度用量</h1>
+              <p class="page-desc">按产品线出各通道、各供应商的发送量与计费条数，供成本分摊与预算；本期只出量，不出金额</p>
+            </div>
+            <div class="stats-header-actions">
+              <span class="update-time" id="usScopeHint"></span>
+            </div>
+          </div>
+
+          <section class="card v2-tabs-card us-tabs-card">
+            <div class="tabs" id="usTabs">
+              <button class="tab" data-tab="usage">月度用量</button>
+              <button class="tab" data-tab="people">人员用量</button>
+            </div>
+          </section>
+
+          <!-- 月度用量分摊表（6.2.2） -->
+          <section data-uspane="usage" hidden>
+            <div class="card filter-card">
+              <div class="filter-row">
+                <div class="filter-item"><span class="filter-label">月份</span><select class="select" id="uMonth"></select></div>
+                <div class="filter-item"><span class="filter-label">业务线</span><select class="select" id="uBl"></select></div>
+                <div class="filter-item"><span class="filter-label">产品线</span><div id="uSite"></div></div>
+                <div class="filter-item"><span class="filter-label">通道</span><div id="uCh"></div></div>
+                <div class="filter-item"><span class="filter-label">供应商</span><div id="uVendor"></div></div>
+                <div class="filter-item"><span class="filter-label">消息类别</span><div id="uCat"></div></div>
+                <div class="filter-item"><span class="filter-label">任务来源 / 接入方</span><select class="select" id="uSrc"></select></div>
+              </div>
+              <div class="filter-row us-row2">
+                <div class="filter-item"><span class="filter-label">行维度</span><select class="select" id="uRowDim"></select></div>
+                <div class="filter-item"><span class="filter-label">列维度</span><select class="select" id="uColDim"></select></div>
+                <div class="filter-item"><span class="filter-label">指标</span><select class="select" id="uMetric"></select></div>
+                <div class="filter-actions">
+                  <button class="btn btn-primary" id="uQuery"><i data-lucide="search"></i>查询</button>
+                  <button class="btn btn-outline" id="uReset"><i data-lucide="rotate-ccw"></i>重置</button>
+                  <button class="btn btn-outline" id="uExport"><i data-lucide="download"></i>导出</button>
+                </div>
+              </div>
+            </div>
+            <div class="us-kpis" id="uKpis"></div>
+            <div class="card table-card">
+              <div class="table-card-head v2-flex-between">
+                <div class="card-title v2-flex" id="uTableTitle">月度用量分摊表</div>
+                <div class="v2-flex"><span class="v2-hint" id="uAsOf"></span>
+                  <button class="btn btn-outline btn-sm" id="uExpandAll">全部展开</button>
+                  <button class="btn btn-outline btn-sm" id="uCollapseAll">全部收起</button></div>
+              </div>
+              <div class="table-scroll us-scroll"><table class="table stats-table us-pivot" id="uTable"></table></div>
+              <div class="v2-hint us-foot-hint">点单元格下钻到发送记录；行可逐级展开（产品线 → 供应商 → 账号 → Sender ID / 发件人）</div>
+            </div>
+          </section>
+
+          <!-- 人员用量表（6.2.3） -->
+          <section data-uspane="people" hidden>
+            <div class="card filter-card">
+              <div class="filter-row">
+                <div class="filter-item"><span class="filter-label">月份</span><select class="select" id="pMonth"></select></div>
+                <div class="filter-item"><span class="filter-label">业务线 / 产品线</span><div id="pSite"></div></div>
+                <div class="filter-item"><span class="filter-label">通道</span><div id="pCh"></div></div>
+                <div class="filter-item"><span class="filter-label">人员</span><input class="input us-w160" id="pPerson" placeholder="输入账号"></div>
+                <div class="filter-item"><span class="filter-label">人员类型</span><select class="select" id="pType"></select></div>
+                <div class="filter-item"><span class="filter-label">指标</span><select class="select" id="pMetric"></select></div>
+                <div class="filter-actions">
+                  <button class="btn btn-primary" id="pQuery"><i data-lucide="search"></i>查询</button>
+                  <button class="btn btn-outline" id="pReset"><i data-lucide="rotate-ccw"></i>重置</button>
+                  <button class="btn btn-outline" id="pExport"><i data-lucide="download"></i>导出</button>
+                </div>
+              </div>
+            </div>
+            <div class="card table-card">
+              <div class="table-card-head v2-flex-between">
+                <div class="card-title v2-flex" id="pTableTitle">人员用量表</div>
+                <span class="v2-hint" id="pAsOf"></span>
+              </div>
+              <div class="table-scroll us-scroll"><table class="table stats-table" id="pTable"></table></div>
+              <div class="v2-hint us-foot-hint">点人员下钻到该人该月的任务列表；与月度用量分摊表同一事实表、同一归月与剔除规则，两表合计相等</div>
+            </div>
+          </section>
+
+          <!-- 报表订阅（6.2.4） -->
+          <section data-uspane="subscribe" hidden>
+            <div class="card table-card">
+              <div class="table-card-head v2-flex-between">
+                <div class="card-title">报表订阅</div>
+                <button class="btn btn-primary" id="sNew"><i data-lucide="plus"></i>新建订阅</button>
+              </div>
+              <div class="v2-callout us-mb12"><i data-lucide="calendar-clock"></i><span>每月按订阅生成上月「月度用量分摊表（产品线 × 通道 × 供应商）」与「人员用量表」Excel，推送到 Lark 接收人 / 群，并附报表页链接；推送失败重试 3 次，仍失败通知管理员。</span></div>
+              <div class="table-scroll"><table class="table stats-table" id="sTable"></table></div>
+            </div>
+          </section>
+
+          <!-- 预算额度提醒（6.2.5，P1） -->
+          <section data-uspane="quota" hidden>
+            <div class="card table-card">
+              <div class="table-card-head v2-flex-between">
+                <div class="card-title v2-flex">额度设置 <span class="tag tag-gray-outline">P1</span></div>
+                <button class="btn btn-primary" id="qNew"><i data-lucide="plus"></i>新建额度</button>
+              </div>
+              <div class="v2-callout us-mb12"><i data-lucide="bell-ring"></i><span>每日 T+1 跑批比对当月用量（与月度用量分摊表同口径，不含测试消息），达阈值各提醒一次（Lark）；超额不拦截，新建任务时表单顶部提示。</span></div>
+              <div class="table-scroll"><table class="table stats-table" id="qTable"></table></div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下钻抽屉 -->
+  <div class="drawer-root" id="usDrillDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-xl">
+      <header class="drawer-header"><h3 id="usDrillTitle">下钻</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button></header>
+      <div class="drawer-body" id="usDrillBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>关闭</button>
+        <a class="btn btn-primary" id="usDrillLink" href="#">前往</a>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- 推送记录抽屉 -->
+  <div class="drawer-root" id="usHistDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-md">
+      <header class="drawer-header"><h3 id="usHistTitle">推送记录</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button></header>
+      <div class="drawer-body" id="usHistBody"></div>
+      <footer class="drawer-footer"><button class="btn btn-outline" data-close>关闭</button></footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/usage.js?v=202611131703"></script>
+</body>
+</html>

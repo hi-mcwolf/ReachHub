@@ -1,0 +1,30 @@
+/* 通道日报与告警 */
+.cd-tabs .tab { display: inline-flex; align-items: center; gap: 6px; padding: 12px 16px; }
+.cd-p1 { font-size: 11px; line-height: 16px; padding: 0 5px; }
+.cd-scope-line { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font-size: 13px; color: var(--text-2); }
+.cd-cards { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cd-cards .kpi-card { padding: 14px 16px; }
+.cd-cards .kpi-value { font-size: 22px; }
+.cd-card-bad { border-color: #F8C4C6; background: #FFF7F7; }
+.cd-charts .chart-card { min-width: 0; }
+.cd-th { cursor: pointer; user-select: none; }
+.cd-th:hover { color: var(--primary); }
+.cd-arrow { margin-left: 3px; font-size: 11px; color: var(--text-3); }
+.cd-top { white-space: normal !important; min-width: 190px; max-width: 230px; line-height: 1.5; }
+.cd-warn { background: #FFF3D6; color: #C76A00; border-radius: 3px; padding: 1px 5px; }
+#cdTable td, #cdTable th { padding: 10px 10px; }
+#cdTable th:last-child, #cdTable td:last-child { position: sticky; right: 0; background: #fff; box-shadow: -6px 0 6px -6px rgba(0,0,0,.15); }
+#cdTable tr.v2-row-hi td:last-child { background: #F3F0FF; }
+.cd-off td { color: var(--text-3); }
+.cd-st { font-size: 12px; color: var(--text-2); margin-left: 4px; vertical-align: middle; }
+.cd-rule-form { grid-template-columns: 100px minmax(0, 1fr); }
+.cd-target { display: flex; flex-direction: column; gap: 8px; background: #F7F8FA; border-radius: 6px; padding: 10px 12px; }
+.cd-mini { font-size: 12px; color: var(--text-3); min-width: 52px; }
+.cd-wrap { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.cd-chk { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.cd-lark { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.cd-lark-head { background: #E5484D; color: #fff; padding: 10px 14px; font-weight: 600; }
+.cd-lark-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+#cdDrill .drawer-body { display: block; }
+#cdTable thead th:last-child { z-index: 2; }
+#rfVendors, #rfAccounts, #rfCats { display: flex; flex-wrap: wrap; gap: 6px 14px; }

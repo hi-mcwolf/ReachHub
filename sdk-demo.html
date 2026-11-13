@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星灵 · 活动管理（H5 SDK 演示）</title>
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/sdk-demo.css?v=202611131703">
+</head>
+<body>
+  <div class="host-shell">
+    <header class="host-top">
+      <b>星灵 · 活动管理</b>
+      <a href="javascript:void(0)">活动列表</a>
+      <a href="javascript:void(0)">人群</a>
+      <a href="javascript:void(0)">数据看板</a>
+      <span class="sd-top-right">
+        <a href="index.html" class="sd-back"><i data-lucide="arrow-left"></i>返回触达中心</a>
+        <span class="sd-user">ken@</span>
+      </span>
+    </header>
+
+    <div class="host-main">
+      <div class="sd-layout">
+        <div class="sd-col-main">
+          <section class="host-card">
+            <div class="sd-crumb">活动列表 › ACT202607001</div>
+            <div class="v2-flex-between">
+              <div>
+                <h2 class="sd-act-title">世界杯竞猜预热 <span class="tag tag-success">进行中</span></h2>
+                <div class="sd-act-meta">
+                  <span>活动 ID：ACT202607001</span><span>产品线：BingoPlus</span><span>活动时间：2026-11-10 ~ 2026-12-18</span><span>负责人：ken@</span>
+                </div>
+              </div>
+              <button class="btn btn-primary sd-host-btn" id="hostConfigBtn"><i data-lucide="send"></i>配置触达</button>
+            </div>
+            <p class="sd-act-desc">竞猜开放前 3 天向活跃用户预热，赛前 2 小时开赛提醒；竞猜结束后发放奖励通知。</p>
+          </section>
+
+          <section class="host-card">
+            <div class="sd-host-h">触达任务 <span class="v2-hint">renderStatus · activity_id = ACT202607001</span></div>
+            <div class="sdk-frame" data-label="触达 H5 SDK（iframe）· 任务状态卡片"><div id="sdkStatus"></div></div>
+          </section>
+
+          <section class="host-card">
+            <div class="sd-host-h">全部触达任务 <span class="tag tag-gray-outline">P1</span> <span class="v2-hint">任务列表组件 · 本接入方（星灵）创建的任务</span></div>
+            <div class="sdk-frame" data-label="触达 H5 SDK（iframe）· 任务列表"><div id="sdkList"></div></div>
+          </section>
+        </div>
+
+        <aside class="sd-col-side">
+          <section class="host-card">
+            <div class="sd-host-h">SDK 初始化参数</div>
+            <div class="sd-params">
+              <label>上游系统</label><select class="select select-sm" id="pUpstream"><option value="xl">星灵（xl_01）</option><option value="mms">MMS（mms_01）</option><option value="oms">OMS · 风控（oms_rc）</option></select>
+              <label>SSO 用户</label><span>ken@</span>
+              <label>site id</label><span id="pSiteTxt">-</span><select class="select select-sm" id="pSite" hidden></select>
+              <label>activity_id</label><span id="pActTxt">-</span>
+              <label>语言</label><span>zh</span>
+              <label>审批方式</label><select class="select select-sm" id="pApproval"><option>模板免审</option><option>逐任务审批</option></select>
+              <label>AppId 状态</label><select class="select select-sm" id="pAppStatus"><option>启用</option><option>停用</option></select>
+            </div>
+            <div class="v2-flex" style="margin-top:10px">
+              <button class="btn btn-outline btn-sm" id="pReinit"><i data-lucide="rotate-cw"></i>重新 init</button>
+              <button class="btn btn-outline btn-sm" id="pTick"><i data-lucide="timer"></i>模拟 30 秒轮询</button>
+            </div>
+            <p class="v2-hint" style="margin-top:8px">切换上游系统模拟不同传参：星灵不传产品线 / 活动（弹窗内选）；MMS 传 activity_id（产品线由活动带出）；OMS 其他系统传 site id。传入的字段在弹窗内自动补全、只读。审批方式 / AppId 状态为演示参数。</p>
+          </section>
+          <section class="host-card">
+            <div class="v2-flex-between"><div class="sd-host-h" style="margin:0">SDK 事件日志</div><button class="link-btn" id="logClear">清空</button></div>
+            <div class="sdk-event-log" id="sdkLog"></div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- SDK · 配置弹窗：iframe 加载触达 sdk-config.html（复用新建任务弹出层） -->
+  <div class="sd-cfg-overlay" id="sdCfgOverlay" hidden><iframe id="sdCfgFrame" title="触达 H5 SDK · 配置弹窗"></iframe></div>
+  <!-- 旧版 SDK 配置抽屉（已由 iframe 版替代，保留代码不展示） -->
+  <div class="drawer-root" id="sdkConfigDrawer">
+    <div class="drawer-mask" data-sd-close></div>
+    <aside class="drawer drawer-lg sd-drawer">
+      <div class="sdk-frame sd-drawer-frame" data-label="触达 H5 SDK（iframe）· 配置弹窗">
+        <header class="drawer-header">
+          <h3>触达配置</h3>
+          <button class="icon-btn" data-sd-close aria-label="关闭"><i data-lucide="x"></i></button>
+        </header>
+        <div class="drawer-body" id="sdCfgBody"></div>
+        <footer class="drawer-footer">
+          <span class="sd-foot-flag" id="sdStrongFlag"></span>
+          <button class="btn btn-outline" data-sd-close>取消</button>
+          <button class="btn btn-outline" id="sdSaveTpl">保存为模板</button>
+          <button class="btn btn-primary" id="sdSubmit">确认提交</button>
+        </footer>
+      </div>
+    </aside>
+  </div>
+
+  <!-- SDK · 任务详情抽屉（只读） -->
+  <div class="drawer-root" id="sdkDetailDrawer">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-lg sd-drawer">
+      <div class="sdk-frame sd-drawer-frame" data-label="触达 H5 SDK（iframe）· 任务详情">
+        <header class="drawer-header">
+          <h3>任务详情</h3>
+          <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+        </header>
+        <div class="drawer-body drawer-body--gray" id="sdDetailBody"></div>
+        <footer class="drawer-footer"><button class="btn btn-outline" data-close>关闭</button></footer>
+      </div>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/sdk-demo.js?v=202611131703"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+/* 接入方管理（apps.html）页面专属样式 */
+.ap-msel { position: relative; }
+.ap-msel-btn { min-width: 120px; text-align: left; }
+.ap-msel-pop { position: absolute; top: 36px; left: 0; z-index: 20; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-m); box-shadow: 0 6px 20px rgba(0,0,0,.08); padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 120px; }
+.ap-msel-pop label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+
+.ap-chk-row { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.ap-chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-1); cursor: pointer; }
+.ap-cascade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--radius-m); }
+.ap-cas-col { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+.ap-cas-col + .ap-cas-col { border-left: 1px solid var(--line); }
+.ap-cas-head { font-weight: 600; padding-bottom: 6px; border-bottom: 1px dashed var(--line); }
+.ap-form { grid-template-columns: 150px minmax(0, 1fr); }
+.ap-form > label { align-self: start; padding-top: 6px; }
+.ap-secret { background: #F7F8FA; border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; font-size: 13px; word-break: break-all; }
+
+.ap-api-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-bottom: 16px; }
+.ap-api-grid .card + .card { margin-top: 0; }
+.ap-presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 14px; }
+.ap-dbg-form { grid-template-columns: 120px minmax(0, 1fr); gap: 10px 12px; }
+.ap-dbg-form > label { align-self: start; padding-top: 6px; }
+.ap-dbg-form .seg-group { width: max-content; }
+.ap-dbg-form .textarea { min-height: 64px; }
+.ap-dbg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.ap-h4 { font-size: 13px; font-weight: 600; margin: 16px 0 8px; }
+.ap-doc-table td { white-space: normal; vertical-align: top; }
+#docTabs { margin-bottom: 12px; }
+
+.ap-quota-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.ap-quota-grid .card + .card { margin-top: 0; }
+.ap-quota-card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.ap-quota-card.is-off { opacity: .6; }
+.ap-quota-num { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ap-quota-num span { font-size: 13px; color: var(--text-3); font-weight: 400; }
+.ap-quota-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-3); }
+.ap-reason { white-space: normal !important; max-width: 320px; }
+#appsMain .v2-tabs-card { margin-bottom: 16px; }
+.ap-apps-table td:nth-child(4), .ap-apps-table td:nth-child(5), .ap-apps-table td:nth-child(6) { white-space: normal; min-width: 70px; }
+.ap-apps-table td:last-child { white-space: nowrap; }
+.ap-apps-table .v2-util { flex-direction: column; align-items: flex-end; gap: 4px; }
+.ap-apps-table .link-btn { margin-right: 6px !important; }
+.ap-reason { min-width: 240px; }

@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>发送记录 · 触达 · Digiplus</title>
-  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/task-records-v2.css?v=202611131703">
 </head>
 <body>
   <div class="app-layout">
@@ -18,7 +20,7 @@
           <div class="stats-header">
             <div>
               <h1 class="page-title">发送记录</h1>
-              <p class="page-desc">查看每一次发送结果、通道状态、回执和失败原因</p>
+              <p class="page-desc">查看每条消息的消息状态、失败分类、原始码与最终供应商</p>
             </div>
             <div class="stats-header-actions">
               <span class="update-time" id="updateTime">2026-07-13 02:30 更新</span>
@@ -70,44 +72,42 @@
                 <span class="filter-label">通道</span>
                 <select class="select" id="fChannel">
                   <option value="">全部</option><option>SMS</option><option>邮件</option><option>Push</option>
-                  <option>Inbox</option><option>IM</option><option>Bot</option>
-                  <option>Viber</option><option>Messenger</option><option>WhatsApp</option><option>电销</option>
+                  <option>站内信</option><option>IM</option>
                 </select>
               </div>
               <div class="filter-item">
                 <span class="filter-label">任务类型</span>
-                <select class="select" id="fType">
-                  <option value="">全部</option><option>系统调用</option><option>手动发送</option>
+                <select class="select" id="fSource">
+                  <option value="">全部</option><option value="手动">手动发送</option><option value="API">系统调用</option>
                 </select>
               </div>
               <div class="filter-item">
-                <span class="filter-label">发送状态</span>
-                <select class="select" id="fStatus">
-                  <option value="">全部</option><option value="pending">待发送</option><option value="sent">已发送</option>
-                  <option value="delivered">送达成功</option><option value="failed">发送失败</option>
-                  <option value="receipt-failed">回执失败</option><option value="cancelled">已取消</option>
-                  <option value="viewed">查看</option><option value="clicked">点击</option>
+                <span class="filter-label">消息类别</span>
+                <select class="select" id="fCategory">
+                  <option value="">全部</option><option>OTP 事务</option><option>营销</option><option>通知</option>
                 </select>
               </div>
               <div class="filter-item">
-                <span class="filter-label">任务来源</span>
-                <select class="select" id="fParty">
-                  <option value="">全部来源</option><option>自营平台</option><option>渠道 A</option><option>渠道 B</option>
+                <span class="filter-label">消息状态</span>
+                <select class="select" id="fStatus"></select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">失败分类</span>
+                <select class="select" id="fCat"></select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">首发 / 重试</span>
+                <select class="select" id="fAttempt">
+                  <option value="">全部</option><option>首发</option><option>重试</option>
                 </select>
               </div>
               <div class="filter-item">
-                <span class="filter-label">供应商</span>
-                <select class="select" id="fVendor">
-                  <option value="">全部供应商</option><option>供应商 A</option><option>供应商 B</option>
-                  <option>SendCloud</option><option>Mailgun</option><option>APNs/FCM</option>
-                </select>
+                <span class="filter-label">最终供应商</span>
+                <select class="select" id="fVendor"></select>
               </div>
               <div class="filter-item">
-                <span class="filter-label">账号/Sender</span>
-                <select class="select" id="fSender">
-                  <option value="">全部账号</option><option>BPLUS</option><option>marketing@bingoplus.com</option>
-                  <option>BingoPlus App</option><option>@BingoPlusBot</option><option>400 880 1***</option>
-                </select>
+                <span class="filter-label">账号/发送方标识</span>
+                <select class="select" id="fSender"></select>
               </div>
               <div class="filter-item">
                 <span class="filter-label">发送对象</span>
@@ -120,6 +120,8 @@
             </div>
           </section>
 
+          <div class="sr-prefilter" id="srPrefilter" hidden></div>
+
           <!-- 3. 快捷统计区 -->
           <section class="kpi-grid kpi-grid-5" id="kpiGrid"></section>
 
@@ -131,8 +133,9 @@
                 <thead>
                   <tr>
                     <th>记录 ID</th><th>发送时间</th><th>任务 ID</th><th class="col-name">任务名称</th><th>任务code</th><th>发送对象</th>
-                    <th>通道</th><th>供应商</th><th>账号</th><th class="col-name">发送内容</th>
-                    <th>发送状态</th><th>回执 ID</th><th>回执状态</th><th>失败原因</th><th>来源</th>
+                    <th>通道</th><th>最终供应商 / 账号 / 发送方标识</th><th class="col-name">发送内容</th>
+                    <th>消息状态</th><th>失败分类</th><th>原始码</th><th>首发 / 重试</th><th class="v2-num">计费条数</th>
+                    <th>回执 ID</th><th>任务类型</th><th>接入方 / operator</th>
                     <th>活动 ID</th><th class="col-name">活动名称</th>
                     <th class="col-ops">操作</th>
                   </tr>
@@ -167,11 +170,13 @@
   </div>
 
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="assets/common.js"></script>
-  <script src="assets/content-editor.js"></script>
-  <script src="assets/reach-config.js"></script>
-  <script src="assets/search-select.js"></script>
-  <script src="assets/search-multi-select.js"></script>
-  <script src="assets/send-records.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/content-editor.js?v=202611131703"></script>
+  <script src="assets/reach-config.js?v=202611131703"></script>
+  <script src="assets/search-select.js?v=202611131703"></script>
+  <script src="assets/search-multi-select.js?v=202611131703"></script>
+  <script src="assets/task-records-data.js?v=202611131703"></script>
+  <script src="assets/send-records.js?v=202611131703"></script>
 </body>
 </html>

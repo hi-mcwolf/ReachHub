@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>我的审批 · 触达 · Digiplus</title>
-  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/email-check.css?v=202611131703">
 </head>
 <body>
   <div class="app-layout">
@@ -35,6 +37,15 @@
                 </select>
               </div>
               <div class="filter-item">
+                <span class="filter-label">单据类型</span>
+                <select class="select" id="fBizType">
+                  <option value="">全部</option>
+                  <option value="任务">任务</option>
+                  <option value="内容变更">内容变更</option>
+                  <option value="模板">模板</option>
+                </select>
+              </div>
+              <div class="filter-item">
                 <span class="filter-label">审批单名称/ID</span>
                 <input class="input" id="fKeyword" placeholder="输入名称或 ID 搜索">
               </div>
@@ -43,7 +54,7 @@
                 <select class="select" id="fChannel">
                   <option value="">全部</option>
                   <option>SMS</option><option>邮件</option><option>Push</option>
-                  <option>Viber</option><option>Messenger</option><option>WhatsApp</option>
+                  <option value="Viber">IM · Viber</option><option value="Messenger">IM · Messenger</option><option value="WhatsApp">IM · WhatsApp</option><option value="站内信">站内信</option>
                 </select>
               </div>
               <div class="filter-item">
@@ -86,6 +97,7 @@
                   <tr>
                     <th class="col-check"><input type="checkbox" id="checkAll" aria-label="全选"></th>
                     <th>类型</th>
+                    <th>单据类型</th>
                     <th>审批单 ID</th>
                     <th class="col-name">审批单名称</th>
                     <th>通道</th>
@@ -123,10 +135,12 @@
   </div>
 
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="assets/common.js"></script>
-  <script src="assets/content-editor.js"></script>
-  <script src="assets/reach-config.js"></script>
-  <script src="assets/search-select.js"></script>
-  <script src="assets/my-approvals.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/content-editor.js?v=202611131703"></script>
+  <script src="assets/reach-config.js?v=202611131703"></script>
+  <script src="assets/search-select.js?v=202611131703"></script>
+  <script src="assets/email-check.js?v=202611131703"></script>
+  <script src="assets/my-approvals.js?v=202611131703"></script>
 </body>
 </html>

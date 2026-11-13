@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>通道日报 · 触达 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/fail-analysis.css?v=202611131703">
+  <link rel="stylesheet" href="assets/channel-daily.css?v=202611131703">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main">
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">通道日报</h1>
+              <p class="page-desc">按通道、供应商、账号、发送方标识看每日的量与质量</p>
+            </div>
+            <div class="stats-header-actions"><span class="v2-live" id="cdUpdated">2026-07-13 16:35 更新</span></div>
+          </div>
+
+          <section class="card v2-tabs-card" style="margin-bottom:16px">
+            <div class="tabs cd-tabs" id="cdTabs">
+              <button class="tab" data-tab="daily">通道日报</button>
+            </div>
+          </section>
+
+          <!-- ============ 通道日报 ============ -->
+          <div data-cdpane="daily">
+            <section class="card filter-card">
+              <div class="filter-row">
+                <div class="filter-item">
+                  <span class="filter-label">时间</span>
+                  <select class="select" id="cdRange">
+                    <option value="today">今天</option><option value="7d" selected>最近 7 天</option>
+                    <option value="30d">最近 30 天</option><option value="custom">自定义</option>
+                  </select>
+                  <div class="date-range" id="cdDates" hidden>
+                    <input type="date" class="input" id="cdFrom" value="2026-07-01"><span class="date-sep">至</span><input type="date" class="input" id="cdTo" value="2026-07-13">
+                  </div>
+                </div>
+                <div class="filter-item"><span class="filter-label">粒度</span>
+                  <select class="select" id="cdGran"><option value="hour">小时</option><option value="day" selected>日</option><option value="week">周</option><option value="month">月</option></select>
+                </div>
+                <div class="filter-item"><span class="filter-label">通道</span><select class="select" id="cdChannel"></select></div>
+                <div class="filter-item"><span class="filter-label">供应商</span><div id="cdVendor"></div></div>
+                <div class="filter-item"><span class="filter-label">账号</span><div id="cdAccount"></div></div>
+                <div class="filter-item"><span class="filter-label">业务线</span><div id="cdBl"></div></div>
+                <div class="filter-item"><span class="filter-label">消息类别</span><div id="cdCat"></div></div>
+                <div class="filter-item"><span class="filter-label">行维度</span><select class="select" id="cdDim"></select></div>
+                <div class="filter-actions">
+                  <button class="btn btn-primary" id="cdQuery">查询</button>
+                  <button class="btn btn-outline" id="cdReset">重置</button>
+                  <button class="btn btn-outline" id="cdExport"><i data-lucide="download"></i>导出</button>
+                </div>
+              </div>
+            </section>
+
+            <div class="cd-scope-line"><span id="cdScopeText"></span><span class="v2-hint">当日数据分钟级累计；历史日 T+1 定稿；回执窗口内的晚到回执会更新当日与原日数据</span></div>
+            <div class="kpi-grid cd-cards" id="cdCards"></div>
+
+            <div class="chart-grid cd-charts">
+              <section class="card chart-card">
+                <div class="chart-card-head">
+                  <h4 class="card-title" style="margin:0">趋势 <span class="v2-hint" id="cdTrendHint"></span></h4>
+                  <div class="seg-group" id="cdTrendMetric">
+                    <button class="seg-btn active" data-m="del">送达率</button><button class="seg-btn" data-m="acc">受理率</button><button class="seg-btn" data-m="rec">回执率</button>
+                  </div>
+                </div>
+                <div id="cdTrend" style="margin-top:12px"></div>
+              </section>
+              <section class="card chart-card">
+                <div class="chart-card-head">
+                  <h4 class="card-title" style="margin:0">失败分类占比 <span class="v2-hint">点击分类查看失败原因</span></h4>
+                </div>
+                <div id="cdDist" style="margin-top:12px"></div>
+              </section>
+            </div>
+
+            <section class="card table-card">
+              <div class="table-card-head"><h4 class="card-title">明细</h4><span class="v2-hint" style="margin-bottom:12px" id="cdTableHint"></span></div>
+              <div class="table-scroll"><table class="table stats-table" id="cdTable"></table></div>
+            </section>
+          </div>
+
+          <!-- ============ 告警记录 ============ -->
+          <div data-cdpane="alerts" hidden>
+            <section class="card filter-card">
+              <div class="filter-row">
+                <div class="filter-item"><span class="filter-label">触发时间</span>
+                  <select class="select" id="alRange"><option value="today">今天</option><option value="7d" selected>最近 7 天</option><option value="30d">最近 30 天</option></select></div>
+                <div class="filter-item"><span class="filter-label">规则</span><select class="select" id="alRule"></select></div>
+                <div class="filter-item"><span class="filter-label">状态</span>
+                  <select class="select" id="alStatus"><option value="">全部</option><option>未处理</option><option>处理中</option><option>已恢复</option></select></div>
+                <div class="filter-actions"><button class="btn btn-primary" id="alQuery">查询</button><button class="btn btn-outline" id="alReset">重置</button></div>
+              </div>
+            </section>
+            <section class="card table-card">
+              <div class="table-card-head"><h4 class="card-title">告警记录</h4>
+                <span class="v2-hint" style="margin-bottom:12px">指标回到阈值内持续一个窗口后由系统置「已恢复」；未恢复期间同一规则同一对象不重复推送，按补发间隔提醒</span></div>
+              <div class="table-scroll"><table class="table stats-table" id="cdAlertTable"></table></div>
+            </section>
+          </div>
+
+          <!-- ============ 告警规则 ============ -->
+          <div data-cdpane="alert-rules" hidden>
+            <section class="card table-card">
+              <div class="v2-flex-between" style="margin-bottom:12px">
+                <div class="v2-flex"><h4 class="card-title" style="margin:0">告警规则</h4><span class="v2-hint">对象内每个最小单元（账号）分别判定；窗口内消息数低于最小样本不判定</span></div>
+                <button class="btn btn-primary" id="cdNewRule"><i data-lucide="plus"></i>新建规则</button>
+              </div>
+              <div class="table-scroll"><table class="table stats-table" id="cdRuleTable"></table></div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下钻：失败原因分析（复用 6.3.3 组件） -->
+  <div class="drawer-root" id="cdDrill">
+    <div class="drawer-mask" data-close></div>
+    <aside class="drawer drawer-lg">
+      <header class="drawer-header">
+        <h3 id="cdDrillTitle">失败原因分析</h3>
+        <button class="icon-btn" data-close aria-label="关闭"><i data-lucide="x"></i></button>
+      </header>
+      <div class="drawer-body" id="cdDrillBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-close>关闭</button>
+        <a class="btn btn-outline" id="cdDrillToTa" href="task-analysis.html">在任务分析中打开</a>
+        <button class="btn btn-primary" id="cdDrillExport"><i data-lucide="download"></i>导出失败明细</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/fail-analysis.js?v=202611131703"></script>
+  <script src="assets/channel-daily.js?v=202611131703"></script>
+</body>
+</html>

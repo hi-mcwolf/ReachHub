@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>首页 · 触达中心</title>
-  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/styles.css?v=202611131703">
+  <link rel="stylesheet" href="assets/v2.css?v=202611131703">
+  <link rel="stylesheet" href="assets/email-check.css?v=202611131703">
 </head>
 <body>
   <div class="app-layout">
@@ -40,9 +42,6 @@
           </button>
           <button class="app-item" data-channel="whatsapp">
             <span class="app-icon"><i data-lucide="message-circle-more"></i></span><span>WhatsApp</span>
-          </button>
-          <button class="app-item app-item-disabled" data-channel="telegram">
-            <span class="app-icon"><i data-lucide="send"></i></span><span>Telegram</span>
           </button>
           <button class="app-item" data-channel="inbox">
             <span class="app-icon"><i data-lucide="inbox"></i></span><span>站内信</span>
@@ -82,8 +81,8 @@
         </section>
 
         <section class="card">
-          <h4 class="card-title">发送中/已启用任务</h4>
-          <p class="home-section-hint">您当前共有 <b>3</b> 个任务在发送中或已启用</p>
+          <h4 class="card-title">发送中任务</h4>
+          <p class="home-section-hint">您当前共有 <b>3</b> 个任务在发送中</p>
           <table class="table home-mini-table">
             <thead>
               <tr>
@@ -91,6 +90,7 @@
                 <th>任务名称</th>
                 <th>通道</th>
                 <th>进度</th>
+                <th>预计完成</th>
               </tr>
             </thead>
             <tbody id="runningTaskBody"></tbody>
@@ -230,12 +230,14 @@
   </div>
 
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="assets/common.js"></script>
-  <script src="assets/content-editor.js"></script>
-  <script src="assets/reach-config.js"></script>
-  <script src="assets/search-select.js"></script>
-  <script src="assets/strategy-data.js"></script>
-  <script src="assets/search-multi-select.js"></script>
-  <script src="assets/reach.js"></script>
+  <script src="assets/common.js?v=202611131703"></script>
+  <script src="assets/v2-data.js?v=202611131703"></script>
+  <script src="assets/content-editor.js?v=202611131703"></script>
+  <script src="assets/reach-config.js?v=202611131703"></script>
+  <script src="assets/search-select.js?v=202611131703"></script>
+  <script src="assets/strategy-data.js?v=202611131703"></script>
+  <script src="assets/search-multi-select.js?v=202611131703"></script>
+  <script src="assets/email-check.js?v=202611131703"></script>
+  <script src="assets/reach.js?v=202611131703"></script>
 </body>
 </html>

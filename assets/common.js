@@ -7,8 +7,27 @@ const REACH_NAV_ITEMS = [
   { key: 'reach-template', label: '模板管理', icon: 'file-text', href: 'templates.html' },
   { key: 'reach-my-approvals', label: '我的审批', icon: 'clipboard-check', href: 'my-approvals.html' },
   { key: 'reach-strategy', label: '触达策略', icon: 'sliders-horizontal', href: 'strategy.html' },
-  { key: 'reach-stats', label: '数据统计', icon: 'bar-chart-3', href: 'stats.html' },
+  { key: 'reach-stats', label: '数据统计', icon: 'bar-chart-3', children: [
+    { key: 'stats-usage', label: '月度 / 人员用量', href: 'usage.html' },
+    { key: 'stats-task', label: '任务分析', href: 'task-analysis.html' },
+    { key: 'stats-channel', label: '通道日报', href: 'channel-daily.html' },
+  ] },
+  /* 队列管理：仅「队列管理」权限可见，运营整个菜单隐藏（PRD 6.11 节点 9） */
+  { key: 'reach-queue', label: '队列管理', icon: 'list-ordered', perm: 'queue', children: [
+    { key: 'queue-board', label: '通道态势', href: 'queue.html' },
+    { key: 'queue-audit', label: '调度审计日志', href: 'queue.html#audit' },
+  ] },
+  { key: 'reach-admin', label: '系统管理', icon: 'settings', perm: 'admin', children: [
+    { key: 'admin-apps', label: '接入方管理', href: 'apps.html' },
+    { key: 'admin-codes', label: '失败码映射表', href: 'settings.html#codes' },
+    { key: 'admin-footer', label: '邮件 Footer / 退订', href: 'settings.html#footer' },
+    { key: 'admin-rules', label: '检测词库与规则', href: 'settings.html#rules' },
+  ] },
 ];
+
+/* 权限：原型按全权限展示；产品中各功能由角色权限节点控制（PRD 6.11） */
+function demoRole() { return 'admin'; }
+function hasPerm(p) { return true; }
 
 const PRODUCT_LINES = [
   { value: 'BP-VIP', label: 'BP-VIP' },
@@ -69,17 +88,32 @@ function renderSidebar(module, activeKey, activeSubKey) {
   const host = document.getElementById('sidebar');
   if (!host) return;
   host.className = 'sidebar';
-
-  const menuHtml = REACH_NAV_ITEMS.map(item =>
-    `<a class="sb-item${item.key === activeKey ? ' active' : ''}" href="${item.href}">
-      <i data-lucide="${item.icon}"></i>${item.label}
-    </a>`
-  ).join('');
+  const here = (location.pathname.split('/').pop() || 'index.html') + (location.hash || '');
+  const herePage = here.split('#')[0];
+  const isActiveChild = c => (activeSubKey ? c.key === activeSubKey : (c.href === here || (c.href === herePage && !location.hash && !c.href.includes('#'))));
+  const menuHtml = REACH_NAV_ITEMS.filter(item => !item.perm || hasPerm(item.perm)).map(item => {
+    if (!item.children) {
+      return `<a class="sb-item${item.key === activeKey ? ' active' : ''}" href="${item.href}">
+        <i data-lucide="${item.icon}"></i>${item.label}
+      </a>`;
+    }
+    const open = item.key === activeKey || item.children.some(isActiveChild);
+    return `<div class="menu-group${open ? ' open' : ''}">
+      <button class="sb-item${open ? ' active' : ''}" type="button" data-group-toggle>
+        <i data-lucide="${item.icon}"></i>${item.label}<i class="chev" data-lucide="chevron-down"></i>
+      </button>
+      <div class="submenu">${item.children.map(c =>
+        `<a class="sub-item${isActiveChild(c) ? ' active' : ''}" href="${c.href}">${c.label}</a>`).join('')}</div>
+    </div>`;
+  }).join('');
 
   host.innerHTML = `
     <div class="sb-brand"><i data-lucide="layout-grid"></i>Digiplus</div>
     <nav class="sb-menu">${menuHtml}</nav>
   `;
+  host.querySelectorAll('[data-group-toggle]').forEach(b =>
+    b.addEventListener('click', () => b.parentElement.classList.toggle('open')));
+  window.addEventListener('hashchange', () => { renderSidebar(module, activeKey, activeSubKey); refreshIcons(); }, { once: true });
 }
 
 function renderTopbar(activeModule = 'reach') {
@@ -91,7 +125,7 @@ function renderTopbar(activeModule = 'reach') {
       <a class="topbar-item active" href="index.html">触达中心</a>
     </nav>
     <div class="topbar-actions">
-      <button class="btn btn-outline btn-sm" id="sdkBtn" type="button">SDK</button>
+      <a class="btn btn-outline btn-sm" href="sdk-demo.html" title="上游系统（星灵）页面嵌入触达 H5 SDK 的演示">SDK</a>
       <div class="topbar-user"><span class="avatar">M</span>marvin@</div>
     </div>
   `;
