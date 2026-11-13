@@ -49,8 +49,8 @@ const US_PEOPLE = { // 手动任务创建人 / 星灵 operator
 const US_FB_ROUTES = [
   ['星灵', 'SMS', 'BP-01', 'BPGROWTH', '营销', 'marvin@', 'operator', 6500],
   ['星灵', 'Push', 'BP-push', 'BP App', '营销', 'marvin@', 'operator', 2000],
-  ['用户中心', 'SMS', 'BP-02', 'BPGROWTH', '通知', '系统', '系统', 1800],
-  ['用户中心', '站内信', 'BP-inbox', 'BP 站内信', '通知', '系统', '系统', 1500],
+  ['用户中心', 'SMS', 'BP-02', 'BPGROWTH', '营销', '系统', '系统', 1800],
+  ['用户中心', '站内信', 'BP-inbox', 'BP 站内信', '营销', '系统', '系统', 1500],
 ];
 
 function usRand(s) {
@@ -61,19 +61,19 @@ function usRand(s) {
 }
 
 function usSlices(site, ch, acct) { // [类别, 来源, 接入方, 占比]
-  if (acct === 'OTP-BP') return [['OTP 事务', 'API', '用户中心', 1]];
+  if (acct === 'OTP-BP') return [['OTP', 'API', '用户中心', 1]];
   const bp = US_PEOPLE[site].xl.length > 0;
   const T = {
-    SMS: bp ? [['营销', '手动', null, .55], ['营销', 'API', '星灵', .25], ['通知', '手动', null, .08], ['通知', 'API', '用户中心', .08], ['通知', 'API', site === 'bp-growth' ? '风控平台' : '用户中心', .04]]
-      : [['营销', '手动', null, .8], ['通知', 'API', '用户中心', .2]],
+    SMS: bp ? [['营销', '手动', null, .55], ['营销', 'API', '星灵', .25], ['营销', '手动', null, .08], ['营销', 'API', '用户中心', .08], ['营销', 'API', site === 'bp-growth' ? '风控平台' : '用户中心', .04]]
+      : [['营销', '手动', null, .8], ['营销', 'API', '用户中心', .2]],
     邮件: bp ? [['营销', '手动', null, .6], ['营销', 'API', '星灵', .4]] : [['营销', '手动', null, 1]],
-    Push: bp ? [['营销', '手动', null, .4], ['营销', 'API', '星灵', .35], ['通知', 'API', '用户中心', .25]] : [['营销', '手动', null, .7], ['通知', 'API', '用户中心', .3]],
-    站内信: [['通知', 'API', '用户中心', .7], ['营销', '手动', null, .3]],
+    Push: bp ? [['营销', '手动', null, .4], ['营销', 'API', '星灵', .35], ['营销', 'API', '用户中心', .25]] : [['营销', '手动', null, .7], ['营销', 'API', '用户中心', .3]],
+    站内信: [['营销', 'API', '用户中心', .7], ['营销', '手动', null, .3]],
     'Viber Biz': [['营销', '手动', null, .5], ['营销', 'API', '星灵', .5]],
     'Viber Bot': [['营销', '手动', null, .6], ['营销', 'API', '星灵', .4]],
     'Messenger Biz': [['营销', '手动', null, .6], ['营销', 'API', '星灵', .4]],
     'Messenger Bot': [['营销', '手动', null, .7], ['营销', 'API', '星灵', .3]],
-    WhatsApp: [['OTP 事务', 'API', '用户中心', 1]],
+    WhatsApp: [['OTP', 'API', '用户中心', 1]],
   };
   return T[ch];
 }
@@ -93,7 +93,7 @@ function usAddFact(out, f, raw) {
   const r = usRand(key);
   const cnt = Math.round(raw * (.9 + .2 * r));
   if (cnt <= 0) return;
-  const seg = f.ch === 'SMS' ? ({ 营销: 1.18, 通知: 1.06, 'OTP 事务': 1 }[f.cat] + (r - .5) * .04) : 1;
+  const seg = f.ch === 'SMS' ? ({ 营销: 1.18, 'OTP': 1 }[f.cat] + (r - .5) * .04) : 1;
   const misRate = f.ch === 'SMS' ? ({ 'bp-poc': .012, 'bp-coc': .004 }[f.site] || 0) : 0;
   out.push(Object.assign(f, {
     vendor: usAcct(f.acct).vendor, cnt, bill: usPerMsg(f.ch) ? Math.round(cnt * seg) : 0, mis: Math.round(cnt * misRate),
@@ -235,14 +235,17 @@ function uNextDim(path) {
   const [d, v] = path[path.length - 1];
   if ((d === 'site' || d === 'bl') && v === US_FB) return 'app';
   if (d === 'bl' && v === US_UNKNOWN) return 'vendor';
+  if (d === 'bl' && usBlNoPl(v)) return 'vendor'; /* 无下级产品线：不展开产品线 */
   const hasPl = path.some(p => p[0] === 'site' || p[0] === 'bl');
   return { bl: 'site', site: 'vendor', vendor: 'acct', acct: 'sender', sender: null, app: hasPl ? 'vendor' : 'site' }[d];
 }
 function uLabel(d, v, path) {
   if (v === US_FB) return '兜底归属';
   if (v === US_UNKNOWN) return '未知产品线';
+  if (d === 'site' && usShowBl() && path.length === 1) { const p0 = V2_PRODUCT_LINES.find(x => x.siteId === v); if (p0 && usBlNoPl(p0.bl)) return '<span class="v2-muted" title="该业务线无下级产品线">-</span>'; }
   if (d === 'site') { const p = V2_PRODUCT_LINES.find(x => x.siteId === v); return esc(plName(v)) + (p && p.status === '已下线' ? ' <span class="tag tag-gray">已下线</span>' : ''); }
   if (d === 'app') return v === US_MANUAL ? '手动（无接入方）' : path.some(p => p[1] === US_FB) ? `兜底归属（${esc(v)}）` : esc(v);
+  if (d === 'bl' && v !== US_UNKNOWN) return esc(usBlName(v));
   if (d === 'acct') return `${esc(v)} <span class="v2-muted">· ${esc(usAcct(v).vendor)}</span>`;
   return esc(v);
 }
@@ -323,7 +326,13 @@ function uRenderKpis(facts, prev) {
     card('归属不一致 ' + tipIcon('任务 site id 与非共用 Sender 关联产品线不一致的消息占比；仍按 site id 计'), cnt ? (mis / cnt * 100).toFixed(1) + '%' : '-', `${fmtN(mis)} 条`);
 }
 
-function uRowHtml(rowFacts, prevFacts, path, level, cols, hasNext, isLast) {
+/* 行维度 = 产品线时，第 1 列显示业务线（同业务线只在首行显示，Marvin 2026-11-13） */
+function usShowBl() { return U.rowDim === 'site'; }
+const US_BL_ORDER = ['BP', 'AP', 'GP'];
+/* 无下级产品线的业务线（ArenaPlus、GameZone：业务线即产品线） */
+function usBlNoPl(code) { const b = V2_BUSINESS_LINES.find(x => x.code === code); return !!b && V2_PRODUCT_LINES.some(p => p.bl === code && p.name === b.name); }
+function usBlName(code) { const b = V2_BUSINESS_LINES.find(x => x.code === code); return b ? b.name : (code && code !== '-' ? code : '-'); }
+function uRowHtml(rowFacts, prevFacts, path, level, cols, hasNext, isLast, blCell) {
   const [d, v] = path[path.length - 1];
   const key = JSON.stringify(path), open = U.expanded.has(key);
   const k = U.metric, ref = US_CELLREFS.push({ path }) - 1;
@@ -337,7 +346,8 @@ function uRowHtml(rowFacts, prevFacts, path, level, cols, hasNext, isLast) {
   }).join('');
   const total = k === 'share' ? null : usSum(rowFacts, k);
   const special = usIsSpecial(v) || path.some(p => p[1] === US_FB);
-  return `<tr class="us-lv${level}${special ? ' us-special' : ''}"><td><span class="us-rl" style="padding-left:${level * 20}px">${branch}${tog}${uLabel(d, v, path)}</span></td>${cells}
+  const blTd = usShowBl() ? `<td class="us-bl">${blCell || ''}</td>` : '';
+  return `<tr class="us-lv${level}${special ? ' us-special' : ''}${blCell ? ' us-bl-first' : ''}">${blTd}<td><span class="us-rl" style="padding-left:${level * 20}px">${branch}${tog}${uLabel(d, v, path)}</span></td>${cells}
     <td class="v2-num us-cell us-total" data-ref="${ref}" data-col="">${k === 'share' ? usCell(rowFacts, k, den(null)) : usCell(rowFacts, k)}</td><td class="v2-num">${level || k === 'share' ? '' : usMoM(total, prevFacts ? usSum(prevFacts, k) : null)}</td></tr>`;
 }
 
@@ -348,13 +358,17 @@ function uRows(facts, prev, path, dim, level, cols) {
     /* 无兜底归属行 */
   }
   const k = U.metric === 'share' ? 'cnt' : U.metric;
-  const keys = [...groups.keys()].sort((a, b) => (usIsSpecial(a) - usIsSpecial(b)) || (a === US_FB ? -1 : b === US_FB ? 1 : 0) || (usSum(groups.get(b), k) || 0) - (usSum(groups.get(a), k) || 0));
+  const blOf = v => (groups.get(v)[0] || {}).bl;
+  const blIdx = v => { const i = US_BL_ORDER.indexOf(blOf(v)); return i < 0 ? 99 : i; };
+  const byBl = level === 0 && usShowBl();
+  const keys = [...groups.keys()].sort((a, b) => (usIsSpecial(a) - usIsSpecial(b)) || (byBl ? blIdx(a) - blIdx(b) : 0) || (a === US_FB ? -1 : b === US_FB ? 1 : 0) || (usSum(groups.get(b), k) || 0) - (usSum(groups.get(a), k) || 0));
   return keys.map((v, i) => {
+    const blCell = byBl && (i === 0 || blOf(keys[i - 1]) !== blOf(v)) ? `<b>${esc(usBlName(blOf(v)))}</b>` : '';
     const p = path.concat([[dim, v]]), rf = groups.get(v);
     const next = uNextDim(p), key = JSON.stringify(p);
     if (U.expandAll && next && rf.length) U.expanded.add(key);
     const pf = prev ? prev.filter(f => uMatch(f, p)) : null;
-    let html = uRowHtml(rf, pf && pf.length ? pf : null, p, level, cols, !!next && rf.length > 0, i === keys.length - 1);
+    let html = uRowHtml(rf, pf && pf.length ? pf : null, p, level, cols, !!next && rf.length > 0, i === keys.length - 1, blCell);
     if (next && U.expanded.has(key)) html += uRows(rf, null, p, next, level + 1, cols);
     return html;
   }).join('');
@@ -367,14 +381,14 @@ function uRender() {
   uRenderKpis(facts, prev);
   const cols = uCols(facts), k = U.metric;
   const corner = U.colDim === 'none' ? US_DIMS[U.rowDim] : `${US_DIMS[U.rowDim]} ＼ ${US_DIMS[U.colDim]}`;
-  const head = `<thead><tr><th>${corner}</th>${cols.map(c => `<th class="v2-num">${esc(c)}</th>`).join('')}<th class="v2-num us-total">合计</th><th class="v2-num">环比</th></tr></thead>`;
+  const head = `<thead><tr>${usShowBl() ? '<th>业务线</th>' : ''}<th>${corner}</th>${cols.map(c => `<th class="v2-num">${esc(c)}</th>`).join('')}<th class="v2-num us-total">合计</th><th class="v2-num">环比</th></tr></thead>`;
   const body = uRows(facts, prev, [], U.rowDim, 0, cols);
   U.expandAll = false;
   const ref = US_CELLREFS.push({ path: [] }) - 1;
-  const foot = `<tfoot><tr><td>合计</td>${cols.map(c => `<td class="v2-num us-cell" data-ref="${ref}" data-col="${esc(c)}">${k === 'share' ? '-' : usCell(facts.filter(f => uKey(f, U.colDim) === c), k)}</td>`).join('')}
+  const foot = `<tfoot><tr>${usShowBl() ? '<td></td>' : ''}<td>合计</td>${cols.map(c => `<td class="v2-num us-cell" data-ref="${ref}" data-col="${esc(c)}">${k === 'share' ? '-' : usCell(facts.filter(f => uKey(f, U.colDim) === c), k)}</td>`).join('')}
     <td class="v2-num us-cell us-total" data-ref="${ref}" data-col="">${k === 'share' ? '-' : usCell(facts, k)}</td><td class="v2-num">${k === 'share' ? '' : usMoM(usSum(facts, k), prev ? usSum(prev, k) : null)}</td></tr></tfoot>`;
   document.getElementById('uTable').innerHTML = head + `<tbody>${body}</tbody>` + foot;
-  document.getElementById('uTableTitle').innerHTML = `月度用量分摊表 · ${U.month} · ${US_METRICS[k]} ${tipIcon('条数 = 当月已提交消息数；计费条数 = 按条计费通道（SMS / IM）按供应商拆分规则折算，邮件 / Push 月包、站内信不计费，显示用量条数并标计费方式；分摊占比 = 条数 ÷ 同业务线同列条数，用于月包按量分摊')}`;
+  document.getElementById('uTableTitle').innerHTML = `月度用量分摊表 · ${U.month} · ${US_METRICS[k]} ${tipIcon('条数 = 当月已提交消息数；计费条数 = 按条计费通道（SMS、Viber、Messenger、WhatsApp）按供应商拆分规则折算，邮件 / Push 月包、站内信不计费，显示用量条数并标计费方式；分摊占比 = 条数 ÷ 同业务线同列条数，用于月包按量分摊')}`;
   document.getElementById('uAsOf').textContent = usAsOfText(U.month);
   refreshIcons();
 }
@@ -389,7 +403,7 @@ function uTableClick(e) {
 
 function uCondChips(path, col) {
   const c = [['月份', U.month]];
-  path.forEach(([d, v]) => c.push([US_DIMS[d], uLabel(d, v, path).replace(/<[^>]+>/g, '')]));
+  path.forEach(([d, v]) => c.push([US_DIMS[d], d === 'site' ? plName(v) : uLabel(d, v, path).replace(/<[^>]+>/g, '')]));
   if (col) c.push([US_DIMS[U.colDim], col]);
   if (U.bl) c.push(['业务线', U.bl]);
   if (U.sites.length) c.push(['产品线', U.sites.map(plName).join('、')]);
@@ -547,7 +561,7 @@ function pInit() {
   });
 }
 
-const US_TASK_NAMES = { 营销: ['周末返利', '充值满赠限时活动', '沉默召回', '新游上线预热', 'VIP 专属回归礼', '每日签到挑战', '世界杯竞猜预热', '生日专属礼包'], 通知: ['开赛提醒', '账户变动通知', '维护公告', '提现到账通知'], 'OTP 事务': ['登录验证码'] };
+const US_TASK_NAMES = { 营销: ['周末返利', '充值满赠限时活动', '沉默召回', '新游上线预热', 'VIP 专属回归礼', '每日签到挑战', '世界杯竞猜预热', '生日专属礼包'], 通知: ['开赛提醒', '账户变动通知', '维护公告', '提现到账通知'], 'OTP': ['登录验证码'] };
 function pTasksOf(r) {
   const out = [];
   r.facts.forEach(f => {

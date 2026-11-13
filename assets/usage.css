@@ -83,3 +83,7 @@
 #qTable .us-use .v2-prog { width: 64px; }
 #qTable .us-chip, #sTable .us-chip { margin: 2px 0; }
 #usDrillBody .table-scroll { max-height: none; }
+
+/* 业务线列 */
+.us-bl { white-space: nowrap; color: var(--text-1, #1f2329); }
+tr.us-bl-first td { border-top: 2px solid var(--border, #dee0e3); }

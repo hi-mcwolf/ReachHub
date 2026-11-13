@@ -43,16 +43,16 @@ const AP_AUDIT = [
   { time: '2026-11-11 10:05:12', app: '星灵', type: '预检', result: '受理', reason: '', task: '', outId: 'order-20261111-015', site: 'bp-growth', channel: '邮件', cat: '营销' },
   { time: '2026-11-11 10:08:44', app: '星灵', type: '回调投递', result: '回调失败', reason: 'CALLBACK_FAILED 3 次重试仍失败（HTTP 503），已通知负责人', task: 'T20260713001', outId: 'order-20261110-088', site: 'bp-growth', channel: 'SMS', cat: '营销',
     retries: [['首次投递', '10:08:44', '失败 · HTTP 503'], ['第 1 次重试（+1 分钟）', '10:09:44', '失败 · HTTP 503'], ['第 2 次重试（+5 分钟）', '10:14:44', '失败 · 连接超时'], ['第 3 次重试（+30 分钟）', '10:44:44', '失败 · HTTP 503']], event: '执行统计快照' },
-  { time: '2026-11-11 10:11:05', app: '用户中心', type: '发送', result: '受理', reason: '', task: 'E20261111-UC-REG', outId: 'reg-88123401', site: 'bp-growth', channel: 'SMS', cat: '通知' },
-  { time: '2026-11-11 10:11:06', app: '用户中心', type: '发送', result: '限流', reason: 'RATE_LIMITED 超出速率上限 100 请求 / 秒', task: '', outId: 'reg-88123477', site: 'bp-growth', channel: 'SMS', cat: '通知' },
-  { time: '2026-11-11 10:15:30', app: '用户中心', type: '回调投递', result: '受理', reason: '', task: 'E20261111-UC-REG', outId: 'reg-88123401', site: 'bp-growth', channel: 'SMS', cat: '通知',
+  { time: '2026-11-11 10:11:05', app: '用户中心', type: '发送', result: '受理', reason: '', task: 'E20261111-UC-REG', outId: 'reg-88123401', site: 'bp-growth', channel: 'SMS', cat: '营销' },
+  { time: '2026-11-11 10:11:06', app: '用户中心', type: '发送', result: '限流', reason: 'RATE_LIMITED 超出速率上限 100 请求 / 秒', task: '', outId: 'reg-88123477', site: 'bp-growth', channel: 'SMS', cat: '营销' },
+  { time: '2026-11-11 10:15:30', app: '用户中心', type: '回调投递', result: '受理', reason: '', task: 'E20261111-UC-REG', outId: 'reg-88123401', site: 'bp-growth', channel: 'SMS', cat: '营销',
     retries: [['首次投递', '10:15:30', '失败 · HTTP 502'], ['第 1 次重试（+1 分钟）', '10:16:30', '成功 · HTTP 200']], event: '已送达' },
-  { time: '2026-11-11 10:20:18', app: '风控平台', type: '发送', result: '拒绝', reason: 'CHANNEL_NOT_ALLOWED 通道不在允许范围（Push）', task: '', outId: 'rc-alert-0091', site: 'bp-growth', channel: 'Push', cat: '通知' },
-  { time: '2026-11-11 10:21:40', app: '风控平台', type: '发送', result: '受理', reason: '', task: 'T20261111021', outId: 'rc-alert-0092', site: 'bp-growth', channel: 'SMS', cat: '通知' },
+  { time: '2026-11-11 10:20:18', app: '风控平台', type: '发送', result: '拒绝', reason: 'CHANNEL_NOT_ALLOWED 通道不在允许范围（Push）', task: '', outId: 'rc-alert-0091', site: 'bp-growth', channel: 'Push', cat: '营销' },
+  { time: '2026-11-11 10:21:40', app: '风控平台', type: '发送', result: '受理', reason: '', task: 'T20261111021', outId: 'rc-alert-0092', site: 'bp-growth', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:30:02', app: 'MMS 活动中心', type: '发送', result: '拒绝', reason: 'APP_DISABLED 接入方已停用', task: '', outId: 'mms-7781', site: 'gamezone', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:31:15', app: '星灵', type: '查询', result: '受理', reason: '', task: 'T20260713001', outId: 'order-20261110-088', site: 'bp-growth', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:35:47', app: '星灵', type: '发送', result: '拒绝', reason: 'TEMPLATE_REQUIRED 模板免审方式下必须使用模板', task: '', outId: 'order-20261111-021', site: 'bp-growth', channel: 'SMS', cat: '营销' },
-  { time: '2026-11-11 10:40:09', app: '用户中心', type: '发送', result: '拒绝', reason: 'SITE_NOT_FOUND 产品线不存在（bingo-ph）', task: '', outId: 'reg-88123990', site: 'bingo-ph', channel: 'SMS', cat: '通知' },
+  { time: '2026-11-11 10:40:09', app: '用户中心', type: '发送', result: '拒绝', reason: 'SITE_NOT_FOUND 产品线不存在（bingo-ph）', task: '', outId: 'reg-88123990', site: 'bingo-ph', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:42:51', app: '星灵', type: '回调投递', result: '受理', reason: '', task: 'T20260713005', outId: 'order-20261111-001', site: 'bp-growth', channel: 'SMS', cat: '营销',
     retries: [['首次投递', '10:42:51', '成功 · HTTP 200']], event: '排队中' },
 ];
@@ -151,7 +151,7 @@ function apValidate(req, forPrecheck) {
   if (badCh.length) return R('CHANNEL_NOT_ALLOWED', `通道不在允许范围（${badCh.join('、')}）`);
   if (req.mode !== '任务式' && !req.recipients.length) return R('PARAM_MISSING', '缺少收件人');
   if (req.mode === '任务式' && !req.crowd) return R('PARAM_MISSING', '任务式发送需指定人群包 / 人群标签');
-  if (req.recipients.some(r => !r.startsWith('user:')) && !['通知', 'OTP 事务'].includes(req.cat)) return R('RECIPIENT_NOT_ALLOWED', '裸地址（手机号 / 邮箱 / 设备 token）只允许通知 / OTP 类消息，请改传用户 ID');
+  if (req.recipients.some(r => !r.startsWith('user:')) && req.cat !== 'OTP') return R('RECIPIENT_NOT_ALLOWED', '裸地址（手机号 / 邮箱 / 设备 token）只允许 OTP 类消息，请改传用户 ID');
   if (req.mode === '批量' && req.recipients.length > 5000) return R('BATCH_LIMIT', '批量一次最多 5,000 个收件人，请分多次或改任务式');
   if (req.mode === '单发' && req.timing === '定时') return R('PARAM_INVALID', '事件单发只能立即发送');
   if (!req.operator) return R('PARAM_MISSING', '缺少操作人（Operator）');
@@ -262,14 +262,14 @@ function apToggle(app) {
 /* ---------- 新建 / 编辑表单 ---------- */
 let apEditing = null;
 const AP_APPROVAL_DESC = {
-  模板免审: '调用必须引用已审批模板；传自由文案 → 拒绝；任务审批状态 = 无需审批。适用：事件类、OTP、通知。',
+  模板免审: '调用必须引用已审批模板；传自由文案 → 拒绝；任务审批状态 = 无需审批。适用：事件类、OTP。',
   逐任务审批: '任务式 / 批量任务进入待审批，由下方审批人处理；通过 → 排队；拒绝 → 终止并回调。事件单发不适用（拒绝接入）。适用：营销批量。',
   接入方授信: '注册时一次性审批场景，调用不审批；事后按比例抽检 + 失败率 / 内容突变自动停用。适用：自由文案的高频场景（如星灵拼接文案）。',
 };
 
 function apOpenForm(app) {
   apEditing = app || null;
-  const a = app || { name: '', appId: '', owner: '', bls: [], siteAll: [], siteList: [], defaultSite: '', channels: [], cats: ['营销', '通知'], approval: '逐任务审批', approvers: [], quota: '', rate: 50, callback: '', events: ['task'], sandbox: false, status: '启用', remark: '' };
+  const a = app || { name: '', appId: '', owner: '', bls: [], siteAll: [], siteList: [], defaultSite: '', channels: [], cats: ['营销'], approval: '逐任务审批', approvers: [], quota: '', rate: 50, callback: '', events: ['task'], sandbox: false, status: '启用', remark: '' };
   document.getElementById('appDrawerTitle').textContent = app ? `编辑接入方 · ${app.name}` : '新建接入方';
   const chk = (name, val, on, extra = '') => `<label class="ap-chk"><input type="checkbox" name="${name}" value="${val}" ${on ? 'checked' : ''} ${extra}>${val}</label>`;
   const siteTree = V2_BUSINESS_LINES.map(b => {
@@ -293,7 +293,7 @@ function apOpenForm(app) {
       <select id="fmDefault" hidden></select>
       <label class="req">允许通道</label><div class="ap-chk-row">${V2_CHANNELS.map(c => chk('ch', c, a.channels.includes(c))).join('')}</div>
       <label class="req">允许消息类别</label><div class="ap-chk-row">${V2_MSG_CATEGORIES.map(c => chk('cat', c, a.cats.includes(c))).join('')}</div>
-      <span class="v2-hint">OTP 事务需管理员单独勾选</span>
+      <span class="v2-hint">OTP需管理员单独勾选</span>
       <label class="req">审批方式</label><div class="radio-group" id="fmApproval">${['模板免审', '逐任务审批', '接入方授信'].map(m => `<label><input type="radio" name="approval" value="${m}" ${a.approval === m ? 'checked' : ''}>${m}${m === '接入方授信' ? ' <span class="tag tag-gray-outline">P1</span>' : ''}</label>`).join('')}</div>
       <span class="v2-hint" id="fmApprovalDesc"></span>
       <label id="fmApproverLab">审批人</label><input class="input" id="fmApprovers" list="apUsers" placeholder="SSO 账号，多人用逗号分隔，任一通过即可" value="${esc(a.approvers.join(', '))}" data-char-count="off">
@@ -406,7 +406,7 @@ const AP_PRESETS = [
   { label: '超出允许通道', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS', '站内信'], tpl: 'TPL-SMS-0012' } },
   { label: 'Out Id 重复', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS'], tpl: 'TPL-SMS-0012', outId: 'order-20261111-001' } },
   { label: '自由文案（模板免审）', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS'], tpl: '', content: 'Hi Marvin, World Cup prediction closes tonight. Join now on BingoPlus!' } },
-  { label: '逐任务审批', set: { appId: 'rc_01', mode: '批量', site: 'bp-growth', cat: '通知', channels: ['SMS'], tpl: '', content: 'Your account login from a new device was detected. If not you, contact support.', recipients: 'user:10023\nuser:10024\n+639171234567' } },
+  { label: '逐任务审批', set: { appId: 'rc_01', mode: '批量', site: 'bp-growth', cat: '营销', channels: ['SMS'], tpl: '', content: 'Your account login from a new device was detected. If not you, contact support.', recipients: 'user:10023\nuser:10024\n+639171234567' } },
   { label: '超出日配额', set: { appId: 'xl_01', mode: '任务式', site: 'bp-growth', cat: '营销', channels: ['SMS'], crowd: 'CP-20261105-11', tpl: 'TPL-SMS-0012' } },
   { label: '邮件预检强提醒', set: { appId: 'xl_01', site: 'bp-growth', cat: '营销', channels: ['邮件'], tpl: '', content: 'Claim your Free Bonus now! Win Big this weekend with an exclusive offer.' } },
   { label: '接入方已停用', set: { appId: 'mms_01', site: 'gamezone', cat: '营销', channels: ['SMS'], tpl: '' , content: 'GameZone weekend event is live.' } },
@@ -442,7 +442,7 @@ function apRenderDebugForm() {
     ${d.mode === '任务式'
       ? `<label class="req">人群</label><select class="select" data-k="crowd">${AP_CROWDS.map(c => `<option value="${c.id}" ${d.crowd === c.id ? 'selected' : ''}>${c.id} · ${c.name}（${fmtN(c.n)}）</option>`).join('')}</select>`
       : `<label class="req">收件人</label><textarea class="textarea" data-k="recipients" rows="3" placeholder="每行一个：user:用户ID（优先）或 手机号 / 邮箱 / 设备 token" data-char-count="off">${esc(d.recipients)}</textarea>
-         <span class="v2-hint">${d.mode === '批量' ? '一次 ≤ 5,000 个收件人' : '单发：一条消息，归入当日该场景的事件任务'}；裸地址只允许通知 / OTP 类</span>`}
+         <span class="v2-hint">${d.mode === '批量' ? '一次 ≤ 5,000 个收件人' : '单发：一条消息，归入当日该场景的事件任务'}；裸地址只允许 OTP 类</span>`}
     <label>模板 Template Code</label><select class="select" data-k="tpl"><option value="">不使用模板（自由文案）</option>${tplOpts}</select>
     <label>内容 Content</label><textarea class="textarea" data-k="content" rows="3" placeholder="传内容即「自由文案」，按审批方式处理" data-char-count="off">${esc(d.content)}</textarea>
     <label>变量</label><input class="input" data-k="vars" value="${esc(d.vars)}" placeholder="key=value，多个用逗号分隔" data-char-count="off">
@@ -639,7 +639,7 @@ function apRenderDocs() {
       <p class="v2-hint" style="margin-top:8px">预检可单独调用（配置阶段提示），也随发送调用一并返回；结果只提示不阻断。</p>
     </div>
     <div data-docpane="appr" hidden>
-      ${t(['方式', '规则', '适用'], [['模板免审', '调用必须引用已审批模板；传自由文案 → 拒绝；任务审批状态 = 无需审批', '事件类、OTP、通知'],
+      ${t(['方式', '规则', '适用'], [['模板免审', '调用必须引用已审批模板；传自由文案 → 拒绝；任务审批状态 = 无需审批', '事件类、OTP'],
         ['逐任务审批', '任务式 / 批量任务进入待审批，由接入方配置的审批人处理；通过 → 排队；拒绝 → 终止并回调；事件单发不适用（拒绝接入）', '营销批量'],
         ['接入方授信 <span class="tag tag-gray-outline">P1</span>', '注册时一次性审批场景，调用不审批；事后按比例抽检 + 失败率 / 内容突变自动停用', '自由文案的高频场景（如星灵拼接文案）']])}
       <p class="v2-hint" style="margin-top:8px">push 事件任务：现状自动通过改为按其接入方的审批方式处理；其事件任务按天聚合后在任务记录可见、可终止。</p>

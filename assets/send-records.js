@@ -66,7 +66,7 @@ const SEND_RECORDS = (() => {
         if (status === 'expired' || status === 'noReceipt') { cat = 'expired'; raw = { code: '-', msg: status === 'noReceipt' ? '超过回执等待窗口仍无回执' : '超过任务有效期' }; }
 
         // 短信：直连提交失败经路由重试到聚合供应商（首发 / 重试）
-        const retried = r.channel === 'SMS' && status === 'delivered' && k % 3 === 0 && t.category !== 'OTP 事务';
+        const retried = r.channel === 'SMS' && status === 'delivered' && k % 3 === 0 && t.category !== 'OTP';
         const finalVendor = retried ? 'NXLink' : r.vendor;
         const finalAccount = retried ? 'BP-NX' : r.account;
         const submittedLike = ['submitted', 'delivered', 'undelivered', 'expired', 'noReceipt'].includes(status);

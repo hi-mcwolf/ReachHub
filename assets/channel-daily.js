@@ -62,7 +62,7 @@ function cdUnits() {
   const units = [];
   CD_ACCOUNTS.forEach(acc => {
     const base = CD_ACC_BASE[acc.id] || 5000;
-    const cats = acc.mode === 'otp' ? { 'OTP 事务': 1 } : { 营销: .72, 通知: .28 };
+    const cats = acc.mode === 'otp' ? { 'OTP': 1 } : { 营销: 1 };
     acc.senders.forEach((sender, si) => {
       const sw = acc.senders.length === 1 ? 1 : (si === 0 ? .55 : .45 / (acc.senders.length - 1));
       const sites = CD_SENDER_SITE[sender] || ['bp-growth'];
@@ -266,7 +266,7 @@ function cdRenderTable() {
   let rows = Object.entries(groups).map(([k, fs]) => ({ k, a: cdAgg(fs) }));
   const sk = CD.sort.key; const val = r => (sk === 'name' ? r.k : sk === 'p95' ? (r.a.p95 || 0) : sk === 'check' ? (r.a.check || 0) : (r.a[sk] ?? 0));
   rows.sort((x, y) => { const a = val(x); const b = val(y); return (a < b ? -1 : a > b ? 1 : 0) * CD.sort.dir; });
-  if (dim === 'cat') rows.sort((x, y) => (y.k === 'OTP 事务') - (x.k === 'OTP 事务'));
+  if (dim === 'cat') rows.sort((x, y) => (y.k === 'OTP') - (x.k === 'OTP'));
   const th = (key, label, tip, num = true) => `<th class="${num ? 'v2-num ' : ''}cd-th" data-sort="${key}">${label}${tip ? tipIcon(tip) : ''}<span class="cd-arrow">${CD.sort.key === key ? (CD.sort.dir < 0 ? '↓' : '↑') : '↕'}</span></th>`;
   const head = `<thead><tr>${th('name', esc(cdDimLabel(dim)), '', false)}${th('sent', '发送量', '已提交消息数')}${th('billable', '计费条数', '4.4.6 计量口径')}
     <th class="v2-num">首发 / 重试${tipIcon('短信路由重试计入最终供应商的重试列；首发失败的供应商只计提交失败，不计发送量；非短信为 -')}</th>
@@ -275,8 +275,8 @@ function cdRenderTable() {
     ${th('uncls', '未分类占比', '失败中未映射的占比；> 5% 标黄')}<th>TOP 失败分类</th>
     ${isMail ? th('check', '检测不通过率（邮件）', '当日发出任务中带强提醒 / 提醒的占比（见 6.9）') : ''}
     ${th('mismatch', '归属不一致', '任务 site id 与非共用 Sender 不一致的消息数')}<th>操作</th></tr></thead>`;
-  const body = rows.map(({ k, a }) => `<tr${dim === 'cat' && k === 'OTP 事务' ? ' class="v2-row-hi"' : ''}>
-    <td><b>${esc(cdValLabel(dim, k))}</b>${dim === 'cat' && k === 'OTP 事务' ? ' <span class="tag tag-primary">置顶</span>' : ''}</td>
+  const body = rows.map(({ k, a }) => `<tr${dim === 'cat' && k === 'OTP' ? ' class="v2-row-hi"' : ''}>
+    <td><b>${esc(cdValLabel(dim, k))}</b>${dim === 'cat' && k === 'OTP' ? ' <span class="tag tag-primary">置顶</span>' : ''}</td>
     <td class="v2-num">${fmtN(a.sent)}</td><td class="v2-num">${cdBillTxt(ch, a.billable, a.sent)}</td>
     <td class="v2-num">${ch === 'SMS' ? `${cdK(a.sent - a.retry)} / ${cdK(a.retry)}` : '-'}</td>
     <td class="v2-num${a.acc != null && a.acc < CD_ACC_CARD_MIN ? ' text-danger' : ''}">${cdP(a.acc)}</td>
@@ -361,7 +361,7 @@ let CD_RULES = [
   { id: 2, name: '邮件送达率', target: { channel: '邮件', vendors: [], accounts: [], cats: [] }, metric: '送达率', op: '<', value: 90, unit: '%', window: '当日', minSample: 200, recipients: ['值班群'], repeat: 30, enabled: true },
   { id: 3, name: '回执 P95', target: { channel: 'SMS', vendors: [], accounts: [], cats: [] }, metric: '回执时延 P95', op: '>', value: 30, unit: '分钟', window: '近 1 小时', minSample: 200, recipients: ['值班群'], repeat: 30, enabled: true },
   { id: 4, name: '队列积压', target: { channel: 'SMS', vendors: [], accounts: [], cats: [] }, metric: '队列积压（待发条数）', op: '>', value: 2, unit: '小时清空', window: '实时', minSample: 1, recipients: ['值班群', '通道运维群'], repeat: 30, enabled: true },
-  { id: 5, name: 'OTP 排队', target: { channel: '', vendors: [], accounts: [], cats: ['OTP 事务'] }, metric: '排队时长 P95', op: '>', value: 30, unit: '秒', window: '近 5 分钟', minSample: 200, recipients: ['值班群'], repeat: 30, enabled: true },
+  { id: 5, name: 'OTP 排队', target: { channel: '', vendors: [], accounts: [], cats: ['OTP'] }, metric: '排队时长 P95', op: '>', value: 30, unit: '秒', window: '近 5 分钟', minSample: 200, recipients: ['值班群'], repeat: 30, enabled: true },
 ];
 function cdTargetText(t) {
   const p = [];
@@ -456,7 +456,7 @@ function cdSaveRule(root, rule) {
 /* ================= 告警记录 ================= */
 let CD_ALERTS = [
   { id: 1, time: '2026-07-13 14:05', rule: 'SMS 失败率', target: 'NXLink · AGG-01', q: { channel: 'SMS', vendor: 'NXLink', account: 'AGG-01' }, value: '8.3%', threshold: '5%', status: '处理中', handler: 'ken@', note: '供应商侧故障，已切部分流量', reminds: 4 },
-  { id: 2, time: '2026-07-13 11:20', rule: 'OTP 排队', target: 'OTP 事务 · OTP-BP', q: { channel: 'SMS', account: 'OTP-BP' }, value: '42 秒', threshold: '30 秒', status: '已恢复', handler: '系统', note: '-', reminds: 0 },
+  { id: 2, time: '2026-07-13 11:20', rule: 'OTP 排队', target: 'OTP · OTP-BP', q: { channel: 'SMS', account: 'OTP-BP' }, value: '42 秒', threshold: '30 秒', status: '已恢复', handler: '系统', note: '-', reminds: 0 },
   { id: 3, time: '2026-07-13 09:40', rule: '回执 P95', target: 'Smart · BP-02', q: { channel: 'SMS', vendor: 'Smart', account: 'BP-02' }, value: '34.6 分钟', threshold: '30 分钟', status: '未处理', handler: '', note: '', reminds: 2 },
   { id: 4, time: '2026-07-12 20:15', rule: '队列积压', target: 'Globe · BP-01', q: { channel: 'SMS', vendor: 'Globe', account: 'BP-01' }, value: '2.6 小时清空', threshold: '2 小时清空', status: '已恢复', handler: 'marvin@', note: '晚高峰营销集中，已错峰', reminds: 1 },
   { id: 5, time: '2026-07-12 18:00', rule: '邮件送达率', target: 'OneSignal · BP-mail', q: { channel: '邮件', vendor: 'OneSignal', account: 'BP-mail' }, value: '88.2%', threshold: '90%', status: '已恢复', handler: 'lily@', note: '退信率升高，已清洗名单', reminds: 0 },

@@ -8,7 +8,7 @@ const QSW = { sel: new Set() };
 const QSW_DLR = { 'BP-02': 94.8, 'BP-04': 92.6 };
 const QSW_CARRIER = { Globe: 'Globe', Smart: 'Smart', DLink: '聚合', NXLink: '聚合', Mocean: '聚合' };
 
-function qsCanSwitch(t) { return !t.qsFrom && t.channel === 'SMS' && t.category !== 'OTP 事务' && Math.round(t.remaining) > 0; }
+function qsCanSwitch(t) { return !t.qsFrom && t.channel === 'SMS' && t.category !== 'OTP' && Math.round(t.remaining) > 0; }
 function qsTargets(a, t) {
   return V2_ACCOUNTS.filter(x => x.id !== a.id && x.channel === 'SMS' && x.mode === 'tasklevel' && x.bl === a.bl && x.status !== '停用'
     && V2_PRODUCT_LINES.some(p => p.siteId === t.site && p.bl === x.bl));

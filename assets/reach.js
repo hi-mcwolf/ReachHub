@@ -98,7 +98,7 @@ const RH_CH_V2 = { sms: 'SMS', email: '邮件', push: 'Push', inbox: '站内信'
 const RH_CAT_HINT = {
   营销: '营销类：按营销频控、DND 与退订名单过滤；邮件通道执行内容检测（只提醒不阻断）',
   通知: '通知类：不按邮件退订名单过滤，DND 与频控按通知规则；邮件通道同样执行内容检测',
-  'OTP 事务': 'OTP 事务仅系统调用，手动任务不可选',
+  'OTP': 'OTP仅系统调用，手动任务不可选',
 };
 const RH_SENDABLE_RATIO = 0.92;   /* 近 30 天该产品线该通道可推送比例（mock） */
 const RH_LEGACY_TPS = { 邮件: 300, Push: 800, 站内信: 1000, 'Viber Biz': 20, 'Viber Bot': 20, 'Messenger Biz': 20, 'Messenger Bot': 20, WhatsApp: 20 };  /* 未接入任务级调度通道的估算吞吐（mock） */
