@@ -41,6 +41,7 @@ const CD_UNDELIV_W = {
   Push: { 号码或地址无效: 64, 用户不可达: 26, 用户拒收: 10 },
   'Viber Biz': { 用户不可达: 70, 号码或地址无效: 15, 用户拒收: 10, 运营商或平台拦截: 5 },
   'Viber Bot': { 用户不可达: 60, 用户拒收: 30, 号码或地址无效: 10 },
+  'Messenger Biz': { 用户不可达: 55, 用户拒收: 30, 号码或地址无效: 15 },
   'Messenger Bot': { 用户不可达: 55, 用户拒收: 35, 号码或地址无效: 10 },
   WhatsApp: { 用户不可达: 65, 号码或地址无效: 25, 用户拒收: 10 },
   站内信: { 号码或地址无效: 100 },
@@ -48,7 +49,7 @@ const CD_UNDELIV_W = {
 const CD_HOUR_W = [1, .6, .4, .3, .3, .5, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 7, 8, 9, 9, 8, 6, 4, 2];
 const CD_HOUR_SUM = CD_HOUR_W.reduce((a, b) => a + b, 0);
 const CD_DIMS = { vendor: '供应商', account: '账号', sender: '发送方标识', bl: '业务线', site: '产品线', cat: '消息类别' };
-const CD_SENDER_LABEL = { SMS: 'Sender ID', 邮件: '发件人', Push: 'App', 'Viber Biz': '发送方标识', 'Viber Bot': '发送方标识', 'Messenger Bot': '发送方标识', WhatsApp: '发送方标识', 站内信: '发送方标识' };
+const CD_SENDER_LABEL = { SMS: 'Sender ID', 邮件: '发件人', Push: 'App', 'Viber Biz': '发送方标识', 'Viber Bot': '发送方标识', 'Messenger Biz': '发送方标识', 'Messenger Bot': '发送方标识', WhatsApp: '发送方标识', 站内信: '发送方标识' };
 const CD_NO_RECEIPT = ['Push', '站内信'];
 const CD_DEFAULT = { range: '7d', gran: 'day', channel: 'SMS', dim: 'vendor' };
 const CD_ACC_CARD_MIN = 98; // 受理率低于此值标红（演示默认）
@@ -219,8 +220,8 @@ function cdDelThreshold(ch) {
   const r = CD_RULES.find(x => x.enabled && x.metric === '送达率' && x.target.channel === ch);
   return r ? r.value : 90;
 }
-/* 计费方式：SMS、Viber Biz / Bot、Messenger Bot、WhatsApp 按条；邮件 / Push 月包；站内信不计费（6.1.3）。月包 / 不计费也显示用量 */
-const CD_BILLING = { SMS: '按条', 'Viber Biz': '按条', 'Viber Bot': '按条', 'Messenger Bot': '按条', WhatsApp: '按条', 邮件: '月包', Push: '月包', 站内信: '不计费' };
+/* 计费方式：SMS、Viber Biz / Bot、Messenger Biz / Bot、WhatsApp 按条；邮件 / Push 月包；站内信不计费（6.1.3）。月包 / 不计费也显示用量 */
+const CD_BILLING = { SMS: '按条', 'Viber Biz': '按条', 'Viber Bot': '按条', 'Messenger Biz': '按条', 'Messenger Bot': '按条', WhatsApp: '按条', 邮件: '月包', Push: '月包', 站内信: '不计费' };
 function cdBillTxt(ch, v, sent) { return CD_BILLING[ch] === '按条' || !CD_BILLING[ch] ? fmtN(v) : `${fmtN(sent != null ? sent : v)} <span class="tag tag-gray-outline">${CD_BILLING[ch]}</span>`; }
 function cdRenderCards(a) {
   const ch = cdChannel(); const noRc = CD_NO_RECEIPT.includes(ch); const delMin = cdDelThreshold(ch);

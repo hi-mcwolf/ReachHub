@@ -63,9 +63,9 @@ function stBlPls(bl) { return V2_PRODUCT_LINES.filter(p => p.bl === bl && p.stat
 function stPlNames(sites) { return sites.map(plName).join('、'); }
 
 /* ================= 6.1.3 供应商档案 ================= */
-const ST_VENDOR_CHANNELS = { Smart: ['SMS'], Globe: ['SMS'], Mocean: ['SMS', 'Viber Biz', 'WhatsApp'], DLink: ['SMS'], NXLink: ['SMS'], OneSignal: ['邮件'], 'Engagement Lab': ['Push'], PTX: ['Viber Biz'], Viber: ['Viber Bot'], Meta: ['Messenger Bot'] };
-const ST_SENDER_TYPE = { SMS: 'Sender ID', 邮件: '发件人', Push: 'App', 'Viber Biz': '账号', 'Viber Bot': '账号', 'Messenger Bot': '账号', WhatsApp: '账号', 站内信: '-' };
-const ST_SENDER_HINT = { SMS: '请输入 Sender ID', 邮件: '请输入发件地址', Push: '请输入 App 标识', 'Viber Biz': '请输入账号标识', 'Viber Bot': '请输入账号标识', 'Messenger Bot': '请输入账号标识', WhatsApp: '请输入账号标识' };
+const ST_VENDOR_CHANNELS = { Smart: ['SMS'], Globe: ['SMS'], Mocean: ['SMS', 'Viber Biz', 'WhatsApp'], DLink: ['SMS'], NXLink: ['SMS'], OneSignal: ['邮件'], 'Engagement Lab': ['Push'], PTX: ['Viber Biz'], Viber: ['Viber Bot'], Infobip: ['Messenger Biz'], Meta: ['Messenger Bot'] };
+const ST_SENDER_TYPE = { SMS: 'Sender ID', 邮件: '发件人', Push: 'App', 'Viber Biz': '账号', 'Viber Bot': '账号', 'Messenger Biz': '账号', 'Messenger Bot': '账号', WhatsApp: '账号', 站内信: '-' };
+const ST_SENDER_HINT = { SMS: '请输入 Sender ID', 邮件: '请输入发件地址', Push: '请输入 App 标识', 'Viber Biz': '请输入账号标识', 'Viber Bot': '请输入账号标识', 'Messenger Biz': '请输入账号标识', 'Messenger Bot': '请输入账号标识', WhatsApp: '请输入账号标识' };
 const ST_BILLING = ['按条', '短信按段（GSM-7 160/153，UCS-2 70/67）'];
 const ST_ALL_BP = ['bp-growth', 'bp-poc', 'bp-coc', 'bp-vip'];
 const ST_SENDER_PL = {
@@ -82,6 +82,7 @@ const ST_ACCOUNT_EXTRA = {
   'BP-im':   { key: 'ptx_bp_viber_bm', remark: 'Viber BM', updated: '2026-11-03 14:00' },
   'BP-vbot': { key: 'viber_bp_bot', remark: 'Viber Bot（官方直连）', updated: '2026-11-03 14:00' },
   'BP-msgbot': { key: 'meta_bp_page_bot', remark: 'Messenger Bot（官方直连）', updated: '2026-11-03 14:00' },
+  'BP-msg':  { key: 'infobip_bp_messenger', remark: 'Messenger Biz', updated: '2026-11-03 14:00' },
   'OTP-IM':  { key: 'mocean_bp_wa_otp', remark: 'WhatsApp OTP', updated: '2026-11-03 14:00' },
   'OTP-VB':  { key: 'mocean_bp_vb_otp', remark: 'Viber OTP', updated: '2026-11-03 14:00' },
 };
@@ -157,7 +158,7 @@ function stRenderVendors(pane) {
   pane.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => stToggleAccount(b.dataset.toggle)));
 }
 function stChannelCell(ch) {
-  const icon = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', 'Viber Biz': 'phone-call', 'Viber Bot': 'bot', 'Messenger Bot': 'message-circle', WhatsApp: 'message-circle-more' }[ch] || 'radio';
+  const icon = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', 'Viber Biz': 'phone-call', 'Viber Bot': 'bot', 'Messenger Biz': 'message-circle', 'Messenger Bot': 'message-circle', WhatsApp: 'message-circle-more' }[ch] || 'radio';
   return `<span class="v2-flex"><i data-lucide="${icon}" style="width:14px;height:14px;color:var(--text-3)"></i>${ch}</span>`;
 }
 function stToggleAccount(id) {

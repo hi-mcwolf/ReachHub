@@ -21,9 +21,9 @@ const V2_PRODUCT_LINES = [
 function plName(siteId) { const p = V2_PRODUCT_LINES.find(x => x.siteId === siteId); return p ? p.name : siteId; }
 
 /* ---- 渠道维度：通道 → 供应商 → 供应商账号 → 内部账号 → 发送方标识（无「IM」通道，Marvin 2026-11-13） ---- */
-const V2_CHANNELS = ['SMS', '邮件', 'Push', '站内信', 'Viber Biz', 'Viber Bot', 'Messenger Bot', 'WhatsApp'];
+const V2_CHANNELS = ['SMS', '邮件', 'Push', '站内信', 'Viber Biz', 'Viber Bot', 'Messenger Biz', 'Messenger Bot', 'WhatsApp'];
 const V2_IM_SUB = []; /* 已废弃：原 IM 子渠道现为独立通道 */
-const V2_CHAT_CHANNELS = ['Viber Biz', 'Viber Bot', 'Messenger Bot', 'WhatsApp'];
+const V2_CHAT_CHANNELS = ['Viber Biz', 'Viber Bot', 'Messenger Biz', 'Messenger Bot', 'WhatsApp'];
 const V2_MSG_CATEGORIES = ['OTP 事务', '营销', '通知'];
 const V2_TASK_SOURCES = ['手动', 'API'];
 
@@ -37,16 +37,17 @@ const V2_ACCOUNTS = [
   { id: 'OTP-BP',  channel: 'SMS', vendor: 'Globe',  bl: 'BP', tps: 50,  dailyCap: null, mode: 'otp',       senders: ['BPVERIFY'] },
   { id: 'BP-mail', channel: '邮件', vendor: 'OneSignal', bl: 'BP', tps: null, dailyCap: null, mode: 'legacy',  senders: ['news@bingoplus.ph'] },
   { id: 'BP-push', channel: 'Push', vendor: 'Engagement Lab', bl: 'BP', tps: null, dailyCap: null, mode: 'legacy', senders: ['BP App'] },
-  /* 供应商（Marvin 2026-11-12/13）：Viber Biz = PTX（OTP 走 Mocean）；Viber Bot = Viber 官方；Messenger Bot = Meta 官方；WhatsApp（OTP）= Mocean */
+  /* 供应商（Marvin 2026-11-12/13）：Viber Biz = PTX（OTP 走 Mocean）；Viber Bot = Viber 官方；Messenger Biz = Infobip；Messenger Bot = Meta 官方；WhatsApp（OTP）= Mocean */
   { id: 'BP-im',     channel: 'Viber Biz', sub: 'Viber Biz',      vendor: 'PTX',     bl: 'BP', tps: 20, dailyCap: null, mode: 'legacy', senders: ['BingoPlus Viber'] },
   { id: 'BP-vbot',   channel: 'Viber Bot', sub: 'Viber Bot',     vendor: 'Viber',   bl: 'BP', tps: 20, dailyCap: null, mode: 'legacy', senders: ['BingoPlus Bot'] },
+  { id: 'BP-msg',    channel: 'Messenger Biz', sub: 'Messenger Biz', vendor: 'Infobip', bl: 'BP', tps: 20, dailyCap: null, mode: 'legacy', senders: ['BingoPlus Page'] },
   { id: 'BP-msgbot', channel: 'Messenger Bot', sub: 'Messenger Bot', vendor: 'Meta',    bl: 'BP', tps: 20, dailyCap: null, mode: 'legacy', senders: ['BingoPlus Page Bot'] },
   { id: 'OTP-VB',    channel: 'Viber Biz', sub: 'Viber Biz', vendor: 'Mocean', bl: 'BP', tps: 20, dailyCap: null, mode: 'otp', senders: ['BPVERIFY'] },
   { id: 'OTP-IM',    channel: 'WhatsApp', sub: 'WhatsApp', vendor: 'Mocean', bl: 'BP', tps: 20, dailyCap: null, mode: 'otp', senders: ['BPVERIFY'] },
 ];
 /* Sender ID 已配置的产品线（6.1.3 供应商账号 · 发送方标识；切换供应商时只可选与任务产品线一致的） */
 const V2_SENDER_PL = { BPGROWTH: ['bp-growth'], BPPLATFORM: ['bp-poc'], BPCONTENT: ['bp-coc'], BPVIP: ['bp-vip'], GAMEZONE: ['gamezone'], ARENAPLUS: ['arenaplus'] };
-const V2_VENDORS = ['Smart', 'Globe', 'Mocean', 'DLink', 'NXLink', 'OneSignal', 'Engagement Lab', 'PTX', 'Viber', 'Meta'];
+const V2_VENDORS = ['Smart', 'Globe', 'Mocean', 'DLink', 'NXLink', 'OneSignal', 'Engagement Lab', 'PTX', 'Viber', 'Infobip', 'Meta'];
 
 /* ---- 两维状态（4.4.4） ---- */
 const V2_TASK_STATUS = {

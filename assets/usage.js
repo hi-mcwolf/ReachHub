@@ -28,7 +28,7 @@ function usAcct(id) { return US_ALL_ACCOUNTS.find(a => a.id === id) || { vendor:
 
 const US_ROUTES = { // [通道, 账号, 发送方标识, 10 月基准条数]
   'bp-growth': [['SMS', 'BP-01', 'BPGROWTH', 300000], ['SMS', 'BP-02', 'BPGROWTH', 170000], ['SMS', 'BP-03', 'BPGROWTH', 26000], ['SMS', 'OTP-BP', 'BPVERIFY', 60000],
-    ['邮件', 'BP-mail', 'news@bingoplus.ph', 150000], ['Push', 'BP-push', 'BP App', 260000], ['站内信', 'BP-inbox', 'BP 站内信', 80000], ['Viber Biz', 'BP-im', 'BingoPlus Viber', 22000], ['Viber Bot', 'BP-vbot', 'BingoPlus Bot', 9000], ['Messenger Bot', 'BP-msgbot', 'BingoPlus Page Bot', 6000]],
+    ['邮件', 'BP-mail', 'news@bingoplus.ph', 150000], ['Push', 'BP-push', 'BP App', 260000], ['站内信', 'BP-inbox', 'BP 站内信', 80000], ['Viber Biz', 'BP-im', 'BingoPlus Viber', 22000], ['Viber Bot', 'BP-vbot', 'BingoPlus Bot', 9000], ['Messenger Biz', 'BP-msg', 'BingoPlus Page', 7000], ['Messenger Bot', 'BP-msgbot', 'BingoPlus Page Bot', 6000]],
   'bp-poc': [['SMS', 'BP-01', 'BPPLATFORM', 160000], ['邮件', 'BP-mail', 'news@bingoplus.ph', 60000], ['Push', 'BP-push', 'BP App', 90000], ['站内信', 'BP-inbox', 'BP 站内信', 30000]],
   'bp-coc': [['SMS', 'BP-01', 'BPCONTENT', 70000], ['Push', 'BP-push', 'BP App', 30000], ['站内信', 'BP-inbox', 'BP 站内信', 15000]],
   'bp-vip': [['SMS', 'BP-02', 'BPVIP', 18000], ['Push', 'BP-push', 'BP App', 9000], ['Viber Biz', 'BP-im', 'BingoPlus Viber', 4000], ['WhatsApp', 'OTP-IM', 'BPVERIFY', 3000]],
@@ -71,6 +71,7 @@ function usSlices(site, ch, acct) { // [类别, 来源, 接入方, 占比]
     站内信: [['通知', 'API', '用户中心', .7], ['营销', '手动', null, .3]],
     'Viber Biz': [['营销', '手动', null, .5], ['营销', 'API', '星灵', .5]],
     'Viber Bot': [['营销', '手动', null, .6], ['营销', 'API', '星灵', .4]],
+    'Messenger Biz': [['营销', '手动', null, .6], ['营销', 'API', '星灵', .4]],
     'Messenger Bot': [['营销', '手动', null, .7], ['营销', 'API', '星灵', .3]],
     WhatsApp: [['OTP 事务', 'API', '用户中心', 1]],
   };
@@ -83,8 +84,8 @@ function usPersons(site, src, app) { // [人员, 类型, 占比]；接入方未�
   return [['系统', '系统', 1]];
 }
 
-/* 计费方式（6.1.3）：SMS、Viber Biz、Viber Bot、Messenger Bot、WhatsApp 按条；邮件 / Push 月包；站内信不计费。月包 / 不计费通道照常统计用量，用于按量分摊 */
-const US_BILLING = { SMS: '按条', 'Viber Biz': '按条', 'Viber Bot': '按条', 'Messenger Bot': '按条', WhatsApp: '按条', 邮件: '月包', Push: '月包', 站内信: '不计费' };
+/* 计费方式（6.1.3）：SMS、Viber Biz、Viber Bot、Messenger Biz、Messenger Bot、WhatsApp 按条；邮件 / Push 月包；站内信不计费。月包 / 不计费通道照常统计用量，用于按量分摊 */
+const US_BILLING = { SMS: '按条', 'Viber Biz': '按条', 'Viber Bot': '按条', 'Messenger Biz': '按条', 'Messenger Bot': '按条', WhatsApp: '按条', 邮件: '月包', Push: '月包', 站内信: '不计费' };
 function usPerMsg(ch) { return US_BILLING[ch] === '按条'; }
 
 function usAddFact(out, f, raw) {
@@ -317,7 +318,7 @@ function uRenderKpis(facts, prev) {
   const card = (title, val, sub, cls = '') => `<div class="kpi-card ${cls}"><div class="kpi-title">${title}</div><div class="kpi-value">${val}</div><div class="us-kpi-sub ${cls}">${sub}</div></div>`;
   document.getElementById('uKpis').innerHTML =
     card('条数', fmtN(cnt), '当月已提交消息数') +
-    card('计费条数 ' + tipIcon('仅按条计费通道：SMS、Viber Biz、Viber Bot、Messenger Bot、WhatsApp；邮件、Push 月包、站内信不计费，在表中显示用量条数并按条数占比分摊'), fmtN(bill), `按条计费通道 · 月包通道 ${fmtN(pack)} 条`) +
+    card('计费条数 ' + tipIcon('仅按条计费通道：SMS、Viber Biz、Viber Bot、Messenger Biz、Messenger Bot、WhatsApp；邮件、Push 月包、站内信不计费，在表中显示用量条数并按条数占比分摊'), fmtN(bill), `按条计费通道 · 月包通道 ${fmtN(pack)} 条`) +
     card(`环比（${US_METRICS[k]}）`, usMoM(cur, pv), pv ? `上月 ${fmtN(pv)}` : '上月无数据') +
     card('归属不一致 ' + tipIcon('任务 site id 与非共用 Sender 关联产品线不一致的消息占比；仍按 site id 计'), cnt ? (mis / cnt * 100).toFixed(1) + '%' : '-', `${fmtN(mis)} 条`);
 }

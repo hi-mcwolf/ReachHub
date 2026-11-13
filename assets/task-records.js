@@ -37,7 +37,7 @@ function trNeedsApproval(t) {
 }
 
 /* ---------------- 单元格渲染 ---------------- */
-const TR_CH_ICON = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', 'Viber Biz': 'phone-call', 'Viber Bot': 'bot', 'Messenger Bot': 'message-circle', WhatsApp: 'message-circle-more' };
+const TR_CH_ICON = { SMS: 'message-square', 邮件: 'mail', Push: 'bell', 站内信: 'inbox', 'Viber Biz': 'phone-call', 'Viber Bot': 'bot', 'Messenger Biz': 'message-circle', 'Messenger Bot': 'message-circle', WhatsApp: 'message-circle-more' };
 
 function trChannelCell(t) {
   return t.routes.map(r => `<span class="tr-ch"><i data-lucide="${TR_CH_ICON[r.channel] || 'send'}"></i>${r.channel}${r.sub ? ' · ' + r.sub : ''}</span>`).join('<br>');
