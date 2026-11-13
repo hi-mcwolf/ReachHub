@@ -4,18 +4,19 @@
 
 /* ---- 组织维度：业务线 → 产品线（site id，来自用户域血缘） ---- */
 const V2_BUSINESS_LINES = [
-  { code: 'BP', name: 'BP' },
-  { code: 'GP', name: 'GP' },
-  { code: 'AP', name: 'AP' },
+  /* 业务线（Marvin 2026-11-13）：BP = BingoPlus（下设 4 个中心）；AP = ArenaPlus；GP = GameZone（后两者自身即产品线） */
+  { code: 'BP', name: 'BingoPlus' },
+  { code: 'AP', name: 'ArenaPlus' },
+  { code: 'GP', name: 'GameZone' },
 ];
 const V2_PRODUCT_LINES = [
-  { siteId: 'bingoplus',  name: 'BingoPlus',  bl: 'BP', status: '启用' },
-  { siteId: 'arenaplus',  name: 'ArenaPlus',  bl: 'BP', status: '启用' },
-  { siteId: 'gamezone',   name: 'GameZone',   bl: 'BP', status: '启用' },
-  { siteId: 'bp-vip',     name: 'BP-VIP',     bl: 'BP', status: '启用' },
-  { siteId: 'perya',      name: 'Perya Game', bl: 'GP', status: '启用' },
-  { siteId: 'pinoyplay',  name: 'PinoyPlay',  bl: 'GP', status: '启用' },
-  { siteId: 'arena-old',  name: 'ArenaPlus（旧）', bl: 'BP', status: '已下线' },
+  { siteId: 'bp-vip',     name: 'VIP',                        bl: 'BP', status: '启用' },
+  { siteId: 'bp-growth',  name: 'Growth Center',              bl: 'BP', status: '启用' },
+  { siteId: 'bp-poc',     name: 'Platform Operation Center',  bl: 'BP', status: '启用' },
+  { siteId: 'bp-coc',     name: 'Content Operation Center',   bl: 'BP', status: '启用' },
+  { siteId: 'arenaplus',  name: 'ArenaPlus',                  bl: 'AP', status: '启用' },
+  { siteId: 'gamezone',   name: 'GameZone',                   bl: 'GP', status: '启用' },
+  { siteId: 'arena-old',  name: '旧产品线（已下线）',          bl: 'BP', status: '已下线' },
 ];
 function plName(siteId) { const p = V2_PRODUCT_LINES.find(x => x.siteId === siteId); return p ? p.name : siteId; }
 
@@ -27,12 +28,13 @@ const V2_TASK_SOURCES = ['手动', 'API'];
 
 const V2_ACCOUNTS = [
   // 调度：tasklevel = 已切任务级调度；otp = OTP 独立账号；legacy = 未接入调度（只读）
-  { id: 'BP-01',   channel: 'SMS', vendor: 'Globe',  bl: 'BP', tps: 50,  dailyCap: null, mode: 'tasklevel', senders: ['BINGOPLUS', 'ARENAPLUS', 'GAMEZONE'] },
-  { id: 'BP-02',   channel: 'SMS', vendor: 'Smart',  bl: 'BP', tps: 30,  dailyCap: null, mode: 'tasklevel', senders: ['BINGOPLUS', 'BPVIP'] },
-  { id: 'GP-01',   channel: 'SMS', vendor: 'DLink',  bl: 'GP', tps: 40,  dailyCap: null, mode: 'tasklevel', senders: ['PERYA', 'PINOYPLAY'] },
-  { id: 'BP-04',   channel: 'SMS', vendor: 'DLink',  bl: 'BP', tps: 40,  dailyCap: null, mode: 'tasklevel', senders: ['BINGOPLUS', 'ARENAPLUS'] },
+  { id: 'BP-01',   channel: 'SMS', vendor: 'Globe',  bl: 'BP', tps: 50,  dailyCap: null, mode: 'tasklevel', senders: ['BPGROWTH', 'BPPLATFORM', 'BPCONTENT'] },
+  { id: 'BP-02',   channel: 'SMS', vendor: 'Smart',  bl: 'BP', tps: 30,  dailyCap: null, mode: 'tasklevel', senders: ['BPGROWTH', 'BPVIP'] },
+  { id: 'GP-01',   channel: 'SMS', vendor: 'DLink',  bl: 'GP', tps: 40,  dailyCap: null, mode: 'tasklevel', senders: ['GAMEZONE'] },
+  { id: 'AP-01',   channel: 'SMS', vendor: 'Smart',  bl: 'AP', tps: 30,  dailyCap: null, mode: 'tasklevel', senders: ['ARENAPLUS'] },
+  { id: 'BP-04',   channel: 'SMS', vendor: 'DLink',  bl: 'BP', tps: 40,  dailyCap: null, mode: 'tasklevel', senders: ['BPGROWTH', 'BPPLATFORM'] },
   { id: 'OTP-BP',  channel: 'SMS', vendor: 'Globe',  bl: 'BP', tps: 50,  dailyCap: null, mode: 'otp',       senders: ['BPVERIFY'] },
-  { id: 'BP-mail', channel: '邮件', vendor: 'OneSignal', bl: 'BP', tps: null, dailyCap: null, mode: 'legacy',  senders: ['news@bingoplus.ph', 'hello@arenaplus.ph'] },
+  { id: 'BP-mail', channel: '邮件', vendor: 'OneSignal', bl: 'BP', tps: null, dailyCap: null, mode: 'legacy',  senders: ['news@bingoplus.ph'] },
   { id: 'BP-push', channel: 'Push', vendor: 'Engagement Lab', bl: 'BP', tps: null, dailyCap: null, mode: 'legacy', senders: ['BP App'] },
   /* IM 供应商（Marvin 2026-11-12）：Viber / WhatsApp OTP = Mocean；Viber BM = PTX；Viber Bot = Viber 官方；Messenger Biz = Infobip；Messenger Bot = Meta 官方 */
   { id: 'BP-im',     channel: 'IM', sub: 'Viber BM',      vendor: 'PTX',     bl: 'BP', tps: 20, dailyCap: null, mode: 'legacy', senders: ['BingoPlus Viber'] },
@@ -42,7 +44,7 @@ const V2_ACCOUNTS = [
   { id: 'OTP-IM',    channel: 'IM', sub: 'Viber / WhatsApp OTP', vendor: 'Mocean', bl: 'BP', tps: 20, dailyCap: null, mode: 'otp', senders: ['BPVERIFY'] },
 ];
 /* Sender ID 已配置的产品线（6.1.3 供应商账号 · 发送方标识；切换供应商时只可选与任务产品线一致的） */
-const V2_SENDER_PL = { BINGOPLUS: ['bingoplus'], ARENAPLUS: ['arenaplus'], GAMEZONE: ['gamezone'], BPVIP: ['bp-vip'], PERYA: ['perya'], PINOYPLAY: ['pinoyplay'] };
+const V2_SENDER_PL = { BPGROWTH: ['bp-growth'], BPPLATFORM: ['bp-poc'], BPCONTENT: ['bp-coc'], BPVIP: ['bp-vip'], GAMEZONE: ['gamezone'], ARENAPLUS: ['arenaplus'] };
 const V2_VENDORS = ['Smart', 'Globe', 'Mocean', 'DLink', 'NXLink', 'OneSignal', 'Engagement Lab', 'PTX', 'Viber', 'Infobip', 'Meta'];
 
 /* ---- 两维状态（4.4.4） ---- */
@@ -85,27 +87,27 @@ const V2_FAIL_CATS = [
 
 /* ---- 任务（各页共用，ID 与 PRD 示例一致） ---- */
 const V2_TASKS = [
-  { id: 'T20260713002', name: '沉默召回短信',   site: 'arenaplus', channel: 'SMS', account: 'BP-01', source: '手动', creator: 'lily@', operator: 'lily@', category: '营销',
+  { id: 'T20260713002', name: '沉默召回短信',   site: 'bp-poc', channel: 'SMS', account: 'BP-01', source: '手动', creator: 'lily@', operator: 'lily@', category: '营销',
     status: 'sending', approval: 'approved', target: 200000, remaining: 186000, sched: '16:00', estStart: '已开始', estFinish: '17:42', range: 5, priority: '普通', share: 100, seq: 1, activity: 'ACT202607006' },
-  { id: 'T20260713005', name: '充值提醒',       site: 'bingoplus', channel: 'SMS', account: 'BP-01', source: 'API', app: '星灵', creator: 'ken@', operator: 'ken@', category: '营销',
+  { id: 'T20260713005', name: '充值提醒',       site: 'bp-growth', channel: 'SMS', account: 'BP-01', source: 'API', app: '星灵', creator: 'ken@', operator: 'ken@', category: '营销',
     status: 'queued', approval: 'approved', target: 60000, remaining: 60000, sched: '16:30', estStart: '17:42', estFinish: '18:02', range: 5, priority: '普通', share: 0, seq: 2, activity: 'ACT202607002' },
-  { id: 'T20260713007', name: '周末返利',       site: 'gamezone', channel: 'SMS', account: 'BP-01', source: '手动', creator: 'ann@', operator: 'ann@', category: '营销',
+  { id: 'T20260713007', name: '周末返利',       site: 'bp-coc', channel: 'SMS', account: 'BP-01', source: '手动', creator: 'ann@', operator: 'ann@', category: '营销',
     status: 'queued', approval: 'none', target: 40000, remaining: 40000, sched: '17:00', estStart: '18:02', estFinish: '18:15', range: 6, priority: '普通', share: 0, seq: 3 },
-  { id: 'T20260713009', name: '开赛提醒',       site: 'bingoplus', channel: 'SMS', account: 'BP-01', source: '手动', creator: 'lily@', operator: 'lily@', category: '通知',
+  { id: 'T20260713009', name: '开赛提醒',       site: 'bp-growth', channel: 'SMS', account: 'BP-01', source: '手动', creator: 'lily@', operator: 'lily@', category: '通知',
     status: 'pending', approval: 'approved', target: 20000, remaining: 20000, sched: '18:00', estStart: '18:00', estFinish: '18:07', range: 2, priority: '普通', reserve: true, seq: null, activity: 'ACT202607001' },
-  { id: 'T20260713001', name: '世界杯竞猜预热短信', site: 'bingoplus', channel: 'SMS', account: 'BP-02', source: 'API', app: '星灵', creator: 'ken@', operator: 'ken@', category: '营销',
+  { id: 'T20260713001', name: '世界杯竞猜预热短信', site: 'bp-growth', channel: 'SMS', account: 'BP-02', source: 'API', app: '星灵', creator: 'ken@', operator: 'ken@', category: '营销',
     status: 'sending', approval: 'approved', target: 12800, remaining: 3584, sched: '15:40', estStart: '已开始', estFinish: '18:02', range: 5, priority: '普通', share: 100, seq: 1, activity: 'ACT202607001' },
-  { id: 'T20260713011', name: '周报邮件',       site: 'bingoplus', channel: '邮件', account: 'BP-mail', source: '手动', creator: 'marvin@', operator: 'marvin@', category: '营销',
+  { id: 'T20260713011', name: '周报邮件',       site: 'bp-growth', channel: '邮件', account: 'BP-mail', source: '手动', creator: 'marvin@', operator: 'marvin@', category: '营销',
     status: 'queued', approval: 'none', target: 42000, remaining: 42000, sched: '立即', estStart: '16:21', estFinish: '16:24', range: 1, estimated: true },
   { id: 'T20260713012', name: 'VIP 生日礼包 Push', site: 'bp-vip', channel: 'Push', account: 'BP-push', source: '手动', creator: 'lily@', operator: 'lily@', category: '营销',
     status: 'pending', approval: 'pending', target: 3200, remaining: 3200, sched: '2026-07-14 10:00', estStart: '审批通过后约 3 分钟', estFinish: '-', range: 0, activity: 'ACT202607007' },
-  { id: 'T20260712003', name: '新用户注册礼包', site: 'perya', channel: 'SMS', account: 'GP-01', source: '手动', creator: 'ann@', operator: 'ann@', category: '营销',
+  { id: 'T20260712003', name: '新用户注册礼包', site: 'gamezone', channel: 'SMS', account: 'GP-01', source: '手动', creator: 'ann@', operator: 'ann@', category: '营销',
     status: 'done', approval: 'approved', target: 9500, remaining: 0, sched: '2026-07-12 10:00', finishedAt: '2026-07-12 10:21', activity: 'ACT202607003' },
-  { id: 'T20260711008', name: '充值满赠限时活动', site: 'bingoplus', channel: 'SMS', account: 'BP-01', source: '手动', creator: 'lily@', operator: 'lily@', category: '营销',
+  { id: 'T20260711008', name: '充值满赠限时活动', site: 'bp-growth', channel: 'SMS', account: 'BP-01', source: '手动', creator: 'lily@', operator: 'lily@', category: '营销',
     status: 'stopped', approval: 'approved', target: 50000, remaining: 0, sched: '2026-07-11 19:00', stopReason: '人工终止：活动提前结束', activity: 'ACT202607002' },
-  { id: 'T20260710004', name: '七月大促预热',   site: 'arenaplus', channel: 'SMS', account: 'BP-02', source: '手动', creator: 'ken@', operator: 'ken@', category: '营销',
+  { id: 'T20260710004', name: '七月大促预热',   site: 'bp-poc', channel: 'SMS', account: 'BP-02', source: '手动', creator: 'ken@', operator: 'ken@', category: '营销',
     status: 'stopped', approval: 'rejected', target: 80000, remaining: 0, sched: '2026-07-10 12:00', stopReason: '审批拒绝：文案含高风险促销词', activity: 'ACT202607008' },
-  { id: 'T20260709006', name: '账号安全通知',   site: 'bingoplus', channel: 'SMS', account: 'BP-02', source: 'API', app: '用户中心', creator: 'system', operator: '系统', category: '通知',
+  { id: 'T20260709006', name: '账号安全通知',   site: 'bp-growth', channel: 'SMS', account: 'BP-02', source: 'API', app: '用户中心', creator: 'system', operator: '系统', category: '通知',
     status: 'failed', approval: 'none', target: 15000, remaining: 0, sched: '2026-07-09 09:00', stopReason: '任务级异常：供应商账号鉴权失效' },
 ];
 function v2Task(id) { return V2_TASKS.find(t => t.id === id); }
@@ -144,8 +146,8 @@ const V2_FAIL_ROWS = [
 const V2_APPS = [
   { name: '星灵',     appId: 'xl_01', owner: 'ken@',  bls: ['BP'], sites: 'BP 全部（含未来新增）', channels: ['SMS', '邮件', 'Push'], cats: ['营销', '通知'], approval: '模板免审', usage: 312000, quota: 500000, rate: 50, status: '启用', callback: 'https://xingling.internal/reach/callback' },
   { name: '用户中心', appId: 'uc_01', owner: 'jay@',  bls: ['BP', 'GP'], sites: 'bingoplus · perya · pinoyplay', channels: ['SMS', 'Push', '站内信'], cats: ['通知', 'OTP 事务'], approval: '模板免审', usage: 48200, quota: 200000, rate: 100, status: '启用', callback: 'https://uc.internal/notify/reach' },
-  { name: '风控平台', appId: 'rc_01', owner: 'mia@',  bls: ['BP'], sites: 'bingoplus', channels: ['SMS'], cats: ['通知'], approval: '逐任务审批', usage: 2100, quota: 20000, rate: 10, status: '启用', callback: '' },
-  { name: 'MMS 活动中心', appId: 'mms_01', owner: 'leo@', bls: ['GP'], sites: 'perya', channels: ['SMS', '邮件'], cats: ['营销'], approval: '逐任务审批', usage: 0, quota: 100000, rate: 20, status: '停用', callback: '' },
+  { name: '风控平台', appId: 'rc_01', owner: 'mia@',  bls: ['BP'], sites: 'bp-growth', channels: ['SMS'], cats: ['通知'], approval: '逐任务审批', usage: 2100, quota: 20000, rate: 10, status: '启用', callback: '' },
+  { name: 'MMS 活动中心', appId: 'mms_01', owner: 'leo@', bls: ['GP'], sites: 'gamezone', channels: ['SMS', '邮件'], cats: ['营销'], approval: '逐任务审批', usage: 0, quota: 100000, rate: 20, status: '停用', callback: '' },
 ];
 
 /* ---- 通用小工具 ---- */

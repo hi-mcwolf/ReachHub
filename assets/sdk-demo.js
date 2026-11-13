@@ -4,12 +4,12 @@
 
 /* ================= 上下文与数据 ================= */
 const SD_APP_BASE = V2_APPS.find(a => a.appId === 'xl_01');
-const SD_CTX = { appId: 'xl_01', appName: '星灵', user: 'ken@', siteId: 'bingoplus', activityId: 'ACT202607001', activityName: '世界杯竞猜预热', lang: 'zh' };
+const SD_CTX = { appId: 'xl_01', appName: '星灵', user: 'ken@', siteId: 'bp-growth', activityId: 'ACT202607001', activityName: '世界杯竞猜预热', lang: 'zh' };
 /* 上游系统传参（6.8.2）：传了的字段在配置弹窗自动补全、只读 */
 const SD_UPSTREAMS = {
   xl: { appId: 'xl_01', appName: '星灵', pass: {} },
   mms: { appId: 'mms_01', appName: 'MMS', pass: { activity: 'ACT202607001' } },
-  oms: { appId: 'oms_rc', appName: 'OMS · 风控', pass: { site: 'bingoplus' } },
+  oms: { appId: 'oms_rc', appName: 'OMS · 风控', pass: { site: 'bp-growth' } },
 };
 let SD_UP = 'xl';
 const SD_DEMO = { approval: SD_APP_BASE.approval, appStatus: SD_APP_BASE.status };
@@ -97,8 +97,8 @@ function sdProgress(t) {
 function sdInit() {
   const up = SD_UPSTREAMS[SD_UP];
   SD_CTX.appId = up.appId; SD_CTX.appName = up.appName;
-  const site = up.pass.site || (up.pass.activity ? 'bingoplus' : '');
-  SD_CTX.siteId = site || 'bingoplus';
+  const site = up.pass.site || (up.pass.activity ? 'bp-growth' : '');
+  SD_CTX.siteId = site || 'bp-growth';
   document.getElementById('pSiteTxt').textContent = up.pass.site || (up.pass.activity ? '（不传，由活动带出）' : '（不传，弹窗内选择）');
   document.getElementById('pActTxt').textContent = up.pass.activity || '（不传，弹窗内选择）';
   SD_DEMO.approval = document.getElementById('pApproval').value;

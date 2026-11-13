@@ -30,9 +30,12 @@ function demoRole() { return 'admin'; }
 function hasPerm(p) { return true; }
 
 const PRODUCT_LINES = [
-  { value: 'BP-VIP', label: 'BP-VIP' },
-  { value: 'BP-CONTENT OPERATION CENTER', label: 'BP-CONTENT OPERATION CENTER' },
-  { value: 'BingoPlus', label: 'BingoPlus' },
+  { value: 'VIP', label: 'VIP' },
+  { value: 'Growth Center', label: 'Growth Center' },
+  { value: 'Platform Operation Center', label: 'Platform Operation Center' },
+  { value: 'Content Operation Center', label: 'Content Operation Center' },
+  { value: 'ArenaPlus', label: 'ArenaPlus' },
+  { value: 'GameZone', label: 'GameZone' },
 ];
 
 /** 活动选项（新建任务按名称搜索选择；列表/详情展示活动 ID、活动名称） */

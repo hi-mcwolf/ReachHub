@@ -24,13 +24,13 @@ const EC_AI_PATTERNS = [/guarantee/i, /easy money/i, /100% (?:win|sure)/i, /必�
 
 /* 系统 Footer 版本（按产品线维护，见 6.9.3；停用版本触发 E3-2） */
 const EC_FOOTERS = [
-  { site: 'bingoplus', ver: 'v3 2026-11', status: '启用' },
-  { site: 'bingoplus', ver: 'v2 2026-06', status: '停用' },
-  { site: 'arenaplus', ver: 'v2 2026-10', status: '启用' },
+  { site: 'bp-growth', ver: 'v3 2026-11', status: '启用' },
+  { site: 'bp-growth', ver: 'v2 2026-06', status: '停用' },
+  { site: 'bp-poc', ver: 'v2 2026-10', status: '启用' },
   { site: 'bp-vip', ver: 'v1 2026-09', status: '启用' },
-  { site: 'gamezone', ver: 'v1 2026-09', status: '启用' },
-  { site: 'perya', ver: 'v1 2026-08', status: '启用' },
-  { site: 'pinoyplay', ver: 'v1 2026-08', status: '启用' },
+  { site: 'bp-coc', ver: 'v1 2026-09', status: '启用' },
+  { site: 'gamezone', ver: 'v1 2026-08', status: '启用' },
+  { site: 'arenaplus', ver: 'v1 2026-08', status: '启用' },
 ];
 function ecFootersOf(site) {
   const list = EC_FOOTERS.filter(f => f.site === site);

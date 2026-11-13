@@ -67,10 +67,10 @@ const ST_VENDOR_CHANNELS = { Smart: ['SMS'], Globe: ['SMS'], Mocean: ['SMS', 'IM
 const ST_SENDER_TYPE = { SMS: 'Sender ID', 邮件: '发件人', Push: 'App', IM: '账号', 站内信: '-' };
 const ST_SENDER_HINT = { SMS: '请输入 Sender ID', 邮件: '请输入发件地址', Push: '请输入 App 标识', IM: '请输入 IM 账号标识' };
 const ST_BILLING = ['按条', '短信按段（GSM-7 160/153，UCS-2 70/67）'];
-const ST_ALL_BP = ['bingoplus', 'arenaplus', 'gamezone', 'bp-vip'];
+const ST_ALL_BP = ['bp-growth', 'bp-poc', 'bp-coc', 'bp-vip'];
 const ST_SENDER_PL = {
-  BINGOPLUS: ['bingoplus'], ARENAPLUS: ['arenaplus'], GAMEZONE: ['gamezone'], BPVIP: ['bp-vip'], PERYA: ['perya'], PINOYPLAY: ['pinoyplay'],
-  BPVERIFY: ST_ALL_BP, 'news@bingoplus.ph': ['bingoplus', 'gamezone'], 'hello@arenaplus.ph': ['arenaplus'], 'BP App': ST_ALL_BP, 'BingoPlus Viber': ['bingoplus'],
+  BPGROWTH: ['bp-growth'], BPPLATFORM: ['bp-poc'], BPCONTENT: ['bp-coc'], BPVIP: ['bp-vip'], GAMEZONE: ['gamezone'], ARENAPLUS: ['arenaplus'],
+  BPVERIFY: ST_ALL_BP, 'news@bingoplus.ph': ['bp-growth', 'bp-coc'], 'BP App': ST_ALL_BP, 'BingoPlus Viber': ['bp-growth'],
 };
 const ST_ACCOUNT_EXTRA = {
   'BP-01':   { key: 'bp_globe_01',     remark: 'Globe 联系人 rbabad@', updated: '2026-11-11 10:00' },
@@ -98,7 +98,7 @@ const ST_ACCOUNTS = V2_ACCOUNTS.map(a => {
 ST_ACCOUNTS.push({
   id: 'GP-02', vendor: 'NXLink', channel: 'SMS', bl: 'GP', tps: 20, dailyCap: null, mode: 'tasklevel', key: 'gp_nxlink_01', billing: ST_BILLING[1], receipt: 72,
   sched: true, status: '停用', remark: '试用期结束，暂停', updated: '2026-10-30 17:45', updater: ST_ME,
-  senders: [{ value: 'PERYA', pls: ['perya'], status: '停用' }],
+  senders: [{ value: 'GAMEZONE', pls: ['gamezone'], status: '停用' }],
   logs: [{ time: '2026-10-30 17:45', user: ST_ME, target: '账号', content: '状态：启用 → 停用' }],
 });
 const stVendorState = { channel: '', vendor: '', bl: '', status: '', applied: {} };
@@ -606,17 +606,17 @@ const ST_USERS = ['marvin@', 'ken@', 'lily@', 'ann@', 'jay@', 'mia@', 'leo@'];
 const ST_ALL_SITES = V2_PRODUCT_LINES.filter(p => p.status === '启用').map(p => p.siteId);
 /* 用户数据权限（6.11）：可见 site id */
 const ST_USER_SITES = {
-  'marvin@': ST_ALL_SITES, 'ken@': ST_ALL_BP, 'lily@': ['bingoplus', 'arenaplus', 'bp-vip'], 'ann@': ['gamezone', 'perya', 'pinoyplay'],
-  'jay@': ['bingoplus', 'perya', 'pinoyplay'], 'mia@': ['bingoplus'], 'leo@': ['perya'],
+  'marvin@': ST_ALL_SITES, 'ken@': ST_ALL_BP, 'lily@': ['bp-growth', 'bp-poc', 'bp-vip'], 'ann@': ['bp-coc', 'gamezone', 'arenaplus'],
+  'jay@': ['bp-growth', 'gamezone', 'arenaplus'], 'mia@': ['bp-growth'], 'leo@': ['gamezone'],
 };
 const ST_APPLIES = ['任务', '模板', '内容变更'];
 const ST_APPROVERS = [
-  { kind: '用户', applicant: 'lily@', sites: ['bingoplus'], approvers: ['marvin@', 'ken@'], applies: ['任务', '模板'], status: '启用', updater: ST_ME, updated: '2026-11-10 15:00' },
+  { kind: '用户', applicant: 'lily@', sites: ['bp-growth'], approvers: ['marvin@', 'ken@'], applies: ['任务', '模板'], status: '启用', updater: ST_ME, updated: '2026-11-10 15:00' },
   { kind: '接入方', applicant: '星灵', sites: ['*'], approvers: ['lily@'], applies: ['任务'], status: '启用', updater: ST_ME, updated: '2026-11-09 10:30' },
-  { kind: '用户', applicant: 'lily@', sites: ['arenaplus', 'bp-vip'], approvers: ['ken@'], applies: ['任务', '模板', '内容变更'], status: '启用', updater: ST_ME, updated: '2026-11-08 18:10' },
-  { kind: '用户', applicant: 'ann@', sites: ['gamezone'], approvers: ['ken@'], applies: ['任务', '模板'], status: '启用', updater: ST_ME, updated: '2026-11-08 11:20' },
-  { kind: '用户', applicant: 'ann@', sites: ['perya', 'pinoyplay'], approvers: ['jay@'], applies: ['任务', '模板'], status: '启用', updater: ST_ME, updated: '2026-11-07 09:50' },
-  { kind: '接入方', applicant: '风控平台', sites: ['bingoplus'], approvers: ['marvin@', 'mia@'], applies: ['任务'], status: '启用', updater: ST_ME, updated: '2026-11-06 16:00' },
+  { kind: '用户', applicant: 'lily@', sites: ['bp-poc', 'bp-vip'], approvers: ['ken@'], applies: ['任务', '模板', '内容变更'], status: '启用', updater: ST_ME, updated: '2026-11-08 18:10' },
+  { kind: '用户', applicant: 'ann@', sites: ['bp-coc'], approvers: ['ken@'], applies: ['任务', '模板'], status: '启用', updater: ST_ME, updated: '2026-11-08 11:20' },
+  { kind: '用户', applicant: 'ann@', sites: ['gamezone', 'arenaplus'], approvers: ['jay@'], applies: ['任务', '模板'], status: '启用', updater: ST_ME, updated: '2026-11-07 09:50' },
+  { kind: '接入方', applicant: '风控平台', sites: ['bp-growth'], approvers: ['marvin@', 'mia@'], applies: ['任务'], status: '启用', updater: ST_ME, updated: '2026-11-06 16:00' },
   { kind: '用户', applicant: 'ken@', sites: ['*'], approvers: ['marvin@'], applies: ['任务', '模板', '内容变更'], status: '停用', updater: ST_ME, updated: '2026-10-29 10:00' },
 ];
 const stApprState = { f: {}, applied: {} };
@@ -717,22 +717,22 @@ const ST_FOOTER_BASE = {
   unsub: 'Unsubscribe', entity: 'DigiPlus Interactive Corp.',
 };
 const ST_FOOTERS = [
-  { site: 'bingoplus', name: 'v3 2026-11', ...ST_FOOTER_BASE, tpl: 18, status: '启用', updater: ST_ME, updated: '2026-11-10 14:00' },
-  { site: 'bingoplus', name: 'v2 2026-08', ...ST_FOOTER_BASE, license: 'Licensed by PAGCOR. License No. PAGCOR-OGL-2023-0088.', tpl: 4, status: '停用', updater: ST_ME, updated: '2026-11-10 14:02' },
-  { site: 'arenaplus', name: 'v2 2026-10', ...ST_FOOTER_BASE, rg: '18+. Bet responsibly. ArenaPlus promotes responsible gaming.', tpl: 9, status: '启用', updater: 'lily@', updated: '2026-10-21 10:00' },
-  { site: 'gamezone', name: 'v1 2026-07', ...ST_FOOTER_BASE, tpl: 5, status: '启用', updater: 'ann@', updated: '2026-07-15 09:00' },
+  { site: 'bp-growth', name: 'v3 2026-11', ...ST_FOOTER_BASE, tpl: 18, status: '启用', updater: ST_ME, updated: '2026-11-10 14:00' },
+  { site: 'bp-growth', name: 'v2 2026-08', ...ST_FOOTER_BASE, license: 'Licensed by PAGCOR. License No. PAGCOR-OGL-2023-0088.', tpl: 4, status: '停用', updater: ST_ME, updated: '2026-11-10 14:02' },
+  { site: 'bp-poc', name: 'v2 2026-10', ...ST_FOOTER_BASE, rg: '18+. Bet responsibly. ArenaPlus promotes responsible gaming.', tpl: 9, status: '启用', updater: 'lily@', updated: '2026-10-21 10:00' },
+  { site: 'bp-coc', name: 'v1 2026-07', ...ST_FOOTER_BASE, tpl: 5, status: '启用', updater: 'ann@', updated: '2026-07-15 09:00' },
   { site: 'bp-vip', name: 'v1 2026-07', ...ST_FOOTER_BASE, tpl: 3, status: '启用', updater: 'lily@', updated: '2026-07-15 09:10' },
-  { site: 'perya', name: 'v1 2026-07', ...ST_FOOTER_BASE, entity: 'Perya Game Entertainment Inc.', tpl: 6, status: '启用', updater: 'ann@', updated: '2026-07-16 11:00' },
-  { site: 'pinoyplay', name: 'v1 2026-08', ...ST_FOOTER_BASE, entity: 'PinoyPlay Gaming Corp.', tpl: 2, status: '启用', updater: 'ann@', updated: '2026-08-02 16:00' },
+  { site: 'gamezone', name: 'v1 2026-07', ...ST_FOOTER_BASE, entity: 'GameZone Entertainment Inc.', tpl: 6, status: '启用', updater: 'ann@', updated: '2026-07-16 11:00' },
+  { site: 'arenaplus', name: 'v1 2026-08', ...ST_FOOTER_BASE, entity: 'ArenaPlus Gaming Corp.', tpl: 2, status: '启用', updater: 'ann@', updated: '2026-08-02 16:00' },
 ];
 const ST_UNSUBS = [
-  { email: 'juan.dc@gmail.com', site: 'bingoplus', time: '2026-11-11 09:12', source: '退订链接', reason: 'Too many emails' },
-  { email: 'maria.santos@yahoo.com', site: 'bingoplus', time: '2026-11-10 21:40', source: '退订链接', reason: '-' },
-  { email: 'kevin_r@outlook.com', site: 'arenaplus', time: '2026-11-10 13:05', source: '退订链接', reason: 'Not interested' },
-  { email: 'ana.reyes@gmail.com', site: 'gamezone', time: '2026-11-09 08:30', source: '手工导入', reason: '客服工单 #88213' },
-  { email: 'paolo88@gmail.com', site: 'perya', time: '2026-11-08 19:22', source: '退订链接', reason: 'Never signed up' },
-  { email: 'grace.l@icloud.com', site: 'bingoplus', time: '2026-11-07 10:00', source: '手工导入', reason: '合规名单同步' },
-  { email: 'mark.t@gmail.com', site: 'pinoyplay', time: '2026-11-05 17:45', source: '退订链接', reason: '-' },
+  { email: 'juan.dc@gmail.com', site: 'bp-growth', time: '2026-11-11 09:12', source: '退订链接', reason: 'Too many emails' },
+  { email: 'maria.santos@yahoo.com', site: 'bp-growth', time: '2026-11-10 21:40', source: '退订链接', reason: '-' },
+  { email: 'kevin_r@outlook.com', site: 'bp-poc', time: '2026-11-10 13:05', source: '退订链接', reason: 'Not interested' },
+  { email: 'ana.reyes@gmail.com', site: 'bp-coc', time: '2026-11-09 08:30', source: '手工导入', reason: '客服工单 #88213' },
+  { email: 'paolo88@gmail.com', site: 'gamezone', time: '2026-11-08 19:22', source: '退订链接', reason: 'Never signed up' },
+  { email: 'grace.l@icloud.com', site: 'bp-growth', time: '2026-11-07 10:00', source: '手工导入', reason: '合规名单同步' },
+  { email: 'mark.t@gmail.com', site: 'arenaplus', time: '2026-11-05 17:45', source: '退订链接', reason: '-' },
 ];
 const stFooterState = { sub: 'versions', f: {}, applied: {}, uf: {}, uapplied: {}, lookup: null };
 const ST_SITES_ON = () => V2_PRODUCT_LINES.filter(p => p.status === '启用').map(p => ({ v: p.siteId, l: p.name }));
@@ -901,7 +901,7 @@ const ST_TERMS = [
   { term: 'Free Money', regex: false, variant: true, level: '高风险', lang: '英文', scope: ['主题', '首段'], wl: [], status: '启用', updater: ST_ME, updated: '2026-11-11 10:00' },
   { term: 'Guaranteed win', regex: false, variant: true, level: '高风险', lang: '英文', scope: ['主题', '首段'], wl: [], status: '启用', updater: ST_ME, updated: '2026-11-11 10:00' },
   { term: '\\d{2,3}% ?bonus', regex: true, variant: false, level: '中风险', lang: '英文', scope: ['主题'], wl: [], status: '启用', updater: ST_ME, updated: '2026-11-10 16:30' },
-  { term: 'Bingo', regex: false, variant: false, level: '中风险', lang: '英文', scope: ['主题', '首段'], wl: ['bingoplus'], status: '启用', updater: ST_ME, updated: '2026-11-10 16:20' },
+  { term: 'Bingo', regex: false, variant: false, level: '中风险', lang: '英文', scope: ['主题', '首段'], wl: ['bp-growth'], status: '启用', updater: ST_ME, updated: '2026-11-10 16:20' },
   { term: 'Click here', regex: false, variant: true, level: '中风险', lang: '英文', scope: ['全文'], wl: [], status: '启用', updater: 'lily@', updated: '2026-11-09 11:00' },
   { term: 'Libre', regex: false, variant: true, level: '中风险', lang: '菲语', scope: ['主题', '首段'], wl: [], status: '启用', updater: 'ann@', updated: '2026-11-08 15:40' },
   { term: 'Panalo agad', regex: false, variant: true, level: '高风险', lang: '菲语', scope: ['主题', '首段'], wl: [], status: '启用', updater: 'ann@', updated: '2026-11-08 15:38' },

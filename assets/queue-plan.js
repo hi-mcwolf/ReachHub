@@ -2,11 +2,11 @@
  * 窗口内到达、计划 ID 匹配的任务立即升为高优（PRD 6.5.5 计划占位）。依赖 queue.js。 */
 
 const QP_RULES = [
-  { id: 'PR-0001', planId: 'XL-CV-20261113-021', planName: '世界杯 1/4 决赛开赛提醒画布', site: 'bingoplus', channel: 'SMS',
+  { id: 'PR-0001', planId: 'XL-CV-20261113-021', planName: '世界杯 1/4 决赛开赛提醒画布', site: 'bp-growth', channel: 'SMS',
     from: '18:30', to: '18:45', repeat: '仅当天', hitMode: '窗口内全部', est: 15000, hits: 0, status: '待匹配', creator: 'marvin@', remark: '开赛前 30 分钟必须送达' },
   { id: 'PR-0002', planId: 'XL-PL-20261101-007', planName: '每日签到提醒计划', site: '', channel: 'SMS',
     from: '09:00', to: '09:10', repeat: '每天', hitMode: '仅首个', est: null, hits: 6, status: '待匹配', creator: 'jay@', remark: '' },
-  { id: 'PR-0003', planId: 'XL-CV-20261108-003', planName: '周末返利画布', site: 'gamezone', channel: 'SMS',
+  { id: 'PR-0003', planId: 'XL-CV-20261108-003', planName: '周末返利画布', site: 'bp-coc', channel: 'SMS',
     from: '12:00', to: '12:15', repeat: '仅当天', hitMode: '窗口内全部', est: 8000, hits: 0, status: '已失效', creator: 'marvin@', remark: '' },
 ];
 const QP_STATUS_TAG = { 待匹配: 'tag-primary', 已命中: 'tag-success', 已失效: 'tag-gray', 已取消: 'tag-gray-outline' };
@@ -105,7 +105,7 @@ function qpSimulate(a, r) {
   const n = V2_TASKS.filter(t => t.planId).length + 1;
   const id = 'T2026071302' + n;
   const target = r.est || 12000;
-  const t = { id, name: (r.planName || '星灵计划任务').replace(/画布|计划$/, '') + '（星灵）', site: r.site || 'bingoplus', channel: 'SMS', account: a.id,
+  const t = { id, name: (r.planName || '星灵计划任务').replace(/画布|计划$/, '') + '（星灵）', site: r.site || 'bp-growth', channel: 'SMS', account: a.id,
     source: 'API', app: '星灵', creator: 'ken@', operator: 'ken@', category: '营销', status: 'queued', approval: 'none',
     target, remaining: target, sched: '立即', planId: r.planId,
     qReady: QS.now, qSeq: QS.now, qPrio: '普通', qHighAt: null };

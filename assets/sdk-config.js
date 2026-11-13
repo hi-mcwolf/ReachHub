@@ -13,8 +13,8 @@
     ch: q.get('ch') || 'sms',
   };
   /* 活动 → 产品线（MMS 活动自带产品线；原型取固定映射） */
-  const ACT_SITE = { ACT202607001: 'bingoplus', ACT202607002: 'bingoplus', ACT202607003: 'bingoplus', ACT202607004: 'bingoplus',
-    ACT202607005: 'bingoplus', ACT202607006: 'bingoplus', ACT202607007: 'bingoplus', ACT202607008: 'bingoplus' };
+  const ACT_SITE = { ACT202607001: 'bp-growth', ACT202607002: 'bp-growth', ACT202607003: 'bp-growth', ACT202607004: 'bp-growth',
+    ACT202607005: 'bp-growth', ACT202607006: 'bp-growth', ACT202607007: 'bp-growth', ACT202607008: 'bp-growth' };
   const post = (type, data) => { if (window.parent !== window) window.parent.postMessage({ src: 'reach-sdk', type, data }, '*'); };
 
   function lockField(el, text) {

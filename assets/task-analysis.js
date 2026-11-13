@@ -22,7 +22,7 @@ const TA_TEMPLATES = {
   'TPL-SMS-0025': '周末返利', 'TPL-SMS-0031': '开赛提醒', 'TPL-SMS-0040': '注册礼包', 'TPL-SMS-0050': '账号安全通知',
   'TPL-MAIL-0003': '周报邮件', 'TPL-PUSH-0009': 'VIP 生日礼包',
 };
-const TA_SITE_SENDER = { bingoplus: 'BINGOPLUS', arenaplus: 'ARENAPLUS', gamezone: 'GAMEZONE', 'bp-vip': 'BPVIP', perya: 'PERYA', pinoyplay: 'PINOYPLAY' };
+const TA_SITE_SENDER = { 'bp-growth': 'BPGROWTH', 'bp-poc': 'BPPLATFORM', 'bp-coc': 'BPCONTENT', 'bp-vip': 'BPVIP', gamezone: 'GAMEZONE', arenaplus: 'ARENAPLUS' };
 const TA_PREFIX_W = { '0917': 24, '0905': 18, '0927': 15, '0918': 14, '0998': 11, '0947': 10, '0966': 8 };
 const TA_RETRY_VENDOR = 'NXLink';
 const TA_RETRY_ACCOUNT = 'AGG-01';

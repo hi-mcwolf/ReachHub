@@ -7,19 +7,19 @@
 /* ================= 页面数据 ================= */
 const AP_USERS = ['ken@', 'jay@', 'mia@', 'leo@', 'lily@', 'ann@', 'marvin@'];
 const AP_EXTRA = {
-  xl_01:  { siteAll: ['BP'], siteList: [], defaultSite: 'bingoplus', approvers: [], events: ['task', 'msgFinal'], sandbox: false, remark: '星灵活动页通过 H5 SDK 配置触达；批量 API 发送开赛提醒' },
-  uc_01:  { siteAll: [], siteList: ['bingoplus', 'perya', 'pinoyplay'], defaultSite: 'bingoplus', approvers: [], events: ['task', 'msgFinal'], sandbox: false, remark: '注册欢迎 / 安全通知 / OTP' },
-  rc_01:  { siteAll: [], siteList: ['bingoplus'], defaultSite: '', approvers: ['mia@', 'lily@'], events: ['task'], sandbox: false, remark: '' },
-  mms_01: { siteAll: [], siteList: ['perya'], defaultSite: '', approvers: ['leo@'], events: ['task'], sandbox: true, remark: '对接中，暂停' },
+  xl_01:  { siteAll: ['BP'], siteList: [], defaultSite: 'bp-growth', approvers: [], events: ['task', 'msgFinal'], sandbox: false, remark: '星灵活动页通过 H5 SDK 配置触达；批量 API 发送开赛提醒' },
+  uc_01:  { siteAll: [], siteList: ['bp-growth', 'gamezone', 'arenaplus'], defaultSite: 'bp-growth', approvers: [], events: ['task', 'msgFinal'], sandbox: false, remark: '注册欢迎 / 安全通知 / OTP' },
+  rc_01:  { siteAll: [], siteList: ['bp-growth'], defaultSite: '', approvers: ['mia@', 'lily@'], events: ['task'], sandbox: false, remark: '' },
+  mms_01: { siteAll: [], siteList: ['gamezone'], defaultSite: '', approvers: ['leo@'], events: ['task'], sandbox: true, remark: '对接中，暂停' },
 };
 const AP_APPS = V2_APPS.map(a => Object.assign({}, a, AP_EXTRA[a.appId] || { siteAll: [], siteList: [], defaultSite: '', approvers: [], events: ['task'], sandbox: false, remark: '' }));
 
 const AP_TPLS = [
-  { code: 'TPL-SMS-0012', site: 'bingoplus', channel: 'SMS', content: 'Only the best teams remain! Join the World Cup prediction on BingoPlus and win daily prizes. Reply STOP to opt out.' },
-  { code: 'TPL-SMS-0020', site: 'bingoplus', channel: 'SMS', content: 'Hi {nickname}, your weekend top-up reward is ready. Log in to BingoPlus to check it.' },
-  { code: 'TPL-SMS-0031', site: 'arenaplus', channel: 'SMS', content: 'ArenaPlus: the match starts at 20:00. Tap to watch live.' },
-  { code: 'TPL-MAIL-0007', site: 'bingoplus', channel: '邮件', content: 'This week on BingoPlus: World Cup predictions are open. See the featured match lineup inside.' },
-  { code: 'TPL-PUSH-0003', site: 'bingoplus', channel: 'Push', content: 'World Cup predictions are open. Tap to join.' },
+  { code: 'TPL-SMS-0012', site: 'bp-growth', channel: 'SMS', content: 'Only the best teams remain! Join the World Cup prediction on BingoPlus and win daily prizes. Reply STOP to opt out.' },
+  { code: 'TPL-SMS-0020', site: 'bp-growth', channel: 'SMS', content: 'Hi {nickname}, your weekend top-up reward is ready. Log in to BingoPlus to check it.' },
+  { code: 'TPL-SMS-0031', site: 'bp-poc', channel: 'SMS', content: 'ArenaPlus: the match starts at 20:00. Tap to watch live.' },
+  { code: 'TPL-MAIL-0007', site: 'bp-growth', channel: '邮件', content: 'This week on BingoPlus: World Cup predictions are open. See the featured match lineup inside.' },
+  { code: 'TPL-PUSH-0003', site: 'bp-growth', channel: 'Push', content: 'World Cup predictions are open. Tap to join.' },
 ];
 const AP_CROWDS = [
   { id: 'CP-20261101-07', name: '世界杯活跃用户', n: 12800 },
@@ -38,22 +38,22 @@ let apSeq = 100;
 
 /* 调用审计（6.7.7） */
 const AP_AUDIT = [
-  { time: '2026-11-11 10:00:01', app: '星灵', type: '发送', result: '受理', reason: '', task: 'T20260713005', outId: 'order-20261111-001', site: 'bingoplus', channel: 'SMS', cat: '营销' },
+  { time: '2026-11-11 10:00:01', app: '星灵', type: '发送', result: '受理', reason: '', task: 'T20260713005', outId: 'order-20261111-001', site: 'bp-growth', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:02:37', app: '星灵', type: '发送', result: '拒绝', reason: 'SITE_OFFLINE 产品线已下线（arena-old）', task: '', outId: 'order-20261111-014', site: 'arena-old', channel: 'SMS', cat: '营销' },
-  { time: '2026-11-11 10:05:12', app: '星灵', type: '预检', result: '受理', reason: '', task: '', outId: 'order-20261111-015', site: 'bingoplus', channel: '邮件', cat: '营销' },
-  { time: '2026-11-11 10:08:44', app: '星灵', type: '回调投递', result: '回调失败', reason: 'CALLBACK_FAILED 3 次重试仍失败（HTTP 503），已通知负责人', task: 'T20260713001', outId: 'order-20261110-088', site: 'bingoplus', channel: 'SMS', cat: '营销',
+  { time: '2026-11-11 10:05:12', app: '星灵', type: '预检', result: '受理', reason: '', task: '', outId: 'order-20261111-015', site: 'bp-growth', channel: '邮件', cat: '营销' },
+  { time: '2026-11-11 10:08:44', app: '星灵', type: '回调投递', result: '回调失败', reason: 'CALLBACK_FAILED 3 次重试仍失败（HTTP 503），已通知负责人', task: 'T20260713001', outId: 'order-20261110-088', site: 'bp-growth', channel: 'SMS', cat: '营销',
     retries: [['首次投递', '10:08:44', '失败 · HTTP 503'], ['第 1 次重试（+1 分钟）', '10:09:44', '失败 · HTTP 503'], ['第 2 次重试（+5 分钟）', '10:14:44', '失败 · 连接超时'], ['第 3 次重试（+30 分钟）', '10:44:44', '失败 · HTTP 503']], event: '执行统计快照' },
-  { time: '2026-11-11 10:11:05', app: '用户中心', type: '发送', result: '受理', reason: '', task: 'E20261111-UC-REG', outId: 'reg-88123401', site: 'bingoplus', channel: 'SMS', cat: '通知' },
-  { time: '2026-11-11 10:11:06', app: '用户中心', type: '发送', result: '限流', reason: 'RATE_LIMITED 超出速率上限 100 请求 / 秒', task: '', outId: 'reg-88123477', site: 'bingoplus', channel: 'SMS', cat: '通知' },
-  { time: '2026-11-11 10:15:30', app: '用户中心', type: '回调投递', result: '受理', reason: '', task: 'E20261111-UC-REG', outId: 'reg-88123401', site: 'bingoplus', channel: 'SMS', cat: '通知',
+  { time: '2026-11-11 10:11:05', app: '用户中心', type: '发送', result: '受理', reason: '', task: 'E20261111-UC-REG', outId: 'reg-88123401', site: 'bp-growth', channel: 'SMS', cat: '通知' },
+  { time: '2026-11-11 10:11:06', app: '用户中心', type: '发送', result: '限流', reason: 'RATE_LIMITED 超出速率上限 100 请求 / 秒', task: '', outId: 'reg-88123477', site: 'bp-growth', channel: 'SMS', cat: '通知' },
+  { time: '2026-11-11 10:15:30', app: '用户中心', type: '回调投递', result: '受理', reason: '', task: 'E20261111-UC-REG', outId: 'reg-88123401', site: 'bp-growth', channel: 'SMS', cat: '通知',
     retries: [['首次投递', '10:15:30', '失败 · HTTP 502'], ['第 1 次重试（+1 分钟）', '10:16:30', '成功 · HTTP 200']], event: '已送达' },
-  { time: '2026-11-11 10:20:18', app: '风控平台', type: '发送', result: '拒绝', reason: 'CHANNEL_NOT_ALLOWED 通道不在允许范围（Push）', task: '', outId: 'rc-alert-0091', site: 'bingoplus', channel: 'Push', cat: '通知' },
-  { time: '2026-11-11 10:21:40', app: '风控平台', type: '发送', result: '受理', reason: '', task: 'T20261111021', outId: 'rc-alert-0092', site: 'bingoplus', channel: 'SMS', cat: '通知' },
-  { time: '2026-11-11 10:30:02', app: 'MMS 活动中心', type: '发送', result: '拒绝', reason: 'APP_DISABLED 接入方已停用', task: '', outId: 'mms-7781', site: 'perya', channel: 'SMS', cat: '营销' },
-  { time: '2026-11-11 10:31:15', app: '星灵', type: '查询', result: '受理', reason: '', task: 'T20260713001', outId: 'order-20261110-088', site: 'bingoplus', channel: 'SMS', cat: '营销' },
-  { time: '2026-11-11 10:35:47', app: '星灵', type: '发送', result: '拒绝', reason: 'TEMPLATE_REQUIRED 模板免审方式下必须使用模板', task: '', outId: 'order-20261111-021', site: 'bingoplus', channel: 'SMS', cat: '营销' },
+  { time: '2026-11-11 10:20:18', app: '风控平台', type: '发送', result: '拒绝', reason: 'CHANNEL_NOT_ALLOWED 通道不在允许范围（Push）', task: '', outId: 'rc-alert-0091', site: 'bp-growth', channel: 'Push', cat: '通知' },
+  { time: '2026-11-11 10:21:40', app: '风控平台', type: '发送', result: '受理', reason: '', task: 'T20261111021', outId: 'rc-alert-0092', site: 'bp-growth', channel: 'SMS', cat: '通知' },
+  { time: '2026-11-11 10:30:02', app: 'MMS 活动中心', type: '发送', result: '拒绝', reason: 'APP_DISABLED 接入方已停用', task: '', outId: 'mms-7781', site: 'gamezone', channel: 'SMS', cat: '营销' },
+  { time: '2026-11-11 10:31:15', app: '星灵', type: '查询', result: '受理', reason: '', task: 'T20260713001', outId: 'order-20261110-088', site: 'bp-growth', channel: 'SMS', cat: '营销' },
+  { time: '2026-11-11 10:35:47', app: '星灵', type: '发送', result: '拒绝', reason: 'TEMPLATE_REQUIRED 模板免审方式下必须使用模板', task: '', outId: 'order-20261111-021', site: 'bp-growth', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:40:09', app: '用户中心', type: '发送', result: '拒绝', reason: 'SITE_NOT_FOUND 产品线不存在（bingo-ph）', task: '', outId: 'reg-88123990', site: 'bingo-ph', channel: 'SMS', cat: '通知' },
-  { time: '2026-11-11 10:42:51', app: '星灵', type: '回调投递', result: '受理', reason: '', task: 'T20260713005', outId: 'order-20261111-001', site: 'bingoplus', channel: 'SMS', cat: '营销',
+  { time: '2026-11-11 10:42:51', app: '星灵', type: '回调投递', result: '受理', reason: '', task: 'T20260713005', outId: 'order-20261111-001', site: 'bp-growth', channel: 'SMS', cat: '营销',
     retries: [['首次投递', '10:42:51', '成功 · HTTP 200']], event: '排队中' },
 ];
 
@@ -406,18 +406,18 @@ function apSaveForm() {
 
 /* ================= 调试台 ================= */
 const AP_PRESETS = [
-  { label: '正常受理', set: { appId: 'xl_01', mode: '任务式', site: 'bingoplus', cat: '营销', channels: ['SMS'], crowd: 'CP-20261101-07', tpl: 'TPL-SMS-0012', content: '' } },
+  { label: '正常受理', set: { appId: 'xl_01', mode: '任务式', site: 'bp-growth', cat: '营销', channels: ['SMS'], crowd: 'CP-20261101-07', tpl: 'TPL-SMS-0012', content: '' } },
   { label: '产品线已下线', set: { appId: 'xl_01', site: 'arena-old', channels: ['SMS'], tpl: 'TPL-SMS-0012' } },
-  { label: '超出允许通道', set: { appId: 'xl_01', site: 'bingoplus', channels: ['SMS', '站内信'], tpl: 'TPL-SMS-0012' } },
-  { label: 'Out Id 重复', set: { appId: 'xl_01', site: 'bingoplus', channels: ['SMS'], tpl: 'TPL-SMS-0012', outId: 'order-20261111-001' } },
-  { label: '自由文案（模板免审）', set: { appId: 'xl_01', site: 'bingoplus', channels: ['SMS'], tpl: '', content: 'Hi Marvin, World Cup prediction closes tonight. Join now on BingoPlus!' } },
-  { label: '逐任务审批', set: { appId: 'rc_01', mode: '批量', site: 'bingoplus', cat: '通知', channels: ['SMS'], tpl: '', content: 'Your account login from a new device was detected. If not you, contact support.', recipients: 'user:10023\nuser:10024\n+639171234567' } },
-  { label: '超出日配额', set: { appId: 'xl_01', mode: '任务式', site: 'bingoplus', cat: '营销', channels: ['SMS'], crowd: 'CP-20261105-11', tpl: 'TPL-SMS-0012' } },
-  { label: '邮件预检强提醒', set: { appId: 'xl_01', site: 'bingoplus', cat: '营销', channels: ['邮件'], tpl: '', content: 'Claim your Free Bonus now! Win Big this weekend with an exclusive offer.' } },
-  { label: '接入方已停用', set: { appId: 'mms_01', site: 'perya', cat: '营销', channels: ['SMS'], tpl: '' , content: 'Perya weekend event is live.' } },
+  { label: '超出允许通道', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS', '站内信'], tpl: 'TPL-SMS-0012' } },
+  { label: 'Out Id 重复', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS'], tpl: 'TPL-SMS-0012', outId: 'order-20261111-001' } },
+  { label: '自由文案（模板免审）', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS'], tpl: '', content: 'Hi Marvin, World Cup prediction closes tonight. Join now on BingoPlus!' } },
+  { label: '逐任务审批', set: { appId: 'rc_01', mode: '批量', site: 'bp-growth', cat: '通知', channels: ['SMS'], tpl: '', content: 'Your account login from a new device was detected. If not you, contact support.', recipients: 'user:10023\nuser:10024\n+639171234567' } },
+  { label: '超出日配额', set: { appId: 'xl_01', mode: '任务式', site: 'bp-growth', cat: '营销', channels: ['SMS'], crowd: 'CP-20261105-11', tpl: 'TPL-SMS-0012' } },
+  { label: '邮件预检强提醒', set: { appId: 'xl_01', site: 'bp-growth', cat: '营销', channels: ['邮件'], tpl: '', content: 'Claim your Free Bonus now! Win Big this weekend with an exclusive offer.' } },
+  { label: '接入方已停用', set: { appId: 'mms_01', site: 'gamezone', cat: '营销', channels: ['SMS'], tpl: '' , content: 'GameZone weekend event is live.' } },
 ];
 const apDbg = {
-  appId: 'xl_01', mode: '任务式', site: 'bingoplus', cat: '营销', channels: ['SMS'], imSub: '', crowd: 'CP-20261101-07',
+  appId: 'xl_01', mode: '任务式', site: 'bp-growth', cat: '营销', channels: ['SMS'], imSub: '', crowd: 'CP-20261101-07',
   recipients: 'user:10023\nuser:10024\nuser:10025', tpl: 'TPL-SMS-0012', content: '', vars: 'nickname=Marvin', operator: 'ken@',
   activity: 'ACT202607001', outId: 'order-20261111-101', taskName: '开赛提醒', timing: '立即', time: '', test: false,
 };

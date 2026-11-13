@@ -15,39 +15,41 @@ const US_UNK = { '2026-07': 9000, '2026-08': 3200, '2026-09': 1100, '2026-10': 6
 const US_OLD_MF = { '2026-07': .8, '2026-08': .2 }; // 已下线产品线只有早期数据
 
 const US_EXTRA_ACCOUNTS = [
-  { id: 'BP-03', channel: 'SMS', vendor: 'NXLink', bl: 'BP', senders: ['BINGOPLUS'] },
-  { id: 'GP-mail', channel: '邮件', vendor: 'OneSignal', bl: 'GP', senders: ['news@perya.ph'] },
+  { id: 'BP-03', channel: 'SMS', vendor: 'NXLink', bl: 'BP', senders: ['BPGROWTH'] },
+  { id: 'GP-mail', channel: '邮件', vendor: 'OneSignal', bl: 'GP', senders: ['news@gamezone.ph'] },
   { id: 'GP-push', channel: 'Push', vendor: 'Engagement Lab', bl: 'GP', senders: ['GP App'] },
   { id: 'BP-inbox', channel: '站内信', vendor: '站内信（自建）', bl: 'BP', senders: ['BP 站内信'] },
+  { id: 'AP-push', channel: 'Push', vendor: 'Engagement Lab', bl: 'AP', senders: ['AP App'] },
+  { id: 'AP-inbox', channel: '站内信', vendor: '站内信（自建）', bl: 'AP', senders: ['AP 站内信'] },
   { id: 'GP-inbox', channel: '站内信', vendor: '站内信（自建）', bl: 'GP', senders: ['GP 站内信'] },
 ];
 const US_ALL_ACCOUNTS = V2_ACCOUNTS.concat(US_EXTRA_ACCOUNTS);
 function usAcct(id) { return US_ALL_ACCOUNTS.find(a => a.id === id) || { vendor: '-' }; }
 
 const US_ROUTES = { // [通道, 账号, 发送方标识, 10 月基准条数]
-  bingoplus: [['SMS', 'BP-01', 'BINGOPLUS', 300000], ['SMS', 'BP-02', 'BINGOPLUS', 170000], ['SMS', 'BP-03', 'BINGOPLUS', 26000], ['SMS', 'OTP-BP', 'BPVERIFY', 60000],
+  'bp-growth': [['SMS', 'BP-01', 'BPGROWTH', 300000], ['SMS', 'BP-02', 'BPGROWTH', 170000], ['SMS', 'BP-03', 'BPGROWTH', 26000], ['SMS', 'OTP-BP', 'BPVERIFY', 60000],
     ['邮件', 'BP-mail', 'news@bingoplus.ph', 150000], ['Push', 'BP-push', 'BP App', 260000], ['站内信', 'BP-inbox', 'BP 站内信', 80000], ['IM', 'BP-im', 'BingoPlus Viber', 22000]],
-  arenaplus: [['SMS', 'BP-01', 'ARENAPLUS', 160000], ['邮件', 'BP-mail', 'hello@arenaplus.ph', 60000], ['Push', 'BP-push', 'BP App', 90000], ['站内信', 'BP-inbox', 'BP 站内信', 30000]],
-  gamezone: [['SMS', 'BP-01', 'GAMEZONE', 70000], ['Push', 'BP-push', 'BP App', 30000], ['站内信', 'BP-inbox', 'BP 站内信', 15000]],
+  'bp-poc': [['SMS', 'BP-01', 'BPPLATFORM', 160000], ['邮件', 'BP-mail', 'news@bingoplus.ph', 60000], ['Push', 'BP-push', 'BP App', 90000], ['站内信', 'BP-inbox', 'BP 站内信', 30000]],
+  'bp-coc': [['SMS', 'BP-01', 'BPCONTENT', 70000], ['Push', 'BP-push', 'BP App', 30000], ['站内信', 'BP-inbox', 'BP 站内信', 15000]],
   'bp-vip': [['SMS', 'BP-02', 'BPVIP', 18000], ['Push', 'BP-push', 'BP App', 9000], ['IM', 'BP-im', 'BingoPlus Viber', 4000]],
-  perya: [['SMS', 'GP-01', 'PERYA', 120000], ['邮件', 'GP-mail', 'news@perya.ph', 40000], ['Push', 'GP-push', 'GP App', 60000], ['站内信', 'GP-inbox', 'GP 站内信', 25000]],
-  pinoyplay: [['SMS', 'GP-01', 'PINOYPLAY', 55000], ['Push', 'GP-push', 'GP App', 20000], ['站内信', 'GP-inbox', 'GP 站内信', 9000]],
-  'arena-old': [['SMS', 'BP-01', 'ARENAPLUS', 15000]],
+  gamezone: [['SMS', 'GP-01', 'GAMEZONE', 120000], ['邮件', 'GP-mail', 'news@gamezone.ph', 40000], ['Push', 'GP-push', 'GP App', 60000], ['站内信', 'GP-inbox', 'GP 站内信', 25000]],
+  arenaplus: [['SMS', 'AP-01', 'ARENAPLUS', 55000], ['Push', 'AP-push', 'AP App', 20000], ['站内信', 'AP-inbox', 'AP 站内信', 9000]],
+  'arena-old': [['SMS', 'BP-01', 'BPPLATFORM', 15000]],
 };
 const US_PEOPLE = { // 手动任务创建人 / 星灵 operator
-  bingoplus: { manual: ['lily@', 'ken@'], xl: ['marvin@', 'ken@'] },
-  arenaplus: { manual: ['lily@', 'ann@'], xl: ['marvin@'] },
-  gamezone: { manual: ['ann@'], xl: ['marvin@'] },
+  'bp-growth': { manual: ['lily@', 'ken@'], xl: ['marvin@', 'ken@'] },
+  'bp-poc': { manual: ['lily@', 'ann@'], xl: ['marvin@'] },
+  'bp-coc': { manual: ['ann@'], xl: ['marvin@'] },
   'bp-vip': { manual: ['lily@'], xl: ['ken@'] },
-  perya: { manual: ['rico@', 'joy@'], xl: [] },
-  pinoyplay: { manual: ['joy@'], xl: [] },
+  gamezone: { manual: ['rico@', 'joy@'], xl: [] },
+  arenaplus: { manual: ['joy@'], xl: [] },
   'arena-old': { manual: ['ann@'], xl: [] },
 };
 /* 兜底归属：API 未带 / 带错 site id → 接入方默认产品线（报表单列） [接入方, 通道, 账号, Sender, 类别, 人员, 类型, 基准] */
 const US_FB_ROUTES = [
-  ['星灵', 'SMS', 'BP-01', 'BINGOPLUS', '营销', 'marvin@', 'operator', 6500],
+  ['星灵', 'SMS', 'BP-01', 'BPGROWTH', '营销', 'marvin@', 'operator', 6500],
   ['星灵', 'Push', 'BP-push', 'BP App', '营销', 'marvin@', 'operator', 2000],
-  ['用户中心', 'SMS', 'BP-02', 'BINGOPLUS', '通知', '系统', '系统', 1800],
+  ['用户中心', 'SMS', 'BP-02', 'BPGROWTH', '通知', '系统', '系统', 1800],
   ['用户中心', '站内信', 'BP-inbox', 'BP 站内信', '通知', '系统', '系统', 1500],
 ];
 
@@ -62,7 +64,7 @@ function usSlices(site, ch, acct) { // [类别, 来源, 接入方, 占比]
   if (acct === 'OTP-BP') return [['OTP 事务', 'API', '用户中心', 1]];
   const bp = US_PEOPLE[site].xl.length > 0;
   const T = {
-    SMS: bp ? [['营销', '手动', null, .55], ['营销', 'API', '星灵', .25], ['通知', '手动', null, .08], ['通知', 'API', '用户中心', .08], ['通知', 'API', site === 'bingoplus' ? '风控平台' : '用户中心', .04]]
+    SMS: bp ? [['营销', '手动', null, .55], ['营销', 'API', '星灵', .25], ['通知', '手动', null, .08], ['通知', 'API', '用户中心', .08], ['通知', 'API', site === 'bp-growth' ? '风控平台' : '用户中心', .04]]
       : [['营销', '手动', null, .8], ['通知', 'API', '用户中心', .2]],
     邮件: bp ? [['营销', '手动', null, .6], ['营销', 'API', '星灵', .4]] : [['营销', '手动', null, 1]],
     Push: bp ? [['营销', '手动', null, .4], ['营销', 'API', '星灵', .35], ['通知', 'API', '用户中心', .25]] : [['营销', '手动', null, .7], ['通知', 'API', '用户中心', .3]],
@@ -88,7 +90,7 @@ function usAddFact(out, f, raw) {
   const cnt = Math.round(raw * (.9 + .2 * r));
   if (cnt <= 0) return;
   const seg = f.ch === 'SMS' ? ({ 营销: 1.18, 通知: 1.06, 'OTP 事务': 1 }[f.cat] + (r - .5) * .04) : 1;
-  const misRate = f.ch === 'SMS' ? ({ arenaplus: .012, gamezone: .004 }[f.site] || 0) : 0;
+  const misRate = f.ch === 'SMS' ? ({ 'bp-poc': .012, 'bp-coc': .004 }[f.site] || 0) : 0;
   out.push(Object.assign(f, {
     vendor: usAcct(f.acct).vendor, cnt, bill: usPerMsg(f.ch) ? Math.round(cnt * seg) : 0, mis: Math.round(cnt * misRate),
     tasks: f.ptype === '系统' ? 0 : Math.max(1, Math.round(cnt / (f.cat === '营销' ? 14000 : 5000))),
@@ -108,7 +110,7 @@ const US_FACTS = (() => {
     });
     US_FB_ROUTES.forEach(([app, ch, acct, sender, cat, person, ptype, base]) =>
       usAddFact(out, { m, site: US_FB, bl: 'BP', ch, acct, sender, cat, src: 'API', app, person, ptype }, base * US_FB_MF[m]));
-    if (US_UNK[m]) usAddFact(out, { m, site: US_UNKNOWN, bl: '-', ch: 'SMS', acct: 'BP-01', sender: 'BINGOPLUS', cat: '营销', src: '手动', app: null, person: '系统', ptype: '系统', legacy: true }, US_UNK[m]);
+    if (US_UNK[m]) usAddFact(out, { m, site: US_UNKNOWN, bl: '-', ch: 'SMS', acct: 'BP-01', sender: 'BPGROWTH', cat: '营销', src: '手动', app: null, person: '系统', ptype: '系统', legacy: true }, US_UNK[m]);
   });
   return out;
 })();
@@ -120,7 +122,7 @@ const US_COL_DIMS = ['ch', 'vendor', 'cat', 'src', 'none'];
 const US_METRICS = { cnt: '条数', bill: '计费条数', share: '分摊占比' };
 const US_P_METRICS = { cnt: '条数', bill: '计费条数' };
 const US_LARK = ['lily@', 'ken@', 'ann@', 'marvin@', 'rico@', 'joy@', 'amy@（财务）', 'finance 群', 'BP 运营群', 'GP 运营群', '触达管理员群'];
-const US_PL_OWNER = { bingoplus: 'lily@', arenaplus: 'lily@', gamezone: 'ann@', 'bp-vip': 'lily@', perya: 'rico@', pinoyplay: 'joy@', 'arena-old': 'ann@' };
+const US_PL_OWNER = { 'bp-growth': 'lily@', 'bp-poc': 'lily@', 'bp-coc': 'ann@', 'bp-vip': 'lily@', gamezone: 'rico@', arenaplus: 'joy@', 'arena-old': 'ann@' };
 
 function usGlobal() { return hasPerm('queue'); } // 「统计查看（全局）」近似；运营只看本人数据权限内（BP）
 function usScopeSites() { return V2_PRODUCT_LINES.filter(p => usGlobal() || p.bl === 'BP').map(p => p.siteId); }
@@ -588,7 +590,7 @@ const US_REPORTS = ['月度用量分摊表', '人员用量表'];
 const US_SUBS = [
   { id: 1, name: '财务月报', reports: US_REPORTS.slice(), sites: V2_PRODUCT_LINES.map(p => p.siteId), recips: ['finance 群', 'amy@（财务）'], day: 1, time: '09:00', on: true, last: { at: '2026-11-01 09:00', ok: true } },
   { id: 2, name: 'BP 产品线月报', reports: ['人员用量表'], sites: V2_PRODUCT_LINES.filter(p => p.bl === 'BP').map(p => p.siteId), recips: ['BP 运营群', 'lily@'], day: 1, time: '10:00', on: true, last: { at: '2026-11-01 10:00', ok: false } },
-  { id: 3, name: 'GP 预算月报', reports: US_REPORTS.slice(), sites: ['perya'], recips: ['rico@'], day: 3, time: '09:30', on: false, last: { at: '2026-10-03 09:30', ok: true } },
+  { id: 3, name: 'GP 预算月报', reports: US_REPORTS.slice(), sites: ['gamezone'], recips: ['rico@'], day: 3, time: '09:30', on: false, last: { at: '2026-10-03 09:30', ok: true } },
 ];
 
 function sScopeText(sites) {
@@ -712,11 +714,11 @@ const US_THRESHOLDS = [50, 80, 90, 100, 120];
 const US_QUOTA_MONTHS = ['2026-11', '2026-12', '2027-01', '2027-02', '2027-03'];
 function qUsed(site, ch, metric) { return usSum(US_FACTS.filter(f => f.m === US_CUR && f.site === site && f.ch === ch), metric) || 0; }
 const US_QUOTAS = [ // demo：按当月已用反推的演示额度（用于展示 102% / 84% 等状态）
-  { site: 'bingoplus', ch: 'SMS', metric: 'bill', quota: 700000, eff: '2026-09', recips: ['lily@'], th: [80, 100] },
-  { site: 'arenaplus', ch: 'SMS', metric: 'bill', demo: 1.02, eff: '2026-10', recips: ['lily@', 'ann@'], th: [80, 100] },
-  { site: 'bingoplus', ch: 'Push', metric: 'cnt', demo: .46, eff: '2026-10', recips: ['ken@'], th: [80, 100] },
-  { site: 'perya', ch: 'SMS', metric: 'bill', demo: .84, eff: '2026-11', recips: ['rico@'], th: [80, 90, 100] },
-  { site: 'pinoyplay', ch: 'SMS', metric: 'bill', quota: 150000, eff: '2026-12', recips: ['joy@'], th: [80, 100] },
+  { site: 'bp-growth', ch: 'SMS', metric: 'bill', quota: 700000, eff: '2026-09', recips: ['lily@'], th: [80, 100] },
+  { site: 'bp-poc', ch: 'SMS', metric: 'bill', demo: 1.02, eff: '2026-10', recips: ['lily@', 'ann@'], th: [80, 100] },
+  { site: 'bp-growth', ch: 'Push', metric: 'cnt', demo: .46, eff: '2026-10', recips: ['ken@'], th: [80, 100] },
+  { site: 'gamezone', ch: 'SMS', metric: 'bill', demo: .84, eff: '2026-11', recips: ['rico@'], th: [80, 90, 100] },
+  { site: 'arenaplus', ch: 'SMS', metric: 'bill', quota: 150000, eff: '2026-12', recips: ['joy@'], th: [80, 100] },
 ].map((q, i) => Object.assign({ id: i + 1 }, q, { quota: q.quota || Math.round(qUsed(q.site, q.ch, q.metric) / q.demo / 1000) * 1000 }));
 
 function qStat(q) {

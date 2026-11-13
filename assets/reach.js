@@ -46,10 +46,10 @@ const HOME_DEMO_EMAIL_RECORDS = [
 ];
 const APPROVAL_QUEUE = [
   { id: 'AP20260714003', name: 'Messenger 社群拉新', channel: 'Messenger', appliedAt: '2026-07-14 09:20',
-    creator: 'lily@', audience: '新注册用户', taskType: '手动发送', timing: '定时 · 2026-07-15 10:00', category: '营销', site: 'bingoplus',
+    creator: 'lily@', audience: '新注册用户', taskType: '手动发送', timing: '定时 · 2026-07-15 10:00', category: '营销', site: 'bp-growth',
     contentSummary: '加入官方社群，每日抽奖赢免费竞猜券！', template: '-' },
   { id: 'AP20260713002', name: '世界杯决赛邮件预告', channel: '邮件', appliedAt: '2026-07-13 15:40',
-    creator: 'ken@', audience: '活跃用户', taskType: '手动发送', timing: '立即发送', category: '营销', site: 'bingoplus',
+    creator: 'ken@', audience: '活跃用户', taskType: '手动发送', timing: '立即发送', category: '营销', site: 'bp-growth',
     contentSummary: '决赛之夜即将来临，提前锁定您的冠军竞猜…', template: '世界杯竞猜提醒',
     emailContent: HOME_DEMO_EMAIL, emailRecords: HOME_DEMO_EMAIL_RECORDS },
   { id: 'AP20260712001', name: '沉默用户唤醒短信', channel: 'SMS', appliedAt: '2026-07-12 11:05',

@@ -6,15 +6,15 @@ const CD_TODAY = '2026-07-13';
 const CD_NOW_HOUR = 16;
 /* 共享数据缺少的账号（演示）：NXLink 聚合短信账号、站内信 */
 const CD_EXTRA_ACCOUNTS = [
-  { id: 'AGG-01', channel: 'SMS', vendor: 'NXLink', bl: 'BP', senders: ['BINGOPLUS', 'ARENAPLUS', 'GAMEZONE'] },
+  { id: 'AGG-01', channel: 'SMS', vendor: 'NXLink', bl: 'BP', senders: ['BPGROWTH', 'BPPLATFORM', 'BPCONTENT'] },
   { id: 'BP-inbox', channel: '站内信', vendor: '自建站内信', bl: 'BP', senders: ['BingoPlus 站内信', 'ArenaPlus 站内信'] },
 ];
 const CD_ACCOUNTS = V2_ACCOUNTS.concat(CD_EXTRA_ACCOUNTS);
 const CD_ACC_BASE = { 'BP-01': 88000, 'BP-02': 58000, 'GP-01': 21000, 'OTP-BP': 15000, 'AGG-01': 37000, 'BP-mail': 42000, 'BP-push': 30000, 'BP-im': 9000, 'BP-vbot': 3000, 'BP-msg': 4000, 'BP-msgbot': 2000, 'OTP-IM': 1500, 'BP-inbox': 50000 };
 const CD_SENDER_SITE = {
-  BINGOPLUS: ['bingoplus'], ARENAPLUS: ['arenaplus'], GAMEZONE: ['gamezone'], BPVIP: ['bp-vip'], PERYA: ['perya'], PINOYPLAY: ['pinoyplay'],
-  BPVERIFY: ['bingoplus', 'arenaplus'], 'news@bingoplus.ph': ['bingoplus'], 'hello@arenaplus.ph': ['arenaplus'],
-  'BP App': ['bingoplus', 'arenaplus', 'gamezone'], 'BingoPlus Viber': ['bingoplus'], 'BingoPlus 站内信': ['bingoplus'], 'ArenaPlus 站内信': ['arenaplus'],
+  BPGROWTH: ['bp-growth'], BPPLATFORM: ['bp-poc'], BPCONTENT: ['bp-coc'], BPVIP: ['bp-vip'], GAMEZONE: ['gamezone'], ARENAPLUS: ['arenaplus'],
+  BPVERIFY: ['bp-growth', 'bp-poc'], 'news@bingoplus.ph': ['bp-growth', 'bp-poc', 'bp-coc', 'bp-vip'],
+  'BP App': ['bp-growth', 'bp-poc', 'bp-coc'], 'BingoPlus Viber': ['bp-growth'], 'BingoPlus 站内信': ['bp-growth'], 'ArenaPlus 站内信': ['bp-poc'],
 };
 /* 共用 Sender：发送方标识对应多个产品线，不计归属不一致 */
 const CD_SHARED_SENDERS = ['BPVERIFY', 'BP App'];
@@ -61,7 +61,7 @@ function cdUnits() {
     const cats = acc.mode === 'otp' ? { 'OTP 事务': 1 } : { 营销: .72, 通知: .28 };
     acc.senders.forEach((sender, si) => {
       const sw = acc.senders.length === 1 ? 1 : (si === 0 ? .55 : .45 / (acc.senders.length - 1));
-      const sites = CD_SENDER_SITE[sender] || ['bingoplus'];
+      const sites = CD_SENDER_SITE[sender] || ['bp-growth'];
       sites.forEach((site, pi) => {
         const pw = sites.length === 1 ? 1 : (pi === 0 ? .6 : .4 / (sites.length - 1));
         Object.entries(cats).forEach(([cat, cw]) => {
@@ -71,8 +71,8 @@ function cdUnits() {
       });
     });
   });
-  /* 归属不一致示例：GameZone 任务走了 BINGOPLUS（非共用 Sender） */
-  units.push({ id: 'BP-01|BINGOPLUS|gamezone|营销', channel: 'SMS', vendor: 'Globe', account: 'BP-01', sender: 'BINGOPLUS', site: 'gamezone', bl: 'BP', cat: '营销', base: 160, mismatch: 1 });
+  /* 归属不一致示例：GameZone 任务走了 BPGROWTH（非共用 Sender） */
+  units.push({ id: 'BP-01|BPGROWTH|gamezone|营销', channel: 'SMS', vendor: 'Globe', account: 'BP-01', sender: 'BPGROWTH', site: 'bp-coc', bl: 'BP', cat: '营销', base: 160, mismatch: 1 });
   CD._units = units;
   return units;
 }
@@ -80,7 +80,7 @@ function cdDayMul(day) { const dow = new Date(day + 'T00:00:00').getDay(); retur
 function cdAnomaly(u, day, hour) {
   const a = { del: 0, acc: 0, carrier: 0 };
   if (u.vendor === 'NXLink' && day === CD_TODAY && (hour == null || hour >= 13)) { a.del = -.06; a.acc = -.035; a.carrier = 1; }
-  if (u.vendor === 'Globe' && u.sender === 'ARENAPLUS' && day >= '2026-07-12') { a.del = -.045; a.carrier = 1; }
+  if (u.vendor === 'Globe' && u.sender === 'BPPLATFORM' && day >= '2026-07-12') { a.del = -.045; a.carrier = 1; }
   return a;
 }
 /* 单元 × 时段的事实（vol = 已提交条数） */
