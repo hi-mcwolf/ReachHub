@@ -1,7 +1,7 @@
 /* 触达 H5 SDK · 配置弹窗（iframe 页）— PRD 6.8.3
  * 复用触达「新建任务」弹出层（reach.js / content-editor.js），各通道内容编辑与触达一致（含 Viber 渠道 / 分类 / 账号）。
- * SDK 只建「系统调用」任务：不选任务类型、人群、发送时间；人群与时间由上游按任务code 调用时传入。
- * 上游 init 传入的上下文自动补全并只读：site id → 产品线；activity_id → 活动（及其产品线）；task_code → 任务code。
+ * 弹窗只配任务code 与通道内容，「保存」返回配置 ID，不建任务；名称、产品线、活动由上游传入（产品线 / 活动只读）。
+ * 上游业务单审批通过（或无需审批时提交）后，由上游服务端带配置 ID + 名称 + 审批信息创建系统调用任务（6.7.3）。
  */
 (function () {
   const q = new URLSearchParams(location.search);
@@ -33,8 +33,14 @@
     /* 任务类型固定系统调用：隐藏单选，标题说明 */
     const typeField = document.getElementById('ntTaskType')?.closest('.field');
     if (typeField) typeField.hidden = true;
-    document.getElementById('taskDrawerTitle').innerHTML = `触达配置 <span class="tag tag-gray-outline" style="margin-left:8px">系统调用</span><span class="v2-hint" style="margin-left:8px;font-weight:400">人群、发送时间由 ${esc(P.app)} 按任务code 调用时传入</span>`;
-    document.getElementById('createTaskBtn').textContent = '提交';
+    document.getElementById('taskDrawerTitle').innerHTML = `触达配置 <span class="tag tag-gray-outline" style="margin-left:8px">系统调用</span><span class="v2-hint" style="margin-left:8px;font-weight:400">保存后返回配置 ID；任务在 ${esc(P.app)} 业务单审批通过 / 提交后创建，人群与发送时间按任务code 调用时传入</span>`;
+    document.getElementById('createTaskBtn').textContent = '保存';
+    /* 名称由上游创建任务时传入：弹窗不显示 */
+    const nameEl = document.getElementById('ntName');
+    nameEl.value = '（上游传入）';
+    nameEl.closest('.field').hidden = true;
+    const rawToast = window.showToast;
+    window.showToast = m => rawToast(String(m).replace(/^已提交审批.*/, '已保存配置'));
 
     const pl = document.getElementById('ntProductLine');
     const act = document.getElementById('ntActivity');
@@ -44,14 +50,11 @@
       syncDraftActivityFromSelect();
       lockField(act, `由 ${esc(P.app)} 传入（activity_id）`);
     }
+    if (!P.activity && act) act.closest('.field').hidden = true; /* 未传活动不显示 */
     if (site && pl) {
       pl.value = site;
       draft.productLine = rhCurrentSite();
       lockField(pl, P.site ? `由 ${esc(P.app)} 传入（site id）` : '由活动带出');
-    }
-    if (!document.getElementById('ntName').value) {
-      const opt = act && act.selectedOptions[0];
-      if (opt && opt.value) document.getElementById('ntName').value = opt.textContent.trim();
     }
     const code = document.getElementById('ntTaskCode');
     if (code) {
@@ -67,7 +70,7 @@
     initCharCounters(document.getElementById('taskDrawer'));
     refreshIcons();
 
-    /* 提交成功 = RUNNING_TASKS 新增一条后关闭抽屉 → 回调 submitted；否则回调 closed */
+    /* 保存成功 = RUNNING_TASKS 新增一条后关闭抽屉 → 回调 saved（配置 ID）；否则回调 closed */
     const startLen = RUNNING_TASKS.length;
     const rawClose = closeDrawer;
     window.closeDrawer = function (id) {
@@ -75,8 +78,8 @@
       if (id !== 'taskDrawer') return;
       if (RUNNING_TASKS.length > startLen) {
         const t = RUNNING_TASKS[0];
-        post('submitted', {
-          name: t.name, site: t.site, taskCode: t.taskCode, activityId: t.activityId, activityName: t.activityName,
+        post('saved', {
+          configId: 'CFG-' + Date.now().toString().slice(-8), site: t.site, taskCode: t.taskCode, activityId: t.activityId, activityName: t.activityName,
           channels: draft.channels.map(c => rhChannelLabel(c)),
           contents: Object.fromEntries(draft.channels.map(c => [rhChannelLabel(c), { text: previewText(draft.perChannel[c].content) }])),
           emailCheck: t.emailCheck ? true : false,

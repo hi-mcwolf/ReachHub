@@ -32,7 +32,7 @@ const AP_MAIL_MID = ['offer', 'exclusive', 'limited', 'urgent', 'act now'];
 
 /* 幂等记录：AppId|Out Id → 首次结果（24 小时内） */
 const AP_OUTIDS = {
-  'xl_01|order-20261111-001': { kind: 'accepted', taskId: 'T20260713005', approval: 'approved', at: '2026-11-11 09:58:12', estStart: '17:42', estFinish: '18:02 ±5 分', hints: [] },
+  'xl_01|order-20261111-001': { kind: 'accepted', taskId: 'T20260713005', approval: 'approved', approverTxt: 'lily@ · 2026-11-11 09:40', at: '2026-11-11 09:58:12', estStart: '17:42', estFinish: '18:02 ±5 分', hints: [] },
 };
 let apSeq = 100;
 
@@ -51,7 +51,7 @@ const AP_AUDIT = [
   { time: '2026-11-11 10:21:40', app: '风控平台', type: '发送', result: '受理', reason: '', task: 'T20261111021', outId: 'rc-alert-0092', site: 'bp-growth', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:30:02', app: 'MMS 活动中心', type: '发送', result: '拒绝', reason: 'APP_DISABLED 接入方已停用', task: '', outId: 'mms-7781', site: 'gamezone', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:31:15', app: '星灵', type: '查询', result: '受理', reason: '', task: 'T20260713001', outId: 'order-20261110-088', site: 'bp-growth', channel: 'SMS', cat: '营销' },
-  { time: '2026-11-11 10:35:47', app: '星灵', type: '发送', result: '拒绝', reason: 'TEMPLATE_REQUIRED 模板免审方式下必须使用模板', task: '', outId: 'order-20261111-021', site: 'bp-growth', channel: 'SMS', cat: '营销' },
+  { time: '2026-11-11 10:35:47', app: '星灵', type: '发送', result: '拒绝', reason: 'APPROVAL_INFO_MISSING 声明需要审批但缺少审批人或审批时间', task: '', outId: 'order-20261111-021', site: 'bp-growth', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:40:09', app: '用户中心', type: '发送', result: '拒绝', reason: 'SITE_NOT_FOUND 产品线不存在（bingo-ph）', task: '', outId: 'reg-88123990', site: 'bingo-ph', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:42:51', app: '星灵', type: '回调投递', result: '受理', reason: '', task: 'T20260713005', outId: 'order-20261111-001', site: 'bp-growth', channel: 'SMS', cat: '营销',
     retries: [['首次投递', '10:42:51', '成功 · HTTP 200']], event: '排队中' },
@@ -164,8 +164,7 @@ function apValidate(req, forPrecheck) {
     if (!t || t.site !== site || !req.channels.includes(t.channel)) return R('TEMPLATE_MISMATCH', `模板 ${req.tpl} 与产品线 / 通道不匹配`);
   }
   if (!forPrecheck) {
-    if (app.approval === '模板免审' && !req.tpl) return R('TEMPLATE_REQUIRED', '模板免审方式下必须使用模板，传自由文案被拒绝');
-    if (app.approval === '逐任务审批' && req.mode === '单发') return R('APPROVAL_NOT_SUPPORTED', '逐任务审批方式不适用事件单发');
+    if (req.mode !== '单发' && req.needAppr === '是' && (!req.approver.trim() || !req.apprTime)) return R('APPROVAL_INFO_MISSING', '上游声明需要审批，但缺少审批人或审批时间');
     const need = apCount(req) * req.channels.length;
     if (app.usage + need > app.quota) return R('QUOTA_EXCEEDED', `超出接入方日配额：今日已用 ${fmtN(app.usage)}，本次 ${fmtN(need)}，配额 ${fmtN(app.quota)}`);
   }
@@ -195,7 +194,7 @@ function apRenderList() {
     (!apFilter.bls.length || a.bls.some(b => apFilter.bls.includes(b))) &&
     (!apFilter.status || a.status === apFilter.status));
   const body = document.getElementById('appRows');
-  if (!rows.length) { body.innerHTML = '<tr><td colspan="10" class="v2-muted" style="text-align:center;padding:32px">暂无数据</td></tr>'; return; }
+  if (!rows.length) { body.innerHTML = '<tr><td colspan="9" class="v2-muted" style="text-align:center;padding:32px">暂无数据</td></tr>'; return; }
   body.innerHTML = rows.map(a => `<tr>
     <td><b>${esc(a.name)}</b>${a.sandbox ? ' <span class="tag tag-warning">测试模式</span>' : ''}</td>
     <td><code>${a.appId}</code></td>
@@ -203,7 +202,6 @@ function apRenderList() {
     <td title="${esc(apAllowedSites(a).map(plName).join('、'))}">${apSitesLabel(a)}</td>
     <td>${a.channels.join(' ')}</td>
     <td>${a.cats.join(' ')}</td>
-    <td>${a.approval}</td>
     <td class="v2-num">${apUsageCell(a)}</td>
     <td>${a.status === '启用' ? '<span class="tag tag-success">启用</span>' : '<span class="tag tag-gray">停用</span>'}</td>
     <td>
@@ -261,11 +259,6 @@ function apToggle(app) {
 
 /* ---------- 新建 / 编辑表单 ---------- */
 let apEditing = null;
-const AP_APPROVAL_DESC = {
-  模板免审: '调用必须引用已审批模板；传自由文案 → 拒绝；任务审批状态 = 无需审批。适用：事件类、OTP。',
-  逐任务审批: '任务式 / 批量任务进入待审批，由下方审批人处理；通过 → 排队；拒绝 → 终止并回调。事件单发不适用（拒绝接入）。适用：营销批量。',
-  接入方授信: '注册时一次性审批场景，调用不审批；事后按比例抽检 + 失败率 / 内容突变自动停用。适用：自由文案的高频场景（如星灵拼接文案）。',
-};
 
 function apOpenForm(app) {
   apEditing = app || null;
@@ -294,9 +287,7 @@ function apOpenForm(app) {
       <label class="req">允许通道</label><div class="ap-chk-row">${V2_CHANNELS.map(c => chk('ch', c, a.channels.includes(c))).join('')}</div>
       <label class="req">允许消息类别</label><div class="ap-chk-row">${V2_MSG_CATEGORIES.map(c => chk('cat', c, a.cats.includes(c))).join('')}</div>
       <span class="v2-hint">OTP需管理员单独勾选</span>
-      <label class="req">审批方式</label><div class="radio-group" id="fmApproval">${['模板免审', '逐任务审批', '接入方授信'].map(m => `<label><input type="radio" name="approval" value="${m}" ${a.approval === m ? 'checked' : ''}>${m}${m === '接入方授信' ? ' <span class="tag tag-gray-outline">P1</span>' : ''}</label>`).join('')}</div>
-      <span class="v2-hint" id="fmApprovalDesc"></span>
-      <label id="fmApproverLab">审批人</label><input class="input" id="fmApprovers" list="apUsers" placeholder="SSO 账号，多人用逗号分隔，任一通过即可" value="${esc(a.approvers.join(', '))}" data-char-count="off">
+      <label>审批</label><span class="v2-hint" style="margin:0;align-self:center">不在触达配置：上游业务单需审批的，审批通过后才调用触达并传入审批人；无需审批的，审批人显示「无需审批」</span>
       <label class="req">日配额</label><div class="v2-flex"><input class="input" id="fmQuota" type="number" min="1" value="${a.quota}" style="width:200px"><span class="v2-muted">条 / 日</span></div>
       <span class="v2-hint">按消息数；超出拒绝</span>
       <label class="req">速率上限</label><div class="v2-flex"><input class="input" id="fmRate" type="number" min="1" max="1000" value="${a.rate}" style="width:200px"><span class="v2-muted">请求 / 秒</span></div>
@@ -344,13 +335,6 @@ function apBindForm(a) {
     syncDefault();
   }));
   syncDefault();
-  const syncApproval = () => {
-    const m = document.querySelector('[name=approval]:checked').value;
-    document.getElementById('fmApprovalDesc').textContent = AP_APPROVAL_DESC[m];
-    document.getElementById('fmApproverLab').classList.toggle('req', m === '逐任务审批');
-  };
-  document.querySelectorAll('[name=approval]').forEach(r => r.addEventListener('change', syncApproval));
-  syncApproval();
   document.getElementById('fmStatus').addEventListener('change', e => { document.getElementById('fmStatusTxt').textContent = e.target.checked ? '启用' : '停用'; });
   const rs = document.getElementById('fmReset');
   if (rs) rs.addEventListener('click', () => apResetSecret(apEditing));
@@ -362,8 +346,8 @@ function apSaveForm() {
   const sites = apFormSites();
   const data = {
     name: v('fmName'), owner: v('fmOwner'), siteAll: sites.siteAll, siteList: sites.siteList, defaultSite: v('fmDefault'),
-    channels: checked('ch'), cats: checked('cat'), approval: document.querySelector('[name=approval]:checked').value,
-    approvers: v('fmApprovers').split(/[,，\s]+/).filter(Boolean), quota: Number(v('fmQuota')), rate: Number(v('fmRate')),
+    channels: checked('ch'), cats: checked('cat'),
+    quota: Number(v('fmQuota')), rate: Number(v('fmRate')),
     callback: v('fmCallback'), events: checked('ev'), sandbox: document.getElementById('fmSandbox').checked,
     status: document.getElementById('fmStatus').checked ? '启用' : '停用', remark: v('fmRemark'),
   };
@@ -374,7 +358,6 @@ function apSaveForm() {
   if (!data.siteAll.length && !data.siteList.length) errs.push('请选择允许的产品线');
   if (!data.channels.length) errs.push('请选择允许通道');
   if (!data.cats.length) errs.push('请选择允许消息类别');
-  if (data.approval === '逐任务审批' && !data.approvers.length) errs.push('逐任务审批时审批人必填');
   if (!(data.quota >= 1)) errs.push('日配额需 ≥ 1');
   if (!(data.rate >= 1 && data.rate <= 1000)) errs.push('速率上限需在 1–1000 之间');
   if (data.callback && !/^https:\/\/\S+$/.test(data.callback)) errs.push('回调地址需为 https URL');
@@ -405,8 +388,10 @@ const AP_PRESETS = [
   { label: '产品线已下线', set: { appId: 'xl_01', site: 'arena-old', channels: ['SMS'], tpl: 'TPL-SMS-0012' } },
   { label: '超出允许通道', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS', '站内信'], tpl: 'TPL-SMS-0012' } },
   { label: 'Out Id 重复', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS'], tpl: 'TPL-SMS-0012', outId: 'order-20261111-001' } },
-  { label: '自由文案（模板免审）', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS'], tpl: '', content: 'Hi Marvin, World Cup prediction closes tonight. Join now on BingoPlus!' } },
-  { label: '逐任务审批', set: { appId: 'rc_01', mode: '批量', site: 'bp-growth', cat: '营销', channels: ['SMS'], tpl: '', content: 'Your account login from a new device was detected. If not you, contact support.', recipients: 'user:10023\nuser:10024\n+639171234567' } },
+  { label: '自由文案', set: { appId: 'xl_01', site: 'bp-growth', channels: ['SMS'], tpl: '', content: 'Hi Marvin, World Cup prediction closes tonight. Join now on BingoPlus!' } },
+  { label: '上游已审批', set: { needAppr: '是', approver: 'lily@', apprTime: '2026-11-23T15:20', apprRef: 'MMS-AP-0031' } },
+  { label: '审批信息缺失', set: { needAppr: '是', approver: '', apprTime: '' } },
+  { label: '批量（无需审批）', set: { appId: 'rc_01', mode: '批量', needAppr: '否', site: 'bp-growth', cat: '营销', channels: ['SMS'], tpl: '', content: 'Your account login from a new device was detected. If not you, contact support.', recipients: 'user:10023\nuser:10024' } },
   { label: '超出日配额', set: { appId: 'xl_01', mode: '任务式', site: 'bp-growth', cat: '营销', channels: ['SMS'], crowd: 'CP-20261105-11', tpl: 'TPL-SMS-0012' } },
   { label: '邮件预检强提醒', set: { appId: 'xl_01', site: 'bp-growth', cat: '营销', channels: ['邮件'], tpl: '', content: 'Claim your Free Bonus now! Win Big this weekend with an exclusive offer.' } },
   { label: '接入方已停用', set: { appId: 'mms_01', site: 'gamezone', cat: '营销', channels: ['SMS'], tpl: '' , content: 'GameZone weekend event is live.' } },
@@ -415,13 +400,14 @@ const apDbg = {
   appId: 'xl_01', mode: '任务式', site: 'bp-growth', cat: '营销', channels: ['SMS'], imSub: '', crowd: 'CP-20261101-07',
   recipients: 'user:10023\nuser:10024\nuser:10025', tpl: 'TPL-SMS-0012', content: '', vars: 'nickname=Marvin', operator: 'ken@',
   activity: 'ACT202607001', outId: 'order-20261111-101', taskName: '开赛提醒', timing: '立即', time: '', test: false,
+  needAppr: '否', approver: '', apprTime: '', apprRef: '',
 };
 
 function apRenderPresets() {
   const host = document.getElementById('dbgPresets');
   host.innerHTML = '<span class="v2-hint">示例：</span>' + AP_PRESETS.map((p, i) => `<button class="btn btn-outline btn-sm" data-preset="${i}">${p.label}</button>`).join('');
   host.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
-    Object.assign(apDbg, { mode: '任务式', cat: '营销', recipients: 'user:10023\nuser:10024\nuser:10025', outId: 'order-20261111-' + (++apSeq), imSub: '' }, AP_PRESETS[b.dataset.preset].set);
+    Object.assign(apDbg, { mode: '任务式', cat: '营销', needAppr: '否', approver: '', apprTime: '', apprRef: '', recipients: 'user:10023\nuser:10024\nuser:10025', outId: 'order-20261111-' + (++apSeq), imSub: '' }, AP_PRESETS[b.dataset.preset].set);
     apRenderDebugForm();
     showToast(`已填入示例「${AP_PRESETS[b.dataset.preset].label}」`);
   }));
@@ -434,7 +420,7 @@ function apRenderDebugForm() {
   const app = apAppById(d.appId);
   document.getElementById('dbgForm').innerHTML = `<div class="v2-form ap-dbg-form">
     <label class="req">接入方</label><div class="v2-flex"><select class="select" data-k="appId">${AP_APPS.map(a => `<option value="${a.appId}" ${a.appId === d.appId ? 'selected' : ''}>${esc(a.name)}（${a.appId}）</option>`).join('')}</select></div>
-    <span class="v2-hint">${app ? `${app.status} · ${app.approval} · 通道 ${app.channels.join(' ')} · 类别 ${app.cats.join(' ')} · 产品线 ${apSitesLabel(app)}` : ''}</span>
+    <span class="v2-hint">${app ? `${app.status} · 通道 ${app.channels.join(' ')} · 类别 ${app.cats.join(' ')} · 产品线 ${apSitesLabel(app)}` : ''}</span>
     <label class="req">发送方式</label><div class="seg-group" data-seg="mode">${['任务式', '批量', '单发'].map(m => `<button type="button" class="seg-btn ${d.mode === m ? 'active' : ''}" data-v="${m}">${m}</button>`).join('')}</div>
     <label class="req">产品线 Site Id</label><select class="select" data-k="site">${siteOpts.map(([v, l]) => `<option value="${v}" ${d.site === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
     <label class="req">消息类别</label><select class="select" data-k="cat">${V2_MSG_CATEGORIES.map(c => `<option ${d.cat === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
@@ -444,7 +430,7 @@ function apRenderDebugForm() {
       : `<label class="req">收件人</label><textarea class="textarea" data-k="recipients" rows="3" placeholder="每行一个：user:用户ID（优先）或 手机号 / 邮箱 / 设备 token" data-char-count="off">${esc(d.recipients)}</textarea>
          <span class="v2-hint">${d.mode === '批量' ? '一次 ≤ 5,000 个收件人' : '单发：一条消息，归入当日该场景的事件任务'}；裸地址只允许 OTP 类</span>`}
     <label>模板 Template Code</label><select class="select" data-k="tpl"><option value="">不使用模板（自由文案）</option>${tplOpts}</select>
-    <label>内容 Content</label><textarea class="textarea" data-k="content" rows="3" placeholder="传内容即「自由文案」，按审批方式处理" data-char-count="off">${esc(d.content)}</textarea>
+    <label>内容 Content</label><textarea class="textarea" data-k="content" rows="3" placeholder="传内容即「自由文案」；与模板二选一" data-char-count="off">${esc(d.content)}</textarea>
     <label>变量</label><input class="input" data-k="vars" value="${esc(d.vars)}" placeholder="key=value，多个用逗号分隔" data-char-count="off">
     <label class="req">操作人 Operator</label><input class="input" data-k="operator" value="${esc(d.operator)}" placeholder="SSO 账号；事件类可传「系统」" data-char-count="off">
     <label>活动 ID</label><input class="input" data-k="activity" value="${esc(d.activity)}" data-char-count="off">
@@ -453,6 +439,10 @@ function apRenderDebugForm() {
     ${d.mode === '单发' ? '' : `<label class="req">任务名称</label><input class="input" data-k="taskName" value="${esc(d.taskName)}" maxlength="50" data-char-count="off">`}
     <label>发送时机</label><div class="v2-flex"><div class="seg-group" data-seg="timing">${['立即', '定时'].map(m => `<button type="button" class="seg-btn ${d.timing === m ? 'active' : ''}" data-v="${m}">${m}</button>`).join('')}</div>
       ${d.timing === '定时' ? `<input class="input" type="datetime-local" data-k="time" value="${d.time}" style="width:220px">` : ''}</div>
+    ${d.mode === '单发' ? '<label>审批</label><span class="v2-hint" style="margin:0;align-self:center">单发不传审批信息，事件任务审批人显示「无需审批」</span>' : `<label class="req">是否需要审批</label><div class="v2-flex"><div class="seg-group" data-seg="needAppr">${['否', '是'].map(m => `<button type="button" class="seg-btn ${d.needAppr === m ? 'active' : ''}" data-v="${m}">${m}</button>`).join('')}</div><span class="v2-hint" style="margin:0">上游业务单是否经过审批；审批在上游完成后才调用</span></div>
+      ${d.needAppr === '是' ? `<label class="req">审批人</label><input class="input" data-k="approver" value="${esc(d.approver)}" placeholder="上游审批通过人（SSO 账号）" data-char-count="off">
+      <label class="req">审批时间</label><input class="input" type="datetime-local" data-k="apprTime" value="${d.apprTime}" style="width:220px">
+      <label>上游审批单号</label><input class="input" data-k="apprRef" value="${esc(d.apprRef)}" placeholder="选填，任务详情展示" data-char-count="off">` : ''}`}
     <label>测试标记</label><div class="v2-flex"><label class="v2-switch"><input type="checkbox" data-k="test" ${d.test ? 'checked' : ''}><span></span></label><span class="v2-hint" style="margin:0">是 → 按测试消息处理</span></div>
   </div>`;
   const form = document.getElementById('dbgForm');
@@ -513,7 +503,6 @@ function apDoPrecheck() {
   const v = apValidate(req, true);
   if (!v.ok) { apAddAudit('预检', '拒绝', `${v.code} ${v.msg}`, req); apResultCard('reject', [['原因码', `<code>${v.code}</code>`], ['说明', esc(v.msg)]]); return; }
   const hints = apPrecheck(req);
-  if (v.app.approval === '模板免审' && !req.tpl) hints.unshift({ lv: 'strong', item: '审批方式', msg: '发送时将被拒绝：模板免审方式下必须使用模板' });
   apAddAudit('预检', '受理', '', req);
   apResultCard('pre', [['产品线', `${v.site} · ${plName(v.site)}${v.fallback ? ' <span class="tag tag-warning">缺失，已按默认产品线兜底</span>' : ''}`],
     ['预计开始 / 完成', apEtaText(req, v.site)], ['预检提示', apHintsHtml(hints)]],
@@ -528,7 +517,7 @@ function apDoSend() {
     apAddAudit('发送', first.kind === 'accepted' ? '受理' : '拒绝', first.kind === 'accepted' ? '' : first.reason, req, first.taskId);
     apResultCard('dup', [['Out Id', `<code>${esc(req.outId)}</code>（24 小时内重复，未重复发送）`], ['首次受理时间', first.at],
       ['首次结果', first.kind === 'accepted' ? `受理 · 任务 ID <b>${first.taskId}</b>` : `拒绝 · ${esc(first.reason)}`],
-      ...(first.kind === 'accepted' ? [['审批状态', v2Tag(V2_APPROVAL_STATUS, first.approval)], ['预计开始 / 完成', `${first.estStart} / ${first.estFinish}`]] : [])]);
+      ...(first.kind === 'accepted' ? [['审批状态', v2Tag(V2_APPROVAL_STATUS, first.approval)], ['审批人', first.approverTxt || '-'], ['预计开始 / 完成', `${first.estStart} / ${first.estFinish}`]] : [])]);
     return;
   }
   const v = apValidate(req, false);
@@ -540,25 +529,27 @@ function apDoSend() {
   }
   const app = v.app;
   const taskId = req.mode === '单发' ? `E20261111-${app.appId.toUpperCase().replace(/_\d+$/, '')}-EVT` : `T20261111${++apSeq}`;
-  const approval = app.approval === '逐任务审批' ? 'pending' : 'none';
+  const approval = req.mode !== '单发' && req.needAppr === '是' ? 'approved' : 'none';
+  const approverTxt = approval === 'approved' ? `${esc(req.approver)} · ${req.apprTime.replace('T', ' ')}${req.apprRef ? ` · ${esc(req.apprRef)}` : ''}` : '无需审批';
   const hints = apPrecheck(req);
   const count = apCount(req) * req.channels.length;
   if (!req.test && !app.sandbox) app.usage += count;
   const msgIds = req.mode === '任务式' ? [] : req.recipients.map((r, i) => `M${Date.now().toString().slice(-8)}${i}`);
-  AP_OUTIDS[dupKey] = { kind: 'accepted', taskId, approval, at: apStamp(), estStart: '-', estFinish: '-', hints };
+  AP_OUTIDS[dupKey] = { kind: 'accepted', taskId, approval, approverTxt, at: apStamp(), estStart: '-', estFinish: '-', hints };
   apAddAudit('发送', '受理', '', Object.assign({}, req, { site: v.site }), taskId);
   apResultCard('accept', [
     ['任务 ID', `<b>${taskId}</b>${req.mode === '单发' ? ' <span class="v2-hint">（当日该场景事件任务）</span>' : ''}`],
     ...(msgIds.length ? [['消息 ID', msgIds.slice(0, 5).join('、') + (msgIds.length > 5 ? ` 等 ${msgIds.length} 条` : '')]] : []),
     ['产品线', `${v.site} · ${plName(v.site)}${v.fallback ? ' <span class="tag tag-warning">缺失，已按默认产品线兜底</span>' : ''}`],
-    ['审批状态', v2Tag(V2_APPROVAL_STATUS, approval) + (approval === 'pending' ? ` <span class="v2-hint">由审批人 ${app.approvers.join('、')} 处理，任一通过即可</span>` : '')],
-    ['预计开始 / 完成', approval === 'pending' ? '审批通过后预计 3 分钟开始' : apEtaText(req, v.site)],
+    ['审批状态', v2Tag(V2_APPROVAL_STATUS, approval) + ' <span class="v2-hint">上游传入</span>'],
+    ['审批人', approverTxt],
+    ['预计开始 / 完成', apEtaText(req, v.site)],
     ['计量', req.test || app.sandbox ? '测试消息，不计量' : `${fmtN(count)} 条计入今日用量（${fmtN(app.usage)} / ${fmtN(app.quota)}）`],
     ['预检提示', apHintsHtml(hints)],
   ], `<div style="margin-top:10px"><button class="btn btn-outline btn-sm" id="dbgAdvance"><i data-lucide="fast-forward"></i>模拟推进任务（产生回调）</button></div>`);
   apPushEvent(app, '任务级', '已创建', taskId, req.outId);
-  if (approval === 'none' && req.mode !== '单发') apPushEvent(app, '任务级', req.timing === '定时' ? '待发送' : '排队中', taskId, req.outId);
-  const steps = approval === 'pending' ? ['审批通过', '排队中', '发送中', '执行统计快照', '已完成'] : ['发送中', '执行统计快照', '已完成'];
+  if (req.mode !== '单发') apPushEvent(app, '任务级', req.timing === '定时' ? '待发送' : '排队中', taskId, req.outId);
+  const steps = ['发送中', '执行统计快照', '已完成'];
   document.getElementById('dbgAdvance').addEventListener('click', e => {
     const s = steps.shift();
     if (!s) { showToast('任务已完成，无更多事件'); e.currentTarget.disabled = true; return; }
@@ -574,8 +565,9 @@ function apDoQuery() {
   if (!first || first.kind !== 'accepted') { apResultCard('reject', [['原因码', '<code>NOT_FOUND</code>'], ['说明', `未找到 Out Id「${esc(req.outId)}」对应的任务`]]); return; }
   const t = v2Task(first.taskId);
   const f = t ? v2Funnel(t) : null;
-  apResultCard('query', [['任务 ID', first.taskId], ['任务状态', t ? v2Tag(V2_TASK_STATUS, t.status) : v2Tag(V2_TASK_STATUS, first.approval === 'pending' ? 'pending' : 'queued')],
+  apResultCard('query', [['任务 ID', first.taskId], ['任务状态', t ? v2Tag(V2_TASK_STATUS, t.status) : v2Tag(V2_TASK_STATUS, 'queued')],
     ['审批状态', v2Tag(V2_APPROVAL_STATUS, t ? t.approval : first.approval)],
+    ['审批人', t ? (t.approval === 'none' ? '无需审批' : '-') : (first.approverTxt || '-')],
     ['预计开始 / 完成', t ? `${t.estStart} / ${t.estFinish} <span class="v2-pm">±${t.range || 1} 分</span>` : `${first.estStart} / ${first.estFinish}`],
     ['执行统计', f ? `总数 ${fmtN(f.total)} · 可推送 ${fmtN(f.sendable)} · 已提交 ${fmtN(f.submitted)} · 已送达 ${fmtN(f.delivered)} · 未送达 ${fmtN(f.undelivered)}` : '尚未开始']]);
 }
@@ -608,30 +600,32 @@ function apRenderDocs() {
   <section class="card"><h3 class="v2-section-title"><i data-lucide="book-open"></i>能力说明</h3>
     <div class="tabs" id="docTabs">
       <button class="tab active" data-doc="send">发送能力</button><button class="tab" data-doc="cb">状态回调与查询</button>
-      <button class="tab" data-doc="pre">预检能力</button><button class="tab" data-doc="appr">审批方式</button>
+      <button class="tab" data-doc="pre">预检能力</button><button class="tab" data-doc="appr">审批（上游控制）</button>
       <button class="tab" data-doc="res">资源能力 <span class="tag tag-gray-outline">P1</span></button></div>
     <div data-docpane="send">
       ${t(['方式', '适用', '产生的任务', '说明'], [
-        ['任务式', '批量营销：人群包 / 人群标签 / 上传文件 + 模板或内容 + 发送时机', '1 个任务', '与页面新建任务同一流程（审批、排队、ETA、检测）'],
+        ['任务式', '批量营销：人群包 / 人群标签 / 上传文件 + 模板或内容 + 发送时机', '1 个任务', '上游审批通过 / 提交后调用；排队、ETA、检测与页面新建任务一致，触达不审批'],
+        ['创建系统调用任务', 'H5 SDK 配置的内容：上游业务单审批通过 / 提交后调用，传配置 ID + 名称 + site id + 活动 + 任务code + 审批信息', '1 个系统调用任务，创建即「发送中」', '通道与内容取配置 ID；同一配置 ID 只能创建一个任务'],
+        ['按任务code 调用', '已创建的系统调用任务：传任务code + 人群 + 发送时间（立即 / 定时）+ 变量；事件触发即立即', '归入该任务，每次调用一个发送批次', '通道与内容取任务配置；任务已终止 → 拒绝；每次调用不再审批'],
         ['批量', '一次提交 ≤ 5,000 个收件人，每人独立变量或独立内容', '1 个任务（来源 API）', '对应「分别配置」逐行内容；超过上限分多次或改任务式'],
-        ['单发', '事件触发的一条消息（如注册欢迎）', '归入该接入方当日该场景的「事件任务」', '事件任务自动按天聚合，便于统计与审批（场景级）']])}
+        ['单发', '事件触发的一条消息（如注册欢迎）', '归入该接入方当日该场景的「事件任务」', '事件任务自动按天聚合，便于统计与终止']])}
       <h4 class="ap-h4">校验与受理</h4>
-      ${t(['环节', '规则'], [['鉴权', 'AppId + 签名；失败拒绝'], ['范围', '产品线 / 通道 / 消息类别 / 配额 / 速率'], ['幂等', 'Out Id 24 小时去重'],
+      ${t(['环节', '规则'], [['鉴权', 'AppId + 签名；失败拒绝'], ['范围', '产品线 / 通道 / 消息类别 / 配额 / 速率'], ['审批信息', '需要审批但缺审批人或审批时间 → 拒绝；只记录，不校验审批人在触达的权限'], ['幂等', 'Out Id 24 小时去重'],
         ['预检', '重复内容 / 长度 / 敏感词 → 以提示返回，不阻断（敏感词命中的消息按一期规则发送时失败）'],
         ['受理结果', '返回任务 ID（及消息 ID 列表）、审批状态、预计开始 / 完成（如可算）、预检提示'], ['拒绝', '返回明确原因码与说明（鉴权 / 产品线不合法 / 范围 / 配额 / 参数）']])}
       <h4 class="ap-h4">拒绝原因码（示意，协议由开发定）</h4>
       ${t(['原因码', '说明'], [['AUTH_FAILED', '鉴权失败'], ['APP_DISABLED', '接入方已停用'], ['SITE_MISSING', '缺少产品线（site id），不发送'], ['SITE_NOT_FOUND', '产品线不存在'], ['SITE_OFFLINE', '产品线已下线'], ['SITE_NOT_ALLOWED', '产品线不在允许范围'],
-        ['CHANNEL_NOT_ALLOWED / CATEGORY_NOT_ALLOWED', '通道 / 消息类别不在允许范围'], ['TEMPLATE_REQUIRED', '模板免审方式下必须使用模板'], ['TEMPLATE_MISMATCH', '模板与产品线 / 通道不匹配'], ['APPROVAL_NOT_SUPPORTED', '逐任务审批不适用事件单发'],
+        ['CHANNEL_NOT_ALLOWED / CATEGORY_NOT_ALLOWED', '通道 / 消息类别不在允许范围'], ['TEMPLATE_MISMATCH', '模板与产品线 / 通道不匹配'], ['APPROVAL_INFO_MISSING', '声明需要审批但缺审批人或审批时间'],
         ['QUOTA_EXCEEDED / RATE_LIMITED', '超出日配额 / 速率上限'], ['PARAM_MISSING / PARAM_INVALID / BATCH_LIMIT / RECIPIENT_NOT_ALLOWED', '参数缺失或不合法']])}
     </div>
     <div data-docpane="cb" hidden>
-      ${t(['级别', '事件', '触发'], [['任务级', '已创建、审批通过、审批拒绝（= 已终止）、排队中、发送中、已完成、已终止、失败', '任务状态 / 审批状态变化'],
+      ${t(['级别', '事件', '触发'], [['任务级', '已创建（含审批状态与审批人）、排队中、发送中、已完成、已终止、失败', '任务状态变化'],
         ['任务级', '执行统计快照', '发送中每 5 分钟一次 + 完成时一次（漏斗各层数字）'], ['消息级', '已提交、提交失败、已送达、未送达、已过期、无回执、已拦截', '消息终态；「已提交」为可选中间态']])}
       <h4 class="ap-h4">回调规则</h4>
       ${t(['项', '规则'], [['投递', '推送到接入方回调地址；带签名与事件时间；同一事件至少一次，接入方按事件 ID 去重'], ['重试', '失败按 1 / 5 / 30 分钟重试 3 次；仍失败记入调用审计并通知负责人'],
         ['内容', '任务级带任务 ID、Out Id、状态、时间、统计快照；消息级带消息 ID、Out Id、收件人标识（脱敏）、状态、失败分类、原始码、最终供应商'], ['顺序', '不保证严格有序，带状态时间戳']])}
       <h4 class="ap-h4">查询能力</h4>
-      ${t(['查询', '返回'], [['按任务 ID / Out Id 查任务', '任务状态、审批状态、预计开始 / 完成、执行统计（同 6.3.2 漏斗口径）'], ['按消息 ID / Out Id 查消息', '消息状态、失败分类与原始码、提交 / 回执时间、最终供应商'], ['按任务查失败明细', '分页返回失败消息（同 6.3.3 导出字段）']])}
+      ${t(['查询', '返回'], [['按任务 ID / Out Id 查任务', '任务状态、审批状态与审批人、预计开始 / 完成、执行统计（同 6.3.2 漏斗口径）'], ['按消息 ID / Out Id 查消息', '消息状态、失败分类与原始码、提交 / 回执时间、最终供应商'], ['按任务查失败明细', '分页返回失败消息（同 6.3.3 导出字段）']])}
     </div>
     <div data-docpane="pre" hidden>
       ${t(['检查项', '规则', '本期'], [['重复内容', '同一用户 + 同一通道 + 同一模板（或渲染后文本一致）24 小时内已发送 → 提示重复用户数与占比', 'P0'], ['长度', '按通道限制（短信 ≤ 160，变量按变量元数据最大长度估算）', 'P0'],
@@ -639,10 +633,12 @@ function apRenderDocs() {
       <p class="v2-hint" style="margin-top:8px">预检可单独调用（配置阶段提示），也随发送调用一并返回；结果只提示不阻断。</p>
     </div>
     <div data-docpane="appr" hidden>
-      ${t(['方式', '规则', '适用'], [['模板免审', '调用必须引用已审批模板；传自由文案 → 拒绝；任务审批状态 = 无需审批', '事件类、OTP'],
-        ['逐任务审批', '任务式 / 批量任务进入待审批，由接入方配置的审批人处理；通过 → 排队；拒绝 → 终止并回调；事件单发不适用（拒绝接入）', '营销批量'],
-        ['接入方授信 <span class="tag tag-gray-outline">P1</span>', '注册时一次性审批场景，调用不审批；事后按比例抽检 + 失败率 / 内容突变自动停用', '自由文案的高频场景（如星灵拼接文案）']])}
-      <p class="v2-hint" style="margin-top:8px">push 事件任务：现状自动通过改为按其接入方的审批方式处理；其事件任务按天聚合后在任务记录可见、可终止。</p>
+      <p class="v2-hint" style="margin:0 0 8px">触达不为接入方配置审批方式和审批人，也不审批接入方创建的任务（含 H5 SDK、任务式、批量、单发）。</p>
+      ${t(['场景', '规则', '触达展示'], [['上游需要审批', '上游业务单审批通过后才调用触达，传审批人、审批时间（可带审批单号）', '审批状态 已通过；审批人 = 上游传入'],
+        ['上游无需审批', '业务单提交后直接调用，传「无需审批」', '审批状态 无需审批；审批人显示「无需审批」'],
+        ['拒绝 / 撤回', '上游审批拒绝或撤回业务单 → 不调用触达', '触达无任务、无记录'],
+        ['改内容', '上游重新打开配置弹窗得到新配置 ID，经上游审批后调用「更新任务内容」', '下一批注入起生效；触达不审批']])}
+      <p class="v2-hint" style="margin-top:8px">接入方任务不进「我的审批」，不出现待审批 / 已拒绝；触达中心页面新建的任务仍走已上线的审批人配置。push 事件任务接入方化，是否审批由上游决定。</p>
     </div>
     <div data-docpane="res" hidden>
       ${t(['能力', '说明'], [['模板查询', '返回接入方允许范围内、已审批、按产品线与通道过滤的模板列表与变量说明'], ['人群包上传', '按《触达上传模板优化》的文件规范上传人群包，返回人群包 ID 供任务式发送引用'], ['产品线 / 通道可用性', '返回接入方当前允许的产品线（含状态）与通道']])}

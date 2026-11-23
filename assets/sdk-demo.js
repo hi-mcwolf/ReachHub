@@ -7,12 +7,14 @@ const SD_APP_BASE = V2_APPS.find(a => a.appId === 'xl_01');
 const SD_CTX = { appId: 'xl_01', appName: '星灵', user: 'ken@', siteId: 'bp-growth', activityId: 'ACT202607001', activityName: '世界杯竞猜预热', lang: 'zh' };
 /* 上游系统传参（6.8.2）：传了的字段在配置弹窗自动补全、只读 */
 const SD_UPSTREAMS = {
-  xl: { appId: 'xl_01', appName: '星灵', pass: {} },
+  xl: { appId: 'xl_01', appName: '星灵', pass: { site: 'bp-growth' } },
   mms: { appId: 'mms_01', appName: 'MMS', pass: { activity: 'ACT202607001' } },
   oms: { appId: 'oms_rc', appName: 'OMS · 风控', pass: { site: 'bp-growth' } },
 };
 let SD_UP = 'xl';
-const SD_DEMO = { approval: SD_APP_BASE.approval, appStatus: SD_APP_BASE.status };
+const SD_DEMO = { appStatus: SD_APP_BASE.status };
+/* 上游业务单（演示）：配置 ID 存在业务单里，审批在上游完成 */
+const SD_ORDER = { cfg: null, name: '世界杯竞猜预热', needAppr: '需要', state: 'draft', approver: 'lily@' };
 const SD_ALLOWED_SITES = V2_PRODUCT_LINES.filter(p => p.bl === 'BP' && p.status === '启用').map(p => p.siteId); // 星灵：BP 全部
 const SD_USER_SITES = SD_ALLOWED_SITES; // ken@ 数据权限：BP 全部
 const SD_ALL_CH = ['SMS', '邮件', 'Push', 'Viber', 'Messenger', 'WhatsApp'];
@@ -37,6 +39,7 @@ const SD_MAIL_MID = ['offer', 'exclusive', 'limited', 'urgent', 'act now'];
 
 const sdNow = () => new Date();
 const SD_TASKS = V2_TASKS.filter(t => t.app === '星灵').map((t, i) => Object.assign({}, t, {
+  approval: t.approval === 'none' ? 'none' : 'approved', approver: t.approval === 'none' ? '' : 'lily@',
   channels: [t.channel], createdAt: new Date(Date.now() - (i + 1) * 3600e3 * (t.id === 'T20260713005' ? 20 : 2)),
   crowd: t.id === 'T20260713001' ? 'CP-20261101-07' : 'CP-20261103-02',
   contents: { SMS: { tpl: t.id === 'T20260713001' ? 'TPL-SMS-0012' : 'TPL-SMS-0020', content: (SD_TPLS.find(x => x.code === (t.id === 'T20260713001' ? 'TPL-SMS-0012' : 'TPL-SMS-0020')) || {}).content } },
@@ -53,7 +56,8 @@ function sdHMS(d) { return `${sdHM(d)}:${sdPad(d.getSeconds())}`; }
 function sdFmt(d) { return d.toDateString() === sdNow().toDateString() ? sdHM(d) : `${sdPad(d.getMonth() + 1)}-${sdPad(d.getDate())} ${sdHM(d)}`; }
 function sdTask(id) { return SD_TASKS.find(t => t.id === id); }
 function sdIsSys(t) { return !!t.taskCode; }
-/* 系统调用任务沿用一期：审批通过即「发送中」，等待上游按任务code 调用，直到终止 */
+function sdApprover(t) { return t.approval === 'approved' ? esc(t.approver || '-') : '无需审批'; }
+/* 系统调用任务：上游审批通过 / 提交后才创建，创建即「发送中」，等待上游按任务code 调用，直到终止 */
 function sdStatusTag(t) { return v2Tag(V2_TASK_STATUS, t.status); }
 function sdIsActive(t) { return ['pending', 'queued', 'sending'].includes(t.status); }
 function sdChTags(t) { return `<span class="sd-ch-icons">${t.channels.map(c => `<span class="tag tag-gray-outline">${c}</span>`).join('')}</span>`; }
@@ -100,8 +104,7 @@ function sdInit() {
   const site = up.pass.site || (up.pass.activity ? 'bp-growth' : '');
   SD_CTX.siteId = site || 'bp-growth';
   document.getElementById('pSiteTxt').textContent = up.pass.site || (up.pass.activity ? '（不传，由活动带出）' : '（不传，弹窗内选择）');
-  document.getElementById('pActTxt').textContent = up.pass.activity || '（不传，弹窗内选择）';
-  SD_DEMO.approval = document.getElementById('pApproval').value;
+  document.getElementById('pActTxt').textContent = up.pass.activity || '（不传）';
   SD_DEMO.appStatus = document.getElementById('pAppStatus').value;
   sdLog('init', Object.assign({ appId: SD_CTX.appId, user: SD_CTX.user, lang: SD_CTX.lang }, up.pass.site ? { siteId: up.pass.site } : {}, up.pass.activity ? { activityId: up.pass.activity } : {}));
   if (SD_DEMO.appStatus !== '启用') {
@@ -114,7 +117,8 @@ function sdInit() {
     return;
   }
   sdReady = true;
-  sdLog('ready', { appId: SD_CTX.appId, approvalMode: SD_DEMO.approval });
+  sdLog('ready', { appId: SD_CTX.appId });
+  sdRenderOrder();
   sdRenderStatus();
   sdRenderList();
 }
@@ -431,7 +435,7 @@ function sdRenderStatus() {
       <div class="sd-card-row"><span>${sdChTags(t)} · ${plName(t.site)}</span>
         <span><span class="lab">类型</span>${sdIsSys(t) ? '系统调用' : '手动发送'}</span>
         <span><span class="lab">状态</span>${sdStatusTag(t)}</span>
-        <span><span class="lab">审批</span>${v2Tag(V2_APPROVAL_STATUS, t.approval)}</span></div>
+        <span><span class="lab">审批人</span>${sdApprover(t)}</span></div>
       ${sdIsSys(t) ? `<div class="sd-prog-row"><span>累计</span><span>调用 <b>${fmtN(t.calls || 0)}</b> 次</span><span>目标 <b>${fmtN(t.target || 0)}</b></span><span>已提交 <b>${fmtN(t.sentSum || 0)}</b></span><span class="v2-hint">每次调用的人群与时间由上游传入</span></div>` : `<div class="sd-prog-row"><span>进度</span><div class="v2-prog"><i style="width:${p}%"></i></div><b>${p}%</b>
         <span>已提交 <b>${fmtN(f.submitted)}</b> / ${fmtN(f.sendable)}</span><span>已送达 <b>${fmtN(f.delivered)}</b></span><span>失败 <b>${fmtN(failed)}</b></span></div>`}
       <div class="sd-card-foot"><span class="eta">${sdEtaLine(t)}</span>
@@ -531,7 +535,7 @@ function sdRenderDetail(id) {
     <div class="sd-sec"><h4>基础信息</h4><div class="desc-list sd-desc-grid">
       ${item('任务 ID', t.id)}${item('任务名称', esc(t.name))}${item('接入方', `${SD_CTX.appName}（${SD_CTX.appId}）· H5 SDK`)}${item('产品线', plName(t.site))}
       ${item('通道', sdChTags(t))}${item('任务类型', sdIsSys(t) ? `系统调用 · 任务code <code>${esc(t.taskCode)}</code>` : '手动发送')}${item('活动', `${t.activity || '-'} ${t.activity === SD_CTX.activityId ? SD_CTX.activityName : ''}`)}${item('操作人', t.operator)}
-      ${item('任务状态', v2Tag(V2_TASK_STATUS, t.status))}${item('审批状态', v2Tag(V2_APPROVAL_STATUS, t.approval))}${item('计划时间', t.sched)}${etaRow}
+      ${item('任务状态', v2Tag(V2_TASK_STATUS, t.status))}${item('审批状态', v2Tag(V2_APPROVAL_STATUS, t.approval))}${item('审批人', sdApprover(t))}${item('计划时间', t.sched)}${etaRow}
     </div></div>
     <div class="sd-sec"><h4>配置信息</h4><div class="desc-list sd-desc-grid">
       ${sdIsSys(t) ? item('人群 / 发送时机', '由上游每次调用时传入') + item('调用次数', `${fmtN(t.calls || 0)}（最近 ${t.lastCall || '-'}）`) : item('人群', `${crowd.name}（预估 ${fmtN(crowd.n)}）`) + item('发送时机', t.sched === '立即' ? '立即' : `定时 ${t.sched}`)}
@@ -597,12 +601,12 @@ function sdRenderList() {
       <span>创建时间</span>${sel('lfTime', [['today', '今天'], ['7d', '近 7 天']], sdListF.time)}
     </div>
     <div class="table-scroll" style="max-height:none"><table class="table stats-table">
-      <thead><tr><th>任务</th><th>任务类型</th><th>通道</th><th>产品线</th><th>任务状态</th><th>审批状态</th><th>进度</th><th>预计完成</th><th>操作</th></tr></thead>
+      <thead><tr><th>任务</th><th>任务类型</th><th>通道</th><th>产品线</th><th>任务状态</th><th>审批人</th><th>进度</th><th>预计完成</th><th>操作</th></tr></thead>
       <tbody>${shown.length ? shown.map(t => {
         const { pct: p } = sdProgress(t);
         const eta = !sdIsActive(t) ? (t.status === 'done' ? `完成 ${t.finishedAt || '-'}` : '-') : t.approval === 'pending' ? '审批后约 3 分钟开始' : `${t.estFinish} <span class="v2-pm">±${t.range || 1} 分</span>${t.estimated ? '<span class="v2-est">估算</span>' : ''}`;
         return `<tr><td>${esc(t.name)}<div class="v2-hint">${t.id}</div></td><td>${sdIsSys(t) ? `系统调用<div class="v2-hint">${esc(t.taskCode)}</div>` : '手动发送'}</td><td>${sdChTags(t)}</td><td>${plName(t.site)}</td>
-          <td>${sdStatusTag(t)}</td><td>${v2Tag(V2_APPROVAL_STATUS, t.approval)}</td>
+          <td>${sdStatusTag(t)}</td><td>${sdApprover(t)}</td>
           <td>${sdIsSys(t) ? `调用 ${fmtN(t.calls || 0)} 次` : `<span class="sd-mini-prog"><span class="v2-prog"><i style="width:${p}%"></i></span>${p}%</span>`}</td><td>${sdIsSys(t) ? '-' : eta}</td>
           <td><button class="link-btn" data-lview="${t.id}">详情</button>${sdIsActive(t) ? `<button class="link-btn link-btn-danger" data-lstop="${t.id}">终止</button>` : ''}</td></tr>`;
       }).join('') : '<tr><td colspan="9" class="v2-muted" style="text-align:center;padding:24px">暂无数据</td></tr>'}</tbody></table></div>
@@ -632,24 +636,69 @@ window.addEventListener('message', e => {
   const m = e.data;
   if (!m || m.src !== 'reach-sdk') return;
   if (m.type === 'closed') { sdLog('closed', {}); sdCloseFrame(); return; }
-  if (m.type !== 'submitted') return;
+  if (m.type !== 'saved') return;
   const d = m.data;
-  const approval = SD_DEMO.approval === '逐任务审批' ? 'pending' : 'none';
-  const chMap = {};
-  const chs = d.channels.map(c => chMap[c] || c);
+  SD_ORDER.cfg = Object.assign({}, d, { channels: d.channels.slice() });
+  SD_ORDER.state = 'draft';
+  sdLog('saved', { configId: d.configId, taskCode: d.taskCode, siteId: d.site, channels: d.channels });
+  sdCloseFrame();
+  showToast(`已保存配置 ${d.configId}，存入业务单（未创建任务）`);
+  sdRenderOrder();
+});
+
+/* ================= 上游业务单（演示，非 SDK） ================= */
+function sdRenderOrder() {
+  const o = SD_ORDER, c = o.cfg;
+  const host = document.getElementById('hostOrder');
+  if (!host) return;
+  const stateTxt = { draft: '<span class="tag tag-gray">草稿</span>', reviewing: '<span class="tag tag-warning">上游审批中</span>', done: '<span class="tag tag-success">已生效</span>', rejected: '<span class="tag tag-danger">已驳回</span>' }[o.state];
+  const ro = o.state !== 'draft';
+  host.innerHTML = `<div class="sd-params" style="grid-template-columns:110px minmax(0,1fr)">
+      <label>状态</label><span>${stateTxt}</span>
+      <label>名称</label><input class="input" id="odName" value="${esc(o.name)}" ${ro ? 'disabled' : ''} data-char-count="off">
+      <label>触达配置</label><span>${c ? `<code>${c.configId}</code> · 任务code <code>${esc(c.taskCode)}</code> · ${c.channels.join(' ')}` : '<span class="v2-muted">未配置，点「配置触达」</span>'}</span>
+      <label>是否需要审批</label><select class="select select-sm" id="odAppr" ${ro ? 'disabled' : ''}>${['需要', '不需要'].map(x => `<option ${o.needAppr === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      ${o.needAppr === '需要' ? `<label>上游审批人</label><span>${esc(o.approver)}</span>` : ''}
+    </div>
+    <div class="v2-flex" style="margin-top:12px">
+      ${o.state === 'draft' ? `<button class="btn btn-primary btn-sm" id="odSubmit" ${c ? '' : 'disabled'}>提交业务单</button>` : ''}
+      ${o.state === 'reviewing' ? '<button class="btn btn-primary btn-sm" id="odPass">上游审批通过</button><button class="btn btn-outline btn-sm" id="odReject">上游驳回</button>' : ''}
+      ${o.state === 'done' || o.state === 'rejected' ? '<button class="btn btn-outline btn-sm" id="odNew">新建业务单</button>' : ''}
+      <span class="v2-hint" style="margin:0">需要审批：上游审批通过后才调用触达创建任务；不需要：提交即创建，审批人显示「无需审批」；驳回不调用触达</span>
+    </div>`;
+  const $ = id => document.getElementById(id);
+  if ($('odName')) $('odName').addEventListener('input', e => { o.name = e.target.value; });
+  if ($('odAppr')) $('odAppr').addEventListener('change', e => { o.needAppr = e.target.value; sdRenderOrder(); });
+  if ($('odSubmit')) $('odSubmit').addEventListener('click', () => {
+    if (!o.name.trim()) { showToast('请输入名称'); return; }
+    if (o.needAppr === '需要') { o.state = 'reviewing'; showToast('业务单已提交，等待上游审批（触达尚无任务）'); sdRenderOrder(); }
+    else sdCreateFromOrder(false);
+  });
+  if ($('odPass')) $('odPass').addEventListener('click', () => sdCreateFromOrder(true));
+  if ($('odReject')) $('odReject').addEventListener('click', () => { o.state = 'rejected'; showToast('上游驳回：不调用触达，触达无任务'); sdRenderOrder(); });
+  if ($('odNew')) $('odNew').addEventListener('click', () => { Object.assign(o, { cfg: null, state: 'draft' }); sdRenderOrder(); });
+}
+
+/* 上游服务端调用 6.7.3「创建系统调用任务」 */
+function sdCreateFromOrder(approved) {
+  const o = SD_ORDER, c = o.cfg;
+  if (SD_TASKS.some(x => x.taskCode === c.taskCode)) { showToast(`任务code「${c.taskCode}」已存在，创建被拒绝`); return; }
+  const now = sdNow();
+  const approval = approved ? 'approved' : 'none';
   const t = {
-    id: `T20261112${++sdSeq}`, name: d.name, site: d.site, channel: chs[0], channels: chs, account: '', source: 'API', app: SD_CTX.appName,
-    creator: SD_CTX.user, operator: SD_CTX.user, category: '营销', status: approval === 'pending' ? 'pending' : 'sending', approval, taskCode: d.taskCode,
-    target: 0, remaining: 0, sched: '上游调用', schedAt: null, estStart: '-', estFinish: '-', range: 1, activity: d.activityId || '', crowd: '',
-    createdAt: sdNow(), etaAt: sdNow(),
-    contents: Object.fromEntries(chs.map((c, i) => [c, { tpl: '', subject: '', content: Object.values(d.contents)[i]?.text || '' }])),
+    id: `T20261123${++sdSeq}`, name: o.name.trim(), site: c.site, channel: c.channels[0], channels: c.channels.slice(), account: '', source: 'API', app: SD_CTX.appName,
+    creator: SD_CTX.user, operator: SD_CTX.user, category: '营销', status: 'sending', approval, approver: approved ? o.approver : '', taskCode: c.taskCode,
+    target: 0, remaining: 0, sched: '上游调用', schedAt: null, estStart: '-', estFinish: '-', range: 1, activity: c.activityId || SD_CTX.activityId, crowd: '',
+    createdAt: now, etaAt: now,
+    contents: Object.fromEntries(c.channels.map((ch, i) => [ch, { tpl: '', subject: '', content: Object.values(c.contents || {})[i]?.text || '' }])),
   };
   SD_TASKS.unshift(t);
-  sdLog('submitted', { taskId: t.id, taskType: '系统调用', taskCode: t.taskCode, siteId: t.site, activityId: t.activity || undefined, channels: chs, approvalStatus: V2_APPROVAL_STATUS[approval].label });
-  sdCloseFrame();
-  showToast(`已创建系统调用任务：${t.taskCode} · ${V2_APPROVAL_STATUS[approval].label}`);
-  sdRenderStatus(); sdRenderList();
-});
+  sdLog('createTask（上游服务端 API）', { configId: c.configId, name: t.name, siteId: t.site, activityId: t.activity, approvalRequired: approved, approver: approved ? o.approver : undefined, approvalTime: approved ? sdHM(now) : undefined });
+  sdLog('statusChanged', { taskId: t.id, taskCode: t.taskCode, to: '发送中', approvalStatus: V2_APPROVAL_STATUS[approval].label, approver: approved ? o.approver : '无需审批' });
+  o.state = 'done';
+  showToast(`已创建系统调用任务 ${t.taskCode} · 审批人 ${approved ? o.approver : '无需审批'}`);
+  sdRenderOrder(); sdRenderStatus(); sdRenderList();
+}
 
 /* ================= 宿主页绑定 ================= */
 function sdBindHost() {

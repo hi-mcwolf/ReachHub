@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>接入方管理 · 触达 · Digiplus</title>
-  <link rel="stylesheet" href="assets/styles.css?v=202611131839">
-  <link rel="stylesheet" href="assets/v2.css?v=202611131839">
-  <link rel="stylesheet" href="assets/apps.css?v=202611131839">
+  <link rel="stylesheet" href="assets/styles.css?v=202611231711">
+  <link rel="stylesheet" href="assets/v2.css?v=202611231711">
+  <link rel="stylesheet" href="assets/apps.css?v=202611231711">
 </head>
 <body>
   <div class="app-layout">
@@ -17,7 +17,7 @@
           <div class="stats-header">
             <div>
               <h1 class="page-title">接入方管理</h1>
-              <p class="page-desc">上游系统统一接入身份、允许范围、审批方式、配额与调用审计</p>
+              <p class="page-desc">上游系统统一接入身份、允许范围、配额与调用审计（审批由上游业务系统控制）</p>
             </div>
             <div class="stats-header-actions">
               <button class="btn btn-primary" id="createAppBtn"><i data-lucide="plus"></i>新建接入方</button>
@@ -60,7 +60,7 @@
                   <table class="table stats-table ap-apps-table">
                     <thead><tr>
                       <th>接入方</th><th>AppId</th><th>业务线</th><th>允许产品线</th><th>允许通道</th><th>消息类别</th>
-                      <th>审批方式</th><th class="v2-num">今日用量 / 配额</th><th>状态</th><th>操作</th>
+                      <th class="v2-num">今日用量 / 配额</th><th>状态</th><th>操作</th>
                     </tr></thead>
                     <tbody id="appRows"></tbody>
                   </table>
@@ -152,8 +152,8 @@
   </div>
 
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="assets/common.js?v=202611131839"></script>
-  <script src="assets/v2-data.js?v=202611131839"></script>
-  <script src="assets/apps.js?v=202611131839"></script>
+  <script src="assets/common.js?v=202611231711"></script>
+  <script src="assets/v2-data.js?v=202611231711"></script>
+  <script src="assets/apps.js?v=202611231711"></script>
 </body>
 </html>
