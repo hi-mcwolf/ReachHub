@@ -417,7 +417,7 @@ function initDraft(channel) {
   const actEl = document.getElementById('ntActivity');
   if (actEl) actEl.value = '';
   const codeEl = document.getElementById('ntTaskCode');
-  if (codeEl) codeEl.value = '';
+  if (codeEl) { codeEl.value = rhGenTaskCode('RH'); draft.taskCode = codeEl.value; rhTaskCodeHint(true); }
   setTaskDrawerMode('create');
   closePanel();
   syncTaskTypeUi();
@@ -444,6 +444,24 @@ function setTaskDrawerMode(mode) {
   syncCategoryUi();
   document.getElementById('rowAudience')?.classList.toggle('cfg-row-locked', mode === 'edit');
   document.getElementById('rowTiming')?.classList.toggle('cfg-row-locked', locked);
+}
+
+/* 任务code 自动生成：{前缀}_{yyyyMMdd}_{3 位序号}，序号当天递增；提交前可改 */
+function rhGenTaskCode(prefix) {
+  const d = new Date(), p2 = n => String(n).padStart(2, '0');
+  const day = `${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}`;
+  const key = `rhCodeSeq_${prefix}_${day}`;
+  const seq = Number(sessionStorage.getItem(key) || 0) + 1;
+  sessionStorage.setItem(key, String(seq));
+  return `${prefix}_${day}_${String(seq).padStart(3, '0')}`;
+}
+function rhTaskCodeHint(show, text) {
+  const codeEl = document.getElementById('ntTaskCode');
+  if (!codeEl) return;
+  let h = document.getElementById('ntTaskCodeHint');
+  if (!h) { h = document.createElement('div'); h.id = 'ntTaskCodeHint'; h.className = 'v2-hint'; h.style.marginTop = '4px'; codeEl.insertAdjacentElement('afterend', h); }
+  h.textContent = text || '已自动生成，可修改';
+  h.hidden = !show;
 }
 
 function isSystemTask() {
@@ -572,7 +590,7 @@ function openTaskEdit(task, mode = 'edit') {
   ensureProductLineOption(draft.productLine);
   ensureActivityOption(draft.activityId, draft.activityName);
   const codeEl = document.getElementById('ntTaskCode');
-  if (codeEl) codeEl.value = draft.taskCode;
+  if (codeEl) { codeEl.value = draft.taskCode; rhTaskCodeHint(false); }
   setTaskDrawerMode(mode);
   closePanel();
   syncTaskTypeUi();
