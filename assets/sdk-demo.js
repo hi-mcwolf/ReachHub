@@ -13,7 +13,7 @@ const SD_UPSTREAMS = {
 };
 let SD_UP = 'xl';
 const SD_DEMO = { appStatus: SD_APP_BASE.status };
-/* 上游业务单（演示）：配置 ID 存在业务单里，审批在上游完成 */
+/* 上游业务单（演示）：任务code 存在业务单里，审批在上游完成 */
 const SD_ORDER = { cfg: null, name: '世界杯竞猜预热', needAppr: '需要', state: 'draft', approver: 'lily@' };
 const SD_ALLOWED_SITES = V2_PRODUCT_LINES.filter(p => p.bl === 'BP' && p.status === '启用').map(p => p.siteId); // 星灵：BP 全部
 const SD_USER_SITES = SD_ALLOWED_SITES; // ken@ 数据权限：BP 全部
@@ -640,9 +640,9 @@ window.addEventListener('message', e => {
   const d = m.data;
   SD_ORDER.cfg = Object.assign({}, d, { channels: d.channels.slice() });
   SD_ORDER.state = 'draft';
-  sdLog('saved', { configId: d.configId, taskCode: d.taskCode, siteId: d.site, channels: d.channels });
+  sdLog('saved', { taskCode: d.taskCode, siteId: d.site, channels: d.channels });
   sdCloseFrame();
-  showToast(`已保存配置 ${d.configId}，存入业务单（未创建任务）`);
+  showToast(`已保存任务code ${d.taskCode} 的配置，存入业务单（未创建任务）`);
   sdRenderOrder();
 });
 
@@ -656,7 +656,7 @@ function sdRenderOrder() {
   host.innerHTML = `<div class="sd-params" style="grid-template-columns:110px minmax(0,1fr)">
       <label>状态</label><span>${stateTxt}</span>
       <label>名称</label><input class="input" id="odName" value="${esc(o.name)}" ${ro ? 'disabled' : ''} data-char-count="off">
-      <label>触达配置</label><span>${c ? `<code>${c.configId}</code> · 任务code <code>${esc(c.taskCode)}</code> · ${c.channels.join(' ')}` : '<span class="v2-muted">未配置，点「配置触达」</span>'}</span>
+      <label>触达配置</label><span>${c ? `任务code <code>${esc(c.taskCode)}</code> · ${c.channels.join(' ')}` : '<span class="v2-muted">未配置，点「配置触达」</span>'}</span>
       <label>是否需要审批</label><select class="select select-sm" id="odAppr" ${ro ? 'disabled' : ''}>${['需要', '不需要'].map(x => `<option ${o.needAppr === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
       ${o.needAppr === '需要' ? `<label>上游审批人</label><span>${esc(o.approver)}</span>` : ''}
     </div>
@@ -693,7 +693,7 @@ function sdCreateFromOrder(approved) {
     contents: Object.fromEntries(c.channels.map((ch, i) => [ch, { tpl: '', subject: '', content: Object.values(c.contents || {})[i]?.text || '' }])),
   };
   SD_TASKS.unshift(t);
-  sdLog('createTask（上游服务端 API）', { configId: c.configId, name: t.name, siteId: t.site, activityId: t.activity, approvalRequired: approved, approver: approved ? o.approver : undefined, approvalTime: approved ? sdHM(now) : undefined });
+  sdLog('createTask（上游服务端 API）', { taskCode: c.taskCode, name: t.name, siteId: t.site, activityId: t.activity, approvalRequired: approved, approver: approved ? o.approver : undefined, approvalTime: approved ? sdHM(now) : undefined });
   sdLog('statusChanged', { taskId: t.id, taskCode: t.taskCode, to: '发送中', approvalStatus: V2_APPROVAL_STATUS[approval].label, approver: approved ? o.approver : '无需审批' });
   o.state = 'done';
   showToast(`已创建系统调用任务 ${t.taskCode} · 审批人 ${approved ? o.approver : '无需审批'}`);
