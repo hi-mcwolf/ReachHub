@@ -60,6 +60,18 @@
     if (code) {
       code.placeholder = '上游调用时传此 code，接入方内唯一';
       if (P.code) { code.value = P.code; draft.taskCode = P.code; lockField(code, `由 ${esc(P.app)} 传入`); }
+      else {
+        /* 自动生成：{接入方前缀}_{yyyyMMdd}_{3 位序号}，可修改 */
+        const pre = { '星灵': 'XL', 'MMS': 'MMS' }[P.app] || 'OMS';
+        const d = new Date(), p2 = n => String(n).padStart(2, '0');
+        const seq = String(Number(sessionStorage.getItem('sdkCodeSeq') || 0) + 1);
+        sessionStorage.setItem('sdkCodeSeq', seq);
+        code.value = `${pre}_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}_${seq.padStart(3, '0')}`;
+        draft.taskCode = code.value;
+        const hint = document.createElement('span');
+        hint.className = 'v2-hint'; hint.style.marginLeft = '8px'; hint.textContent = '已自动生成，可修改';
+        code.insertAdjacentElement('afterend', hint);
+      }
     }
     if (typeof syncPlMeta === 'function') syncPlMeta();
     renderRows();
