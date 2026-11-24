@@ -344,17 +344,29 @@ function upgradeTaskDrawerV2() {
     meta.id = 'ntPlMeta';
     pl.closest('.field').appendChild(meta);
   }
-  /* Parent / Palcode 选填（触达工具模块 PRD 6.3.5），放在名称之后 */
-  const nameField = document.getElementById('ntName')?.closest('.field');
-  if (nameField && !document.getElementById('ntParent')) {
-    nameField.insertAdjacentHTML('afterend', `<div class="field nt-mark-field">
+  /* Parent / Palcode 选填（触达工具模块 PRD 6.3.5）：放在活动名称下，收在「更多信息」里，默认收起 */
+  const actField = document.getElementById('ntActivity')?.closest('.field');
+  if (actField && !document.getElementById('ntParent')) {
+    actField.insertAdjacentHTML('afterend', `<div class="nt-more" id="ntMore">
+      <button type="button" class="link-btn nt-more-toggle" id="ntMoreToggle"><span class="nt-more-arrow">▸</span>更多信息</button>
+      <div class="nt-more-body" id="ntMoreBody" hidden>
+      <div class="field nt-mark-field">
         <span class="field-label">Parent <span class="v2-hint">选填</span></span>
         <input class="input" id="ntParent" placeholder="请输入 Parent" maxlength="50">
       </div>
       <div class="field nt-mark-field">
         <span class="field-label">Palcode <span class="v2-hint">选填</span></span>
         <input class="input" id="ntPalcode" placeholder="请输入 Palcode" maxlength="50">
-      </div>`);
+      </div>
+      </div></div>`);
+    document.getElementById('ntMoreToggle').addEventListener('click', () => rhSetMoreOpen(document.getElementById('ntMoreBody').hidden));
+    if (!document.getElementById('ntMoreCss')) document.head.insertAdjacentHTML('beforeend', `<style id="ntMoreCss">
+      .nt-more { margin: -4px 0 16px; }
+      .nt-more-toggle { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+      .nt-more-arrow { display: inline-block; transition: transform .15s; }
+      .nt-more.open .nt-more-arrow { transform: rotate(90deg); }
+      .nt-more-body { margin-top: 14px; }
+      .nt-more-toggle { text-decoration: none; }</style>`);
   }
   /* 任务类型（手动发送 / 系统调用）与任务 code 保持一期表单（Marvin 2026-11-12）；任务来源 / 消息类别不在表单录入 */
   const timingField = document.getElementById('ntTimingField');
@@ -363,6 +375,14 @@ function upgradeTaskDrawerV2() {
   }
   const submit = document.getElementById('createTaskBtn');
   if (submit && !document.getElementById('ntCheckBadge')) submit.insertAdjacentHTML('beforebegin', '<span id="ntCheckBadge"></span>');
+}
+
+/* 「更多信息」展开 / 收起 */
+function rhSetMoreOpen(open) {
+  const body = document.getElementById('ntMoreBody');
+  if (!body) return;
+  body.hidden = !open;
+  document.getElementById('ntMore').classList.toggle('open', !!open);
 }
 
 function newChannelConfig() {
@@ -426,6 +446,7 @@ function initDraft(channel) {
   };
   document.getElementById('ntName').value = '';
   ['ntParent', 'ntPalcode'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  rhSetMoreOpen(false);
   document.getElementById('ntProductLine').value = '';
   const actEl = document.getElementById('ntActivity');
   if (actEl) actEl.value = '';
@@ -600,7 +621,7 @@ function openTaskEdit(task, mode = 'edit') {
     perChannel,
   };
   document.getElementById('ntName').value = draft.name;
-  if (document.getElementById('ntParent')) { document.getElementById('ntParent').value = task.parent || ''; document.getElementById('ntPalcode').value = task.palcode || ''; }
+  if (document.getElementById('ntParent')) { document.getElementById('ntParent').value = task.parent || ''; document.getElementById('ntPalcode').value = task.palcode || ''; rhSetMoreOpen(!!(task.parent || task.palcode)); }
   ensureProductLineOption(draft.productLine);
   ensureActivityOption(draft.activityId, draft.activityName);
   const codeEl = document.getElementById('ntTaskCode');
