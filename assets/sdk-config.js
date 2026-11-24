@@ -39,6 +39,8 @@
     const nameEl = document.getElementById('ntName');
     nameEl.value = '（上游传入）';
     nameEl.closest('.field').hidden = true;
+    /* Parent / Palcode 只在新触达新建任务填写（工具模块 PRD 6.3.5），SDK 配置弹窗不显示 */
+    document.querySelectorAll('.nt-mark-field').forEach(f => { f.hidden = true; });
     const rawToast = window.showToast;
     window.showToast = m => rawToast(String(m).replace(/^已提交审批.*/, '已保存配置'));
 

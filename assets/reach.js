@@ -344,6 +344,18 @@ function upgradeTaskDrawerV2() {
     meta.id = 'ntPlMeta';
     pl.closest('.field').appendChild(meta);
   }
+  /* Parent / Palcode 选填（触达工具模块 PRD 6.3.5），放在名称之后 */
+  const nameField = document.getElementById('ntName')?.closest('.field');
+  if (nameField && !document.getElementById('ntParent')) {
+    nameField.insertAdjacentHTML('afterend', `<div class="field nt-mark-field">
+        <span class="field-label">Parent <span class="v2-hint">选填</span></span>
+        <input class="input" id="ntParent" placeholder="请输入 Parent" maxlength="50">
+      </div>
+      <div class="field nt-mark-field">
+        <span class="field-label">Palcode <span class="v2-hint">选填</span></span>
+        <input class="input" id="ntPalcode" placeholder="请输入 15–30 位数字" maxlength="30">
+      </div>`);
+  }
   /* 任务类型（手动发送 / 系统调用）与任务 code 保持一期表单（Marvin 2026-11-12）；任务来源 / 消息类别不在表单录入 */
   const timingField = document.getElementById('ntTimingField');
   if (timingField && !document.getElementById('ntReserveField')) {
@@ -413,6 +425,7 @@ function initDraft(channel) {
     perChannel: { [channel]: newChannelConfig() },
   };
   document.getElementById('ntName').value = '';
+  ['ntParent', 'ntPalcode'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('ntProductLine').value = '';
   const actEl = document.getElementById('ntActivity');
   if (actEl) actEl.value = '';
@@ -587,6 +600,7 @@ function openTaskEdit(task, mode = 'edit') {
     perChannel,
   };
   document.getElementById('ntName').value = draft.name;
+  if (document.getElementById('ntParent')) { document.getElementById('ntParent').value = task.parent || ''; document.getElementById('ntPalcode').value = task.palcode || ''; }
   ensureProductLineOption(draft.productLine);
   ensureActivityOption(draft.activityId, draft.activityName);
   const codeEl = document.getElementById('ntTaskCode');
@@ -1361,6 +1375,10 @@ function createTask() {
   const name = document.getElementById('ntName').value.trim();
   if (!name) { showToast('请输入名称'); return; }
   if (!document.getElementById('ntProductLine').value) { showToast('请选择产品线'); return; }
+  const parent = (document.getElementById('ntParent')?.value || '').trim().toUpperCase();
+  const palcode = (document.getElementById('ntPalcode')?.value || '').trim();
+  if (parent && !/^[A-Z0-9_-]{1,50}$/.test(parent)) { showToast('Parent 只能包含字母、数字、下划线、中划线，最多 50 个字符'); return; }
+  if (palcode && !/^\d{15,30}$/.test(palcode)) { showToast('Palcode 须为 15–30 位数字'); return; }
   syncDraftActivityFromSelect();
   draft.productLine = rhCurrentSite();
   draft.taskCode = document.getElementById('ntTaskCode')?.value.trim() || '';
@@ -1404,6 +1422,8 @@ function createTask() {
       emailCheck,
       activityId: draft.activityId || '',
       activityName: draft.activityName || '',
+      parent,
+      palcode,
     });
     renderRunningTasksTable();
     closeDrawer('taskDrawer');

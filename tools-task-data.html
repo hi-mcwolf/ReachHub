@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>触达任务数据 · 工具 · Digiplus</title>
+  <link rel="stylesheet" href="assets/styles.css?v=202611241147">
+  <link rel="stylesheet" href="assets/v2.css?v=202611241147">
+  <link rel="stylesheet" href="assets/fail-analysis.css?v=202611241147">
+  <link rel="stylesheet" href="assets/tools.css?v=202611241147">
+</head>
+<body data-page="task-data">
+  <div class="app-layout">
+    <aside id="sidebar"></aside>
+    <div class="app-content">
+      <header id="topbar"></header>
+      <div class="content-body">
+        <main class="stats-main">
+          <div class="stats-header">
+            <div>
+              <h1 class="page-title">触达任务数据</h1>
+              <p class="page-desc">统一查看 Viber Biz / Messenger Biz / SMS 已发送任务与触达指标（直接读取新触达、旧 SMS 模块、SOP 数据），维护 Parent / Palcode 并导出</p>
+            </div>
+            <div class="stats-header-actions">
+              <button class="btn btn-outline" id="tdImportBtn"><i data-lucide="upload"></i>导入 Parent/Palcode</button>
+              <button class="btn btn-primary" id="tdExportBtn"><i data-lucide="download"></i>导出</button>
+            </div>
+          </div>
+
+          <div class="card filter-card">
+            <div class="filter-row">
+              <div class="filter-item"><span class="filter-label">渠道</span><div id="tdCh"></div></div>
+              <div class="filter-item"><span class="filter-label">发送时间</span>
+                <input type="date" class="input td-date" id="tdFrom"><span class="cell-muted">-</span><input type="date" class="input td-date" id="tdTo"></div>
+              <div class="filter-item"><span class="filter-label">创建人</span><div id="tdCreator"></div>
+                <label class="td-check"><input type="checkbox" id="tdMine">只看我创建的</label></div>
+            </div>
+            <div class="filter-row td-row2">
+              <div class="filter-item"><span class="filter-label">任务名称</span>
+                <textarea class="input td-multi" id="tdNames" rows="1" placeholder="关键词，逗号或换行分隔" title="包含匹配、不区分大小写；多个关键词任一命中即命中，最多 20 个"></textarea></div>
+              <div class="filter-item"><span class="filter-label">任务 ID</span>
+                <textarea class="input td-multi" id="tdIds" rows="1" placeholder="精确匹配，可粘贴多个" title="逗号、空格、换行分隔，最多 500 个"></textarea></div>
+              <div class="filter-item"><span class="filter-label">Parent</span><div id="tdParent"></div></div>
+              <div class="filter-item"><span class="filter-label">Palcode</span><input class="input td-w180" id="tdPalcode" placeholder="输入 Palcode"></div>
+              <label class="td-check"><input type="checkbox" id="tdUnlinked">仅看未关联</label>
+              <div class="filter-actions">
+                <button class="btn btn-primary" id="tdQueryBtn"><i data-lucide="search"></i>查询</button>
+                <button class="btn btn-outline" id="tdResetBtn"><i data-lucide="rotate-ccw"></i>重置</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card td-sum-card">
+            <div class="card-title" id="tdSumTitle">汇总</div>
+            <div id="tdSum"></div>
+            <div class="v2-hint td-mt8">按筛选结果全部任务合计（不受分页、勾选影响）；「—」表示指标不可获得，不计入合计</div>
+          </div>
+
+          <div class="card table-card">
+            <div class="td-selbar" id="tdSelBar" hidden></div>
+            <div class="table-scroll td-scroll"><table class="table stats-table td-table" id="tdTable"></table></div>
+            <div class="table-footer"><div class="pagination" id="tdPager"></div></div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- 单条编辑抽屉（6.3.2） -->
+  <div class="drawer-root" id="tdEditDrawer">
+    <div class="drawer-mask" data-cancel></div>
+    <aside class="drawer drawer-md">
+      <header class="drawer-header"><h3>编辑 Parent / Palcode</h3>
+        <button class="icon-btn" data-cancel aria-label="关闭">×</button></header>
+      <div class="drawer-body" id="tdEditBody"></div>
+      <footer class="drawer-footer">
+        <button class="btn btn-outline" data-cancel>取消</button>
+        <button class="btn btn-primary" id="tdESave">保存</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="assets/common.js?v=202611241147"></script>
+  <script src="assets/v2-data.js?v=202611241147"></script>
+  <script src="assets/fail-analysis.js?v=202611241147"></script>
+  <script src="assets/tools.js?v=202611241147"></script>
+</body>
+</html>

@@ -869,6 +869,8 @@ function openTaskDetail(id) {
         ${t.source === 'API' ? trDesc('任务code', fmt(t.taskCode)) : ''}
         ${trDesc('活动 ID', fmt(t.activityId))}
         ${trDesc('活动名称', esc(fmt(t.activityName)))}
+        ${trDesc('Parent', esc(fmt(trMark(t).parent)))}
+        ${trDesc('Palcode', esc(fmt(trMark(t).palcode)))}
       </div>
     </section>
     ${trFallbackConfigHtml(t)}
@@ -976,3 +978,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (qTask && trTask(qTask)) openTaskDetail(qTask);
   refreshIcons();
 });
+
+/* Parent / Palcode（触达工具模块 PRD 6.3.5：任务详情只读展示；演示数据） */
+const TR_MARKS = {
+  T20260713002: { parent: 'RECALL111', palcode: '123456789012345678' },
+  T20260713005: { parent: 'VIP_BDAY', palcode: '' },
+};
+function trMark(t) { return { parent: t.parent || (TR_MARKS[t.id] || {}).parent || '', palcode: t.palcode || (TR_MARKS[t.id] || {}).palcode || '' }; }

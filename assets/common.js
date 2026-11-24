@@ -12,6 +12,11 @@ const REACH_NAV_ITEMS = [
     { key: 'stats-task', label: '任务分析', href: 'task-analysis.html' },
     { key: 'stats-channel', label: '通道日报', href: 'channel-daily.html' },
   ] },
+  /* 工具：跨服务工具（PRD 触达工具模块） */
+  { key: 'reach-tools', label: '工具', icon: 'wrench', children: [
+    { key: 'tools-task-data', label: '触达任务数据', href: 'tools-task-data.html' },
+    { key: 'tools-export', label: '导出中心', href: 'export-center.html' },
+  ] },
   /* 队列管理：仅「队列管理」权限可见，运营整个菜单隐藏（PRD 6.11 节点 9） */
   { key: 'reach-queue', label: '队列管理', icon: 'list-ordered', perm: 'queue', children: [
     { key: 'queue-board', label: '通道态势', href: 'queue.html' },
