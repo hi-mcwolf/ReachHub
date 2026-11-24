@@ -353,7 +353,7 @@ function upgradeTaskDrawerV2() {
       </div>
       <div class="field nt-mark-field">
         <span class="field-label">Palcode <span class="v2-hint">选填</span></span>
-        <input class="input" id="ntPalcode" placeholder="请输入 15–30 位数字" maxlength="30">
+        <input class="input" id="ntPalcode" placeholder="请输入 Palcode" maxlength="50">
       </div>`);
   }
   /* 任务类型（手动发送 / 系统调用）与任务 code 保持一期表单（Marvin 2026-11-12）；任务来源 / 消息类别不在表单录入 */
@@ -1375,10 +1375,11 @@ function createTask() {
   const name = document.getElementById('ntName').value.trim();
   if (!name) { showToast('请输入名称'); return; }
   if (!document.getElementById('ntProductLine').value) { showToast('请选择产品线'); return; }
-  const parent = (document.getElementById('ntParent')?.value || '').trim().toUpperCase();
+  const parent = (document.getElementById('ntParent')?.value || '').trim();
   const palcode = (document.getElementById('ntPalcode')?.value || '').trim();
-  if (parent && !/^[A-Z0-9_-]{1,50}$/.test(parent)) { showToast('Parent 只能包含字母、数字、下划线、中划线，最多 50 个字符'); return; }
-  if (palcode && !/^\d{15,30}$/.test(palcode)) { showToast('Palcode 须为 15–30 位数字'); return; }
+  const codeRe = /^[\u4e00-\u9fa5A-Za-z0-9_-]{1,50}$/;
+  if (parent && !codeRe.test(parent)) { showToast('Parent 只能包含中文、英文、数字、下划线、中划线，最多 50 个字符'); return; }
+  if (palcode && !codeRe.test(palcode)) { showToast('Palcode 只能包含中文、英文、数字、下划线、中划线，最多 50 个字符'); return; }
   syncDraftActivityFromSelect();
   draft.productLine = rhCurrentSite();
   draft.taskCode = document.getElementById('ntTaskCode')?.value.trim() || '';

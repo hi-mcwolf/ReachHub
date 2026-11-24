@@ -86,14 +86,14 @@ const TD_TASKS = tdBuildTasks();
 const TD_BY_KEY = Object.fromEntries(TD_TASKS.map(t => [t.key, t]));
 
 /* ===================== 2. 策略标记 / 修改记录 / 导出记录（localStorage） ===================== */
-const TD_LS_MARKS = 'rhToolMarks.v1', TD_LS_LOG = 'rhToolMarkLog.v1', TD_LS_EXP = 'rhToolExports.v1';
+const TD_LS_MARKS = 'rhToolMarks.v2', TD_LS_LOG = 'rhToolMarkLog.v2', TD_LS_EXP = 'rhToolExports.v1';
 function tdLoad(k, def) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? def : v; } catch (e) { return def; } }
 function tdSave(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 
 function tdSeedMarks() {
   if (localStorage.getItem(TD_LS_MARKS)) return;
   const marks = {}, log = [];
-  const parents = ['RECALL111', 'RECALL222', 'RECALL333', 'NEWUSER_01', 'VIP_BDAY', 'WC2026'];
+  const parents = ['RECALL111', 'acc66', '召回活动A', 'NewUser_01', 'VIP生日', 'WC2026'];
   TD_TASKS.forEach((t, i) => {
     const r = tdRand('mk' + t.key);
     if (r < 0.45) {
@@ -133,10 +133,12 @@ function tdApplyMarks(changes, src) {
 }
 
 /* 字段规则（PRD 6.3.1） */
-function tdNormParent(v) { return String(v ?? '').trim().toUpperCase(); }
+function tdNormParent(v) { return String(v ?? '').trim(); }
 function tdNormPalcode(v) { return String(v ?? '').trim().replace(/^="?|"$/g, ''); }
-function tdParentErr(v) { return v && !/^[A-Z0-9_-]{1,50}$/.test(v) ? 'Parent 只能包含字母、数字、下划线、中划线，最多 50 个字符' : ''; }
-function tdPalcodeErr(v) { return v && !/^\d{15,30}$/.test(v) ? 'Palcode 须为 15–30 位数字' : ''; }
+/* Parent / Palcode：1–50 字符，中文、英文、数字、下划线、中划线；区分大小写，原样保存 */
+const TD_CODE_RE = /^[\u4e00-\u9fa5A-Za-z0-9_-]{1,50}$/;
+function tdParentErr(v) { return v && !TD_CODE_RE.test(v) ? 'Parent 只能包含中文、英文、数字、下划线、中划线，最多 50 个字符' : ''; }
+function tdPalcodeErr(v) { return v && !TD_CODE_RE.test(v) ? 'Palcode 只能包含中文、英文、数字、下划线、中划线，最多 50 个字符' : ''; }
 
 /* ===================== 3. 指标口径（PRD 6.2.3） ===================== */
 const TD_RATES = [
@@ -392,7 +394,7 @@ function tdOpenEdit(key) {
   body.innerHTML = `<div class="td-edit-head">${esc(t.channel)} · ${esc(t.name)} · <span class="td-id">${esc(t.id)}</span></div>
     <div class="td-form">
       <label class="td-f"><span class="field-label">Parent</span><input class="input" id="tdEParent" placeholder="请输入 Parent" value="${esc(m.parent)}"><span class="td-err" id="tdEParentErr"></span></label>
-      <label class="td-f"><span class="field-label">Palcode</span><input class="input" id="tdEPalcode" placeholder="请输入 15–30 位数字" value="${esc(m.palcode)}"><span class="td-err" id="tdEPalcodeErr"></span></label>
+      <label class="td-f"><span class="field-label">Palcode</span><input class="input" id="tdEPalcode" placeholder="请输入 Palcode" value="${esc(m.palcode)}"><span class="td-err" id="tdEPalcodeErr"></span></label>
       <div class="v2-hint">两个字段都清空保存 = 该任务变为未关联</div>
     </div>
     <h4 class="card-title td-log-title">修改记录</h4>
@@ -438,7 +440,7 @@ function tdOpenBatch() {
     </div>`;
   const root = v2Modal({
     title: `批量设置 Parent / Palcode（已选 ${keys.length} 个任务）`, width: 620, okText: '确定',
-    body: `${fieldRow('parent', 'Parent', '请输入 Parent')}${fieldRow('palcode', 'Palcode', '请输入 15–30 位数字')}
+    body: `${fieldRow('parent', 'Parent', '请输入 Parent')}${fieldRow('palcode', 'Palcode', '请输入 Palcode')}
       <div class="v2-callout warn td-batch-warn" id="tdBWarn" hidden><i data-lucide="alert-triangle"></i><span></span></div>`,
     onOk: r => {
       const st = tdBatchState(r);
