@@ -170,13 +170,13 @@ function tdSummary(rows) {
 
 /* ===================== 4. 导出（PRD 6.4） ===================== */
 const TD_EXPORT_COLS = ['渠道', '任务名称', '任务ID', '创建人', '发送时间', '发送人数', '有效人数', 'DLR成功触达人数', 'Seen查看人数', 'Click点击人数',
-  '名单有效率', '触达率', '查看率', '点击率', '查看后点击率', 'Parent', 'Palcode', '数据更新时间'];
+  '名单有效率', '触达率', '查看率', '点击率', '查看后点击率', 'Parent', 'Palcode'];
 function tdExportRow(t) {
   const m = tdMark(t.key);
   const blank = v => v == null ? '' : v;
   const pct = (a, b) => { const p = tdPct(a, b); return p === '—' ? '' : p; };
   return [t.channel, t.name, t.id, t.creator, tdFmtTime(t.sendAt).replace(/-/g, '/'), blank(t.total), blank(t.valid), blank(t.dlr), blank(t.seen), blank(t.click),
-    ...TD_RATES.map(r => pct(t[r.a], t[r.b])), m.parent, m.palcode ? `="${m.palcode}"` : '', t.updatedAt ? tdFmtTime(t.updatedAt).replace(/-/g, '/') : ''];
+    ...TD_RATES.map(r => pct(t[r.a], t[r.b])), m.parent, m.palcode ? `="${m.palcode}"` : ''];
 }
 function tdCsv(rows) {
   const q = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -338,7 +338,7 @@ function tdRenderTable() {
   document.getElementById('tdTable').innerHTML = `<thead><tr>
       <th class="td-ck"><input type="checkbox" id="tdCkPage" ${pageAll ? 'checked' : ''}></th>
       <th>渠道</th><th>任务名称 / 任务 ID</th><th>创建人</th><th>发送时间</th>${TD_METRICS.map(th).join('')}
-      <th>Parent</th><th>Palcode</th><th>数据更新时间</th><th>操作</th></tr></thead>
+      <th>Parent</th><th>Palcode</th><th>操作</th></tr></thead>
     <tbody>${rows.length ? rows.map(t => {
       const m = marks[t.key] || {};
       return `<tr data-key="${esc(t.key)}" class="${TD.sel.has(t.key) ? 'td-row-sel' : ''}">
@@ -350,10 +350,9 @@ function tdRenderTable() {
         ${TD_METRICS.map(x => `<td class="v2-num">${tdN(t[x.k])}</td>`).join('')}
         <td>${m.parent ? esc(m.parent) : '<span class="cell-muted">—</span>'}</td>
         <td>${m.palcode ? `<span class="td-pal" title="${esc(m.palcode)}">${esc(m.palcode)}</span>` : '<span class="cell-muted">—</span>'}</td>
-        <td>${tdFmtTime(t.updatedAt)}</td>
         <td><button class="link-btn" data-edit>编辑</button></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="16" class="td-empty">没有符合条件的任务</td></tr>`}</tbody>`;
+    }).join('') : `<tr><td colspan="15" class="td-empty">没有符合条件的任务</td></tr>`}</tbody>`;
   const tbl = document.getElementById('tdTable');
   tbl.querySelector('#tdCkPage')?.addEventListener('change', e => {
     if (e.target.checked) {
@@ -635,7 +634,7 @@ function tdDemoImportRows() {
   TD_TASKS.filter(t => !marks[t.key] && !src.includes(t)).slice(0, 3).forEach(t => {
     const r = tdExportRow(t); r[TD_EXPORT_COLS.indexOf('Parent')] = 'NEWUSER_02'; r[TD_EXPORT_COLS.indexOf('Palcode')] = '="202611240000000001"'; rows.push(r);
   });
-  rows.push(['SMS', '不存在的任务', 'SMS-20200101-999', '', '', '', '', '', '', '', '', '', '', '', '', 'RECALL111', '', '']);
+  rows.push(['SMS', '不存在的任务', 'SMS-20200101-999', '', '', '', '', '', '', '', '', '', '', '', '', 'RECALL111', '']);
   if (src[3]) rows.push(tdExportRow(src[3]));
   return [TD_EXPORT_COLS].concat(rows);
 }
