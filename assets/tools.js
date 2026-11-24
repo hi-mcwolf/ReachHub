@@ -290,7 +290,6 @@ function tdRefreshParentOptions() {
 }
 
 function tdRender() {
-  tdRenderSummary();
   tdRenderSelBar();
   tdRenderTable();
   tdRenderPager();
