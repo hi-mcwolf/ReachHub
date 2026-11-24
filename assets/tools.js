@@ -290,6 +290,7 @@ function tdRefreshParentOptions() {
 }
 
 function tdRender() {
+  document.getElementById('tdExportTxt').textContent = `导出全部筛选结果（${TD.rows.length.toLocaleString('en-US')}）`;
   tdRenderSelBar();
   tdRenderTable();
   tdRenderPager();
@@ -484,12 +485,12 @@ function tdBatchState(root) {
 }
 
 /* ---- 导出（6.4.2） ---- */
-function tdOpenExport(keys) {
+function tdOpenExport(keys, all) {
   if (!keys.length) { showToast('没有可导出的任务'); return; }
   if (keys.length > 100000) { showToast('导出任务超过 10 万条，请缩小筛选范围'); return; }
   v2Modal({
     title: '导出任务数据', width: 440, okText: '导出',
-    body: `<p class="td-mb8">${TD.sel.size ? `导出已选 <b>${keys.length}</b> 个任务` : `导出当前筛选结果全部 <b>${keys.length}</b> 个任务（不受分页限制）`}</p>
+    body: `<p class="td-mb8">${!all ? `导出已选 <b>${keys.length}</b> 个任务` : `导出当前筛选结果全部 <b>${keys.length}</b> 个任务（不受分页限制）`}</p>
       <div class="radio-group"><label><input type="radio" name="tdFmt" value="xlsx" checked> XLSX</label><label><input type="radio" name="tdFmt" value="csv"> CSV</label></div>
       <p class="v2-hint td-mt8">文件可直接用于填写 Parent / Palcode 后导入。</p>`,
     onOk: r => {
@@ -649,7 +650,7 @@ function tdInitPage() {
   document.getElementById('tdUnlinked').addEventListener('change', tdSyncFiltLocks);
   document.getElementById('tdQueryBtn').addEventListener('click', () => tdQuery(false));
   document.getElementById('tdResetBtn').addEventListener('click', () => { tdWriteFilt(tdDefaultFilt()); tdQuery(false); });
-  document.getElementById('tdExportBtn').addEventListener('click', () => tdOpenExport(TD.rows.map(t => t.key)));
+  document.getElementById('tdExportBtn').addEventListener('click', () => tdOpenExport(TD.rows.map(t => t.key), true));
   document.getElementById('tdImportBtn').addEventListener('click', tdOpenImport);
   ['tdNames', 'tdIds', 'tdPalcode'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && id !== 'tdNames') tdQuery(false); }));
   /* 支持 URL 参数快速定位：?name=召回&mine=1 */
