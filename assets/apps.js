@@ -54,13 +54,13 @@ const AP_AUDIT = [
   { time: '2026-11-11 10:35:47', app: '星灵', type: '发送', result: '拒绝', reason: 'APPROVAL_INFO_MISSING 声明需要审批但缺少审批人或审批时间', task: '', outId: 'order-20261111-021', site: 'bp-growth', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:40:09', app: '用户中心', type: '发送', result: '拒绝', reason: 'SITE_NOT_FOUND 产品线不存在（bingo-ph）', task: '', outId: 'reg-88123990', site: 'bingo-ph', channel: 'SMS', cat: '营销' },
   { time: '2026-11-11 10:42:51', app: '星灵', type: '回调投递', result: '受理', reason: '', task: 'T20260713005', outId: 'order-20261111-001', site: 'bp-growth', channel: 'SMS', cat: '营销',
-    retries: [['首次投递', '10:42:51', '成功 · HTTP 200']], event: '排队中' },
+    retries: [['首次投递', '10:42:51', '成功 · HTTP 200']], event: '待发送' },
 ];
 
 /* 回调事件（调试台右侧，6.7.4） */
 const AP_CB_EVENTS = [
   { id: 'EV-9F21A0', time: '10:08:44', level: '任务级', event: '执行统计快照', ref: 'T20260713001', outId: 'order-20261110-088', delivery: 'fail', note: '3 次重试仍失败，已通知负责人' },
-  { id: 'EV-9F2201', time: '10:42:51', level: '任务级', event: '排队中', ref: 'T20260713005', outId: 'order-20261111-001', delivery: 'ok', note: 'HTTP 200' },
+  { id: 'EV-9F2201', time: '10:42:51', level: '任务级', event: '已创建', ref: 'T20260713005', outId: 'order-20261111-001', delivery: 'ok', note: 'HTTP 200' },
 ];
 
 /* ================= 通用小工具 ================= */
@@ -548,7 +548,7 @@ function apDoSend() {
     ['预检提示', apHintsHtml(hints)],
   ], `<div style="margin-top:10px"><button class="btn btn-outline btn-sm" id="dbgAdvance"><i data-lucide="fast-forward"></i>模拟推进任务（产生回调）</button></div>`);
   apPushEvent(app, '任务级', '已创建', taskId, req.outId);
-  if (req.mode !== '单发') apPushEvent(app, '任务级', req.timing === '定时' ? '待发送' : '排队中', taskId, req.outId);
+  if (req.mode !== '单发') apPushEvent(app, '任务级', '已创建', taskId, req.outId);
   const steps = ['发送中', '执行统计快照', '已完成'];
   document.getElementById('dbgAdvance').addEventListener('click', e => {
     const s = steps.shift();
@@ -619,7 +619,7 @@ function apRenderDocs() {
         ['QUOTA_EXCEEDED / RATE_LIMITED', '超出日配额 / 速率上限'], ['PARAM_MISSING / PARAM_INVALID / BATCH_LIMIT / RECIPIENT_NOT_ALLOWED', '参数缺失或不合法']])}
     </div>
     <div data-docpane="cb" hidden>
-      ${t(['级别', '事件', '触发'], [['任务级', '已创建（含审批状态与审批人）、排队中、发送中、已完成、已终止、失败', '任务状态变化'],
+      ${t(['级别', '事件', '触发'], [['任务级', '已创建（含审批状态与审批人）、发送中、已完成、已终止、失败', '任务状态变化'],
         ['任务级', '执行统计快照', '发送中每 5 分钟一次 + 完成时一次（漏斗各层数字）'], ['消息级', '已提交、提交失败、已送达、未送达、已过期、无回执、已拦截', '消息终态；「已提交」为可选中间态']])}
       <h4 class="ap-h4">回调规则</h4>
       ${t(['项', '规则'], [['投递', '推送到接入方回调地址；带签名与事件时间；同一事件至少一次，接入方按事件 ID 去重'], ['重试', '失败按 1 / 5 / 30 分钟重试 3 次；仍失败记入调用审计并通知负责人'],

@@ -52,7 +52,7 @@ const V2_VENDORS = ['Smart', 'Globe', 'Mocean', 'DLink', 'NXLink', 'OneSignal', 
 /* ---- 两维状态（4.4.4） ---- */
 const V2_TASK_STATUS = {
   pending:  { label: '待发送', cls: 'tag-info' },
-  queued:   { label: '排队中', cls: 'tag-primary' },
+  queued:   { label: '待发送', cls: 'tag-info', alias: 'pending' }, /* 内部：已入队未开始提交；对外显示待发送，不单列筛选 */
   sending:  { label: '发送中', cls: 'tag-orange' },
   done:     { label: '已完成', cls: 'tag-success' },
   stopped:  { label: '已终止', cls: 'tag-gray' },

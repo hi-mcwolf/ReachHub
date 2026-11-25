@@ -205,7 +205,7 @@ function qAddAudit(entry) {
 }
 function qLaterIds(rows) { return rows.filter(r => (r.a.finish || 0) > (r.b.finish || 0) || r.a.expired > r.b.expired).map(r => r.t.id).join(', '); }
 
-/* 操作后：拿到额度的排队中任务转为发送中 */
+/* 操作后：拿到额度的待发送（已入队）任务转为发送中 */
 function qPromote(acct) {
   const sim = qSimulate(acct, qQueueTasks(acct.id));
   sim.order.forEach(t => { if (t.status === 'queued' && sim.rate[t.id] > 0) t.status = 'sending'; });
@@ -327,7 +327,7 @@ function qRenderBoard() {
           <thead><tr><th>通道</th><th>供应商</th><th>账号</th><th>业务线</th><th>状态 ${tipIcon('只分正常 / 拥堵。拥堵 = 预计清空 > 2 小时，或利用率 > 90% 持续 15 分钟；原因显示在状态下方')}</th>
             <th class="v2-num">吞吐 / 上限（条/秒）${tipIcon('近 1 分钟实际提交速率 / 供应商档案 TPS 上限')}</th><th>利用率</th>
             <th class="v2-num">队列深度 ${tipIcon('该队列全部任务待发送表剩余之和（不含缓冲）')}</th>
-            <th>预计清空 ${tipIcon('队列深度 ÷ 有效吞吐')}</th><th>发送中 / 排队中 / 占位</th><th>操作</th></tr></thead>
+            <th>预计清空 ${tipIcon('队列深度 ÷ 有效吞吐')}</th><th>发送中 / 待发送 / 占位</th><th>操作</th></tr></thead>
           <tbody>${rows.length ? rows.map(({ a, s }) => {
             const cls = s.status === '拥堵' ? 'v2-row-danger' : '';
             const cnt = s.mode === 'otp' ? `OTP 独立 · 排队 P95 ${s.p95}` : s.mode === 'legacy' ? '-' : `${s.counts.sending} / ${s.counts.queued} / ${s.counts.reserve}`;
@@ -387,7 +387,7 @@ function qRenderDetail(acctId) {
   const hasNormalQueued = sim.order.some(t => t.qPrio !== '高');
   host.innerHTML = head + `
     <section class="card table-card">
-      <div class="table-card-head v2-flex-between"><h4 class="card-title">发送中 / 排队中 <span class="q-sub">按调度顺序，可拖动排队中任务</span></h4>
+      <div class="table-card-head v2-flex-between"><h4 class="card-title">发送中 / 待发送 <span class="q-sub">按调度顺序，可拖动待发送任务</span></h4>
         ${typeof qsToolbarHtml === 'function' ? qsToolbarHtml(a) : ''}</div>
       <div class="table-scroll">
         <table class="table stats-table q-table">

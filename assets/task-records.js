@@ -156,7 +156,6 @@ function openColumnSettings() {
 function renderKpis() {
   const kpis = [
     { title: '任务总数', value: TASK_RECORDS.length, cls: '' },
-    { title: '排队中', value: TASK_RECORDS.filter(t => t.status === 'queued').length, cls: 'kpi-blue' },
     { title: '发送中', value: TASK_RECORDS.filter(t => t.status === 'sending').length, cls: 'kpi-orange' },
     { title: '待审批', value: TASK_RECORDS.filter(t => t.approval === 'pending' || trPendingVersion(t)).length, cls: 'kpi-orange' },
   ];
@@ -257,7 +256,7 @@ function applyFilters(keepPage) {
     (!app || t.app === app) &&
     (!category || t.category === category) &&
     (!channelCascade || channelCascade.matches(t)) &&
-    (!statuses.length || statuses.includes(t.status)) &&
+    (!statuses.length || statuses.includes(V2_TASK_STATUS[t.status]?.alias || t.status)) &&
     (!approval || t.approval === approval) &&
     (!fallback || (fallback === 'yes') === !!t.fallback) &&
     (!approver || (t.approver || '').toLowerCase().includes(approver)) &&
@@ -365,7 +364,7 @@ function handleBatchAction(act) {
 
 /* ---------------- 编辑内容入口判断（6.10.2） ---------------- */
 function trEditBlockReason(t) {
-  if (!['queued', 'sending'].includes(t.status)) return '仅排队中 / 发送中的任务可编辑内容';
+  if (!['queued', 'sending'].includes(t.status)) return '仅已入队的待发送 / 发送中任务可编辑内容';
   if (t.contentMode === '分别配置') return '「分别配置」（逐行内容）任务不支持发送中改文案';
   if (t.accountMode !== 'tasklevel') return '该通道暂不支持';
   if (trPendingVersion(t)) return '已有内容变更待审批，审批完成后可再次编辑';
@@ -932,7 +931,7 @@ function trInitFilters() {
   });
   statusFilter = createSearchMultiSelect({
     container: document.getElementById('fStatus'),
-    options: Object.entries(V2_TASK_STATUS).map(([k, s]) => ({ value: k, label: s.label })),
+    options: Object.entries(V2_TASK_STATUS).filter(([, s]) => !s.alias).map(([k, s]) => ({ value: k, label: s.label })),
     placeholder: '全部',
     searchPlaceholder: '搜索状态…',
   });

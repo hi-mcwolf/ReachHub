@@ -585,7 +585,7 @@ function sdRenderList() {
   if (!sdReady) return;
   const all = sdScopeTasks();
   const now = sdNow();
-  const rows = all.filter(t => (!sdListF.activity || t.activity === sdListF.activity) && (!sdListF.site || t.site === sdListF.site) && (!sdListF.status || t.status === sdListF.status)
+  const rows = all.filter(t => (!sdListF.activity || t.activity === sdListF.activity) && (!sdListF.site || t.site === sdListF.site) && (!sdListF.status || (V2_TASK_STATUS[t.status]?.alias || t.status) === sdListF.status)
     && (!sdListF.time || (sdListF.time === 'today' ? t.createdAt.toDateString() === now.toDateString() : now - t.createdAt <= 7 * 86400e3)))
     .sort((a, b) => b.createdAt - a.createdAt);
   const pages = Math.max(1, Math.ceil(rows.length / 10));
@@ -597,7 +597,7 @@ function sdRenderList() {
     <div class="sd-list-filter">
       <span>活动</span>${sel('lfAct', acts.map(a => [a, a]), sdListF.activity)}
       <span>产品线</span>${sel('lfSite', SD_USER_SITES.map(s => [s, plName(s)]), sdListF.site)}
-      <span>任务状态</span>${sel('lfStatus', Object.entries(V2_TASK_STATUS).map(([k, v]) => [k, v.label]), sdListF.status)}
+      <span>任务状态</span>${sel('lfStatus', Object.entries(V2_TASK_STATUS).filter(([, v]) => !v.alias).map(([k, v]) => [k, v.label]), sdListF.status)}
       <span>创建时间</span>${sel('lfTime', [['today', '今天'], ['7d', '近 7 天']], sdListF.time)}
     </div>
     <div class="table-scroll" style="max-height:none"><table class="table stats-table">
